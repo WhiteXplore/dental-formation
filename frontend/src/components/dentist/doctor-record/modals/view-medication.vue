@@ -11,11 +11,11 @@
           class="flex items-center justify-between px-6 py-4 bg-blue-700 text-white"
         >
           <div class="flex items-center gap-2">
-            <icon :name="'add-students'" />
+            <icon name="add-students" />
             <h2 class="text-lg font-semibold">Prescription Summary</h2>
           </div>
           <icon
-            :name="'circle-close3'"
+            name="circle-close3"
             class="cursor-pointer hover:scale-110 transition"
             @click="$emit('close')"
           />
@@ -68,7 +68,7 @@
                   >
                   –
                   <span class="text-gray-600">
-                    {{ tooth.priceProcedure?.procedure_name }}
+                    {{ tooth.priceProcedure?.procedure_name || "N/A" }}
                   </span>
                 </li>
                 <li
@@ -94,10 +94,11 @@
                   v-for="med in prescription.prescribedMedications || []"
                   :key="med.prescribe_medication_id"
                 >
-                  <span class="font-semibold">{{ med.inventory?.name }}</span> –
-                  {{ med.inventory?.dosage }} – {{ med.pcs }}
-                  {{ med.inventory?.unit }}
+                  <span class="font-semibold">{{ med.name }}</span> –
+                  {{ med.dosage || "N/A" }} – {{ med.pcs }}
+                  {{ med.unit || "pcs" }}
                 </li>
+
                 <li
                   v-if="!prescription.prescribedMedications?.length"
                   class="text-gray-400 italic"
@@ -150,10 +151,8 @@ import { useFetchDataStore } from "@/store/fetch-data-store";
 import { mapState } from "pinia";
 
 export default {
-  name: "viewMedicationPage",
-  components: {
-    icon,
-  },
+  name: "ViewMedicationPage",
+  components: { icon },
   props: {
     prescriptionId: {
       type: Number,
@@ -161,7 +160,7 @@ export default {
     },
   },
   computed: {
-    ...mapState(useFetchDataStore, ["medications"]),
+    ...mapState(useFetchDataStore, ["medications"]), // medications should contain all prescriptions
     prescription() {
       return this.medications.find(
         (p) => p.prescription_id === this.prescriptionId

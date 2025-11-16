@@ -8,7 +8,7 @@
         </div>
 
         <button
-          @click="fetchPrescriptions"
+          @click="fetchMedications"
           class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
         >
           Refresh
@@ -238,7 +238,7 @@
                 </p>
                 <p class="text-gray-600">
                   <strong>Position:</strong>
-                  {{ selectedReport.dentalChart.user_accounts.position }}
+                  {{ selectedReport.dentalChart.user_accounts.role }}
                 </p>
                 <p class="text-gray-600">
                   <strong>Email:</strong>
@@ -316,25 +316,37 @@
                   </thead>
                   <tbody>
                     <tr
-                      v-for="med in selectedReport.prescribedMedications"
+                      v-for="med in selectedReport.prescribedMedications || []"
                       :key="med.prescribe_medication_id"
                       class="hover:bg-gray-50 transition"
                     >
                       <td class="p-3 border border-gray-200">
-                        {{ med.inventory.name }}
+                        {{ med.name || "N/A" }}
                       </td>
                       <td class="p-3 border border-gray-200">
-                        {{ med.inventory.dosage }}
+                        {{ med.dosage || "N/A" }}
                       </td>
                       <td class="p-3 border border-gray-200">
-                        {{ med.pcs }} {{ med.inventory.unit }}
+                        {{ med.pcs || 0 }} {{ med.inventory?.unit || "" }}
                       </td>
-                      <!-- <td class="p-3 border border-gray-200">
-                        ₱{{ formatCurrency(med.inventory.price_per_unit) }}
+                      <!-- Optional: If you want price/expiration, keep them null-safe too -->
+                      <!--
+    <td class="p-3 border border-gray-200">
+      ₱{{ formatCurrency(med.inventory?.price_per_unit || 0) }}
+    </td>
+    <td class="p-3 border border-gray-200">
+      {{ formatDate(med.inventory?.expiration) }}
+    </td>
+    -->
+                    </tr>
+
+                    <tr v-if="!selectedReport?.prescribedMedications?.length">
+                      <td
+                        colspan="3"
+                        class="text-center py-8 text-gray-400 bg-white border border-gray-200 rounded-md shadow-sm"
+                      >
+                        No prescribed medications
                       </td>
-                      <td class="p-3 border border-gray-200">
-                        {{ formatDate(med.inventory.expiration) }}
-                      </td> -->
                     </tr>
                   </tbody>
                 </table>
@@ -421,7 +433,7 @@ export default {
     },
   },
   methods: {
-    async fetchPrescriptions() {
+    async fetchMedications() {
       this.loading = true;
       const store = useFetchDataStore();
       await store.fetchMedications();
@@ -454,7 +466,7 @@ export default {
     },
   },
   async mounted() {
-    await this.fetchPrescriptions();
+    await this.fetchMedications();
   },
 };
 </script>

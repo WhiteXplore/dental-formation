@@ -124,7 +124,7 @@
                 required
                 class="w-full border px-2 py-3.5 border-gray-600 rounded-md text-md text-gray-800"
               >
-                <option disabled value="">Select appointment_status</option>
+                <option disabled value="">Select appointment status</option>
                 <option value="Walk-In">Walk-In</option>
                 <option value="No-Show">No-Show</option>
               </select>
@@ -193,7 +193,6 @@ export default {
         scheduled_date: "",
         appointment_status: "",
         appointment_time: "",
-        medical_history: "",
       },
       searchPatientQuery: "",
       searchDentistQuery: "",
@@ -213,7 +212,6 @@ export default {
             scheduled_date: dayjs(newVal.scheduled_date).format("YYYY-MM-DD"),
             appointment_status: newVal.appointment_status,
             appointment_time: newVal.appointment_time,
-            medical_history: newVal.medical_history || "",
           };
 
           this.searchPatientQuery = `${newVal.patient?.last_name || ""}, ${
@@ -289,17 +287,33 @@ export default {
         return;
       }
 
+      // Check if anything changed
+      const hasChanges =
+        this.form.patient_id !== this.appointment.patient?.patient_id ||
+        this.form.user_id !== this.appointment.user_accounts?.user_id ||
+        this.form.scheduled_date !==
+          dayjs(this.appointment.scheduled_date).format("YYYY-MM-DD") ||
+        this.form.appointment_time !== this.appointment.appointment_time ||
+        this.form.appointment_status !== this.appointment.appointment_status;
+
+      if (!hasChanges) {
+        toast.warning("No changes detected.");
+        return;
+      }
+
       const inputDate = dayjs(this.form.scheduled_date).format("YYYY-MM-DD");
       const inputTime = this.form.appointment_time;
       const dentistId = this.form.user_id;
 
+      // Check for conflict
       const hasConflict = this.appointments.some((a) => {
         const apptDate = dayjs(a.scheduled_date).format("YYYY-MM-DD");
         const apptTime = a.appointment_time;
         return (
           apptDate === inputDate &&
           apptTime === inputTime &&
-          a.user_id === dentistId
+          a.user_id === dentistId &&
+          a.appointment_id !== this.form.appointment_id // exclude current appointment
         );
       });
 
@@ -312,18 +326,18 @@ export default {
 
       try {
         await axios.patch(
-          `http://localhost:8000/appointment/update/${this.form.appointment_id}`,
+          `http://localhost:8000/appointment/${this.form.appointment_id}`,
           this.form
         );
 
-        toast.success("Appointment added successfully!");
+        toast.success("Appointment updated successfully!");
         const audio = new Audio(require("@/assets/add.mp3"));
         audio.play();
         this.$emit("refresh");
         this.$emit("close");
       } catch (error) {
         console.error(error);
-        toast.error("Failed to add appointment.");
+        toast.error("Failed to update appointment.");
       }
     },
   },

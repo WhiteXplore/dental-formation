@@ -84,4 +84,12 @@ export class InventoryController {
 
     return res.send(item.image);
   }
+
+  @Patch('deduct')
+  async deductInventory(
+    @Body() body: { inventoryId: number; quantity: number },
+  ) {
+    const { inventoryId, quantity } = body;
+    return this.inventoryService.deductInventory(inventoryId, quantity);
+  }
 }

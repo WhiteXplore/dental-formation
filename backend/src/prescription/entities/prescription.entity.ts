@@ -1,4 +1,3 @@
-// prescription.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -9,10 +8,10 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-
 import { DentalChart } from 'src/dental-chart/entities/dental-chart.entity';
 import { PrescribeMedication } from 'src/prescribe-medication/entities/prescribe-medication.entity';
 import { Payment } from 'src/payment/entities/payment.entity';
+
 @Entity('prescriptions')
 export class Prescription {
   @PrimaryGeneratedColumn()
@@ -36,10 +35,13 @@ export class Prescription {
   @Column({ type: 'date' })
   issued_date: Date;
 
-  @OneToMany(() => PrescribeMedication, (prescribe) => prescribe.prescription, {
+  @OneToMany(() => PrescribeMedication, (med) => med.prescription, {
     cascade: true,
   })
   prescribedMedications: PrescribeMedication[];
+
+  @Column('int', { nullable: true })
+  prescribedMedicationIds?: number[];
 
   @OneToMany(() => Payment, (payment) => payment.prescription)
   payments: Payment[];

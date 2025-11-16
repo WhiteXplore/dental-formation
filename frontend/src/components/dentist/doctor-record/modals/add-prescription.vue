@@ -109,12 +109,10 @@
             </div>
           </div>
 
-          <!-- Prescribe Medication and instruction -->
+          <!-- Prescribe Medication -->
           <div class="flex flex-col gap-2">
             <div class="w-full space-y-2 text-left flex flex-col relative">
-              <label for="prescribe_medication" class="font-bold"
-                >Prescribe Medication:</label
-              >
+              <label class="font-bold">Prescribe Medication:</label>
 
               <input
                 type="text"
@@ -125,87 +123,30 @@
                 placeholder="Search medication..."
               />
 
-              <!-- Dropdown -->
+              <!-- Manual Medication Dropdown -->
               <div
                 v-if="showMedicationDropdown"
-                class="absolute left-0 top-full z-30 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto w-full mt-1 transition-all duration-200"
+                class="absolute left-0 top-full z-30 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto w-full mt-1"
               >
                 <div
-                  v-for="(med, idx) in filteredMedications"
-                  :key="idx"
-                  class="flex justify-between items-center p-3 border-b border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer"
-                  :class="{
-                    'opacity-50 cursor-not-allowed bg-gray-50':
-                      med.quantity === 0 || isExpired(med.expiration),
-                  }"
-                  @mousedown.prevent="
-                    !isExpired(med.expiration) && med.quantity > 0
-                      ? toggleMedicationSelection(med.name)
-                      : null
-                  "
+                  v-for="(med, index) in filteredManualMedications"
+                  :key="index"
+                  class="p-3 hover:bg-blue-50 cursor-pointer flex justify-between items-center border-b"
+                  @mousedown.prevent="toggleManualMedication(med)"
                 >
-                  <!-- Left: Checkbox & Name -->
-                  <div class="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      class="mt-[2px] accent-blue-600"
-                      :checked="
-                        form.prescribe_medications.some(
-                          (m) => m.name === med.name
-                        )
-                      "
-                      :disabled="
-                        med.quantity === 0 || isExpired(med.expiration)
-                      "
-                    />
-
-                    <div class="flex flex-col">
-                      <span
-                        class="font-semibold text-gray-800 flex items-center gap-2"
-                      >
-                        {{ med.name }}
-                        <span
-                          v-if="isExpired(med.expiration)"
-                          class="text-[11px] bg-red-100 text-red-600 px-2 py-[1px] rounded-full"
-                        >
-                          Expired
-                        </span>
-                        <span
-                          v-else-if="med.quantity <= 5"
-                          class="text-[11px] bg-yellow-100 text-yellow-700 px-2 py-[1px] rounded-full"
-                        >
-                          Low Stock
-                        </span>
-                      </span>
-
-                      <!-- Sub details -->
-                      <span class="text-[12px] text-gray-600 italic">
-                        {{ med.type || "No type" }} • {{ med.dosage || "N/A" }}
-                      </span>
-
-                      <span
-                        v-if="med.expiration"
-                        :class="[
-                          'text-xs italic mt-[1px]',
-                          isExpired(med.expiration)
-                            ? 'text-red-500'
-                            : 'text-gray-500',
-                        ]"
-                      >
-                        Exp: {{ formatDateDisplay(med.expiration) }}
-                      </span>
-                    </div>
-                  </div>
-
-                  <!-- Right: Quantity -->
-                  <div class="text-sm text-gray-700 font-medium">
-                    {{ med.quantity }} {{ med.unit }}
+                  <div class="flex flex-col">
+                    <span class="font-semibold text-gray-800">{{
+                      med.name
+                    }}</span>
+                    <span class="text-xs text-gray-600 italic">
+                      {{ med.type }} • {{ med.dosage }}
+                    </span>
                   </div>
                 </div>
 
                 <div
-                  v-if="filteredMedications.length === 0"
-                  class="px-4 py-3 text-gray-500 italic text-sm text-center"
+                  v-if="filteredManualMedications.length === 0"
+                  class="p-3 text-gray-500 italic text-center text-sm"
                 >
                   No medications found
                 </div>
@@ -217,27 +158,32 @@
                 class="mt-2 space-y-2"
               >
                 <div
-                  v-for="(medication, index) in form.prescribe_medications"
+                  v-for="(med, index) in form.prescribe_medications"
                   :key="index"
                   class="flex justify-between items-center border border-green-300 bg-white shadow-sm rounded-lg px-4 py-2"
                 >
-                  <div
-                    class="flex flex-col text-sm text-gray-800 font-medium w-full"
-                  >
-                    <div class="flex justify-between items-center w-full gap-2">
-                      <span>{{ medication.name }}</span>
+                  <div class="flex flex-col w-full text-sm">
+                    <div class="flex justify-between items-center">
+                      <span>
+                        {{ med.name }}
+                        <span class="text-xs text-gray-500">
+                          ({{ med.type }} • {{ med.dosage }})
+                        </span>
+                      </span>
+
                       <input
                         type="number"
                         min="1"
                         class="border rounded px-2 py-1 w-[70px] text-sm"
-                        v-model.number="form.prescribe_medications[index].pcs"
+                        v-model.number="med.pcs"
                         placeholder="pcs"
                       />
                     </div>
                   </div>
+
                   <button
                     type="button"
-                    @click="removeMedicationSelection(index)"
+                    @click="removeManualMedication(index)"
                     class="ml-3 text-red-500 text-xs hover:underline"
                   >
                     Remove
@@ -245,18 +191,18 @@
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- Instruction Field -->
-            <div class="w-full space-y-2 text-left flex flex-col">
-              <label for="instruction" class="font-bold">Instruction:</label>
-              <textarea
-                id="instruction"
-                v-model="form.instruction"
-                placeholder="Enter instruction here..."
-                class="w-full border px-3 py-2 border-gray-400 rounded-md text-sm resize-none min-h-[100px]"
-                required
-              ></textarea>
-            </div>
+          <div class="w-full space-y-2 text-left flex flex-col">
+            <label for="instruction" class="font-bold">Instruction:</label>
+            <textarea
+              id="instruction"
+              v-model="form.instruction"
+              placeholder="Enter instruction here..."
+              class="w-full border px-3 py-2 border-gray-400 rounded-md text-sm resize-none min-h-[100px]"
+              required
+            >
+            </textarea>
           </div>
 
           <!-- Divider -->
@@ -312,10 +258,27 @@ export default {
       showPatientDropdown: false,
       searchMedicationQuery: "",
       showMedicationDropdown: false,
+      medicationOptions: [
+        { name: "Amoxicillin", type: "Antibiotic", dosage: "500mg" },
+        { name: "Ibuprofen", type: "Pain reliever", dosage: "200mg" },
+        { name: "Paracetamol", type: "Analgesic", dosage: "500mg" },
+        { name: "Mefenamic Acid", type: "Pain reliever", dosage: "250mg" },
+      ],
     };
   },
   computed: {
     ...mapState(useFetchDataStore, ["dentalCharts", "inventories"]),
+    filteredManualMedications() {
+      const q = this.searchMedicationQuery.toLowerCase();
+      return this.medicationOptions.filter(
+        (m) =>
+          m.name.toLowerCase().includes(q) &&
+          !this.form.prescribe_medications.some(
+            (selected) => selected.name === m.name
+          )
+      );
+    },
+
     filteredPatients() {
       const query = this.searchPatientQuery.toLowerCase();
       const userId = this.user?.sub || null;
@@ -371,6 +334,26 @@ export default {
   },
   methods: {
     ...mapActions(useFetchDataStore, ["fetchDentalChart", "fetchInventories"]),
+    toggleManualMedication(med) {
+      const exists = this.form.prescribe_medications.some(
+        (item) => item.name === med.name
+      );
+
+      if (!exists) {
+        this.form.prescribe_medications.push({
+          name: med.name,
+          type: med.type,
+          dosage: med.dosage,
+          pcs: 1,
+        });
+      } else {
+        toast.info(`${med.name} already selected`);
+      }
+    },
+
+    removeManualMedication(index) {
+      this.form.prescribe_medications.splice(index, 1);
+    },
 
     formatDate(date) {
       return dayjs(date).format("MMMM D, YYYY - h:mm A");
@@ -461,10 +444,11 @@ export default {
         !Array.isArray(this.form.prescribe_medications) ||
         this.form.prescribe_medications.length === 0
       ) {
-        toast.warning("Please select at least one medication.");
+        toast.warning("Please add at least one medication.");
         return;
       }
 
+      // Validate pcs for each medication
       for (const med of this.form.prescribe_medications) {
         const pcsNumber = Number(med.pcs);
         if (!pcsNumber || pcsNumber <= 0) {
@@ -479,6 +463,7 @@ export default {
         return;
       }
 
+      // Create payload for each dental chart
       const payloads = this.form.user_id.map((dental_id) => {
         const chart = this.dentalCharts.find((c) => c.dental_id === dental_id);
         const issuedDate = chart?.procedure_date
@@ -491,7 +476,9 @@ export default {
           issued_date: issuedDate,
           instruction: this.form.instruction,
           medications: this.form.prescribe_medications.map((med) => ({
-            inventory_id: med.inventory_id,
+            name: med.name,
+            type: med.type,
+            dosage: med.dosage,
             pcs: Number(med.pcs),
             issued_date: issuedDate,
           })),
@@ -521,7 +508,6 @@ export default {
         );
       }
     },
-
     async fetchUser() {
       try {
         const response = await axios.get(

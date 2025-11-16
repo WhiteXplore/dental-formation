@@ -5,21 +5,21 @@ export class CreatePrescribeMedicationDto {
   dental_chart: number;
 
   @IsNumber()
-  inventory: number;
-
-  @IsNumber()
   prescription: number;
 
   @IsString()
-  @IsOptional()
-  prescribe_medication?: string;
-
-  @IsNumber()
-  pcs: number;
+  name: string; // Medication name
 
   @IsString()
   @IsOptional()
-  payment_status?: string;
+  type?: string; // Medication type (optional)
+
+  @IsString()
+  @IsOptional()
+  dosage?: string; // Medication dosage (optional)
+
+  @IsNumber()
+  pcs: number; // Quantity
 
   @IsDateString()
   issued_date: Date;

@@ -7,24 +7,28 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Inventory } from 'src/inventory/entities/inventory.entity';
 import { DentalChart } from 'src/dental-chart/entities/dental-chart.entity';
 import { Prescription } from 'src/prescription/entities/prescription.entity';
 
-@Entity()
+@Entity('prescribed_medications')
 export class PrescribeMedication {
   @PrimaryGeneratedColumn()
   prescribe_medication_id: number;
 
+  @Column({ type: 'varchar', length: 255 })
+  name: string; // Medication name
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  type: string; // Medication type
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  dosage: string; // Medication dosage
+
   @Column({ type: 'int' })
-  pcs: number;
+  pcs: number; // Quantity
 
   @Column({ type: 'date' })
   issued_date: Date;
-
-  @ManyToOne(() => Inventory, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'inventory_id' })
-  inventory: Inventory;
 
   @ManyToOne(() => DentalChart, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'dental_chart_id' })
@@ -33,9 +37,7 @@ export class PrescribeMedication {
   @ManyToOne(
     () => Prescription,
     (prescription) => prescription.prescribedMedications,
-    {
-      onDelete: 'CASCADE', // or 'RESTRICT'
-    },
+    { onDelete: 'CASCADE' },
   )
   @JoinColumn({ name: 'prescription_id' })
   prescription: Prescription;

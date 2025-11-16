@@ -524,7 +524,7 @@ export default {
                           alignment: "right",
                         },
                         {
-                          text: `${patient?.sex || "N/A"}`,
+                          text: `${patient?.gender || "N/A"}`,
                           style: "value",
                           border: [false, false, false, false],
                         },
@@ -566,7 +566,7 @@ export default {
                 {
                   width: "auto",
                   table: {
-                    widths: [35, 18, 25, 95], // adjust widths as needed
+                    widths: [35, 35, 25, 90], // adjust widths as needed
                     body: [
                       [
                         {
@@ -576,7 +576,7 @@ export default {
                           alignment: "right",
                         },
                         {
-                          text: patient?.status || "N/A",
+                          text: patient?.marital_status || "N/A",
                           style: "value",
                           border: [false, false, false, false],
                         },
@@ -665,7 +665,7 @@ export default {
       else if (type === "medication") {
         const meds =
           row.prescribedMedications?.map((med) => {
-            const inv = med.inventory || {};
+            const inv = med || {};
             let dosage = inv.dosage ? `${inv.dosage} ${inv.unit || ""}` : "";
 
             // 🧹 Remove the word "pcs" if it appears anywhere in dosage or name

@@ -1,4 +1,21 @@
-import { IsString, IsNumber, IsOptional, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+
+class InventoryItem {
+  @IsNumber({}, { message: 'inventory_id must be a number' })
+  inventory_id: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'quantity must be a number' })
+  quantity?: number;
+}
 
 export class CreatePriceProcedureDto {
   @IsString()
@@ -13,5 +30,15 @@ export class CreatePriceProcedureDto {
 
   @IsOptional()
   @IsString()
-  status_color?: string; // e.g., "#00FF00" or "green"
+  status_color?: string; // e.g., "bg-blue-400" or "#00FF00"
+
+  @IsOptional()
+  @IsNumber({}, { message: 'inventory_id must be a number' })
+  inventory_id?: number; // single inventory_id
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => InventoryItem)
+  inventory_ids?: InventoryItem[]; // multiple inventories with optional quantity
 }

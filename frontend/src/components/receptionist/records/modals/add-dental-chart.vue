@@ -278,23 +278,18 @@ export default {
     filteredPatients() {
       if (!this.appointments || this.appointments.length === 0) return [];
 
-      // Find the latest scheduled date
-      const latestDate = this.appointments.reduce((latest, a) => {
-        const date = new Date(a.scheduled_date);
-        return date > latest ? date : latest;
-      }, new Date(0));
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to midnight for comparison
 
-      // Filter appointments that match the latest date
-      let latestPatients = this.appointments.filter(
-        (a) =>
-          new Date(a.scheduled_date).toDateString() ===
-          latestDate.toDateString()
+      // Filter appointments that are today or in the future
+      let upcomingAppointments = this.appointments.filter(
+        (a) => new Date(a.scheduled_date) >= today
       );
 
       // Apply search filter if query exists
       if (this.searchPatientQuery) {
         const query = this.searchPatientQuery.toLowerCase();
-        latestPatients = latestPatients.filter((a) =>
+        upcomingAppointments = upcomingAppointments.filter((a) =>
           `${a.patient.last_name}, ${a.patient.first_name} ${
             a.patient.middle_name || ""
           }`
@@ -303,7 +298,12 @@ export default {
         );
       }
 
-      return latestPatients;
+      // Optional: sort by nearest date first
+      upcomingAppointments.sort(
+        (a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date)
+      );
+
+      return upcomingAppointments;
     },
     statusColors() {
       const colors = {};

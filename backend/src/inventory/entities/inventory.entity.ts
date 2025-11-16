@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { PrescribeMedication } from 'src/prescribe-medication/entities/prescribe-medication.entity';
+import { ProcedureInventory } from 'src/price-procedure/entities/price-procedure-inventory.entity';
 
 @Entity('inventory')
 export class Inventory {
@@ -25,15 +25,6 @@ export class Inventory {
   @Column({ type: 'varchar', length: 100 })
   unit: string;
 
-  @Column({ type: 'varchar', length: 100 })
-  dosage: string;
-
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  price_per_unit: number;
-
-  @Column({ type: 'date', nullable: true })
-  expiration: Date;
-
   @Column({ type: 'longblob', nullable: true })
   image: Buffer;
 
@@ -43,8 +34,6 @@ export class Inventory {
   @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
 
-  @OneToMany(() => PrescribeMedication, (med) => med.inventory, {
-    cascade: true,
-  })
-  prescribedMedications: PrescribeMedication[];
+  @OneToMany(() => ProcedureInventory, (ppi) => ppi.inventory)
+  procedureInventories: ProcedureInventory[];
 }

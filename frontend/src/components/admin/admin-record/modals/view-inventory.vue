@@ -10,13 +10,13 @@
         class="border border-gray-300 focus:ring-2 focus:ring-blue-500 px-4 py-3 rounded-lg w-full md:w-[20vw] transition"
       />
 
-      <!-- Select Dropdown -->
+      <!-- Type Filter (Only Dental Tool now) -->
       <select
         v-model="selectedUnit"
         class="border border-gray-300 focus:ring-2 focus:ring-blue-500 px-4 py-3 rounded-lg w-full md:w-[10vw] transition"
       >
-        <option value="">All Units</option>
-        <option v-for="unit in availableUnits" :key="unit">{{ unit }}</option>
+        <option value="">All Types</option>
+        <option value="Dental Tool">Dental Tool</option>
       </select>
 
       <!-- Action Buttons -->
@@ -54,9 +54,8 @@
           v-for="(item, index) in filteredInventories"
           :key="item.id"
           class="border rounded-xl shadow-sm bg-white hover:shadow-md transition relative overflow-hidden min-h-[40vh] flex flex-col justify-between"
-          :class="{ 'border-red-500': item.quantity <= 5 }"
         >
-          <!-- Image wrapper with badge -->
+          <!-- Image -->
           <div class="relative w-full h-36 bg-gray-100">
             <img
               :src="item.image"
@@ -67,30 +66,6 @@
               class="w-full h-full object-contain p-3"
               alt="Inventory item image"
             />
-
-            <!-- Expired Badge (Takes Priority) -->
-            <div
-              v-if="isExpired(item.expiration)"
-              class="absolute top-2 right-2 bg-red-700 text-white text-xs font-semibold px-2 py-1 rounded-md shadow"
-            >
-              Expired
-            </div>
-
-            <!-- Out of Stock Badge -->
-            <div
-              v-else-if="item.quantity === 0"
-              class="absolute top-2 right-2 bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded-md shadow"
-            >
-              Out of Stock
-            </div>
-
-            <!-- Low Stock Badge -->
-            <div
-              v-else-if="item.quantity > 0 && item.quantity <= 5"
-              class="absolute top-2 right-2 bg-yellow-500 text-white text-xs font-semibold px-2 py-1 rounded-md shadow"
-            >
-              Low Stock
-            </div>
           </div>
 
           <div class="p-4">
@@ -101,34 +76,17 @@
             <div class="flex flex-col text-sm mt-2 space-y-1">
               <p class="text-gray-600 flex gap-1">
                 <span class="font-semibold">Type:</span>
-                <span class=" ">{{ item.type }}</span>
-              </p>
-
-              <p
-                v-if="item.type === 'Medication'"
-                class="text-gray-600 flex gap-1"
-              >
-                <span class="font-semibold">Dosage:</span>
-                <span class=" ">{{
-                  item.dosage ? item.dosage + "" : "N/A"
-                }}</span>
+                <span>Dental Tool</span>
               </p>
 
               <p class="text-gray-700 flex gap-1 items-center">
                 <span class="font-semibold">Quantity:</span>
-                <span class=" ">{{ item.quantity }}</span>
+                <span>{{ item.quantity }}</span>
               </p>
 
               <p class="text-gray-600 flex gap-1">
                 <span class="font-semibold">Unit:</span>
-                <span class=" ">{{ item.unit }}</span>
-              </p>
-
-              <p class="text-gray-600 flex gap-1">
-                <span class="font-semibold">Expiration:</span>
-                <span>
-                  {{ item.expiration ? formatDate(item.expiration) : "N/A" }}
-                </span>
+                <span>{{ item.unit }}</span>
               </p>
             </div>
           </div>
@@ -159,20 +117,18 @@
       <div
         class="w-full max-w-xl bg-white rounded-[15px] shadow-xl animate-fadeInUp"
       >
-        <!-- Header -->
-
         <div
           class="w-full p-5 py-3 bg-[#34699A] text-white rounded-t-[15px] flex justify-between items-center border-b shadow"
         >
           <div class="flex gap-1 items-center">
             <icon :name="'add-students'" />
             <h1 class="font-bold tracking-wide text-lg">
-              {{ editIndex !== null ? "Edit" : "Add" }} Inventory Item
+              {{ editIndex !== null ? "Edit" : "Add" }} Dental Tool
             </h1>
           </div>
           <icon
             :name="'circle-close3'"
-            @click="$emit('close')"
+            @click="closeModal"
             class="cursor-pointer"
           />
         </div>
@@ -181,7 +137,7 @@
         <form @submit.prevent="saveItem" class="space-y-2 text-sm p-5">
           <div class="w-full gap-2 flex">
             <!-- Name -->
-            <div class="w-full space-y-2 text-left flex flex-col">
+            <div class="w-full space-y-2">
               <label class="font-semibold text-gray-700">Item Name</label>
               <input
                 v-model="form.name"
@@ -191,39 +147,23 @@
                 class="px-3 py-3 border w-full border-gray-600 rounded-md text-md text-gray-800"
               />
             </div>
-            <!-- Type -->
-            <div class="w-full space-y-2 text-left flex flex-col">
+
+            <!-- Type (Always Dental Tool) -->
+            <div class="w-full space-y-2">
               <label class="font-semibold text-gray-700">Type</label>
               <select
                 v-model="form.type"
                 required
                 class="px-3 py-3 border w-full border-gray-600 rounded-md text-md text-gray-800"
               >
-                <option disabled value="">Select type</option>
-                <option value="Medication">Medication</option>
                 <option value="Dental Tool">Dental Tool</option>
               </select>
             </div>
-
-            <!-- Dosage (Only for Medication) -->
-            <div
-              v-if="form.type === 'Medication'"
-              class="w-full space-y-2 text-left flex flex-col"
-            >
-              <label class="font-semibold text-gray-700"
-                >Dosage (e.g., 500mg)</label
-              >
-              <input
-                v-model="form.dosage"
-                type="text"
-                placeholder="Enter dosage"
-                class="px-3 py-3 border w-full border-gray-600 rounded-md text-md text-gray-800"
-              />
-            </div>
           </div>
+
           <div class="w-full gap-2 flex">
             <!-- Quantity -->
-            <div class="w-full space-y-2 text-left flex flex-col">
+            <div class="w-full space-y-2">
               <label class="font-semibold text-gray-700">Quantity</label>
               <input
                 v-model.number="form.quantity"
@@ -236,7 +176,7 @@
             </div>
 
             <!-- Unit -->
-            <div class="w-full space-y-2 text-left flex flex-col">
+            <div class="w-full space-y-2">
               <label class="font-semibold text-gray-700">Unit</label>
               <select
                 v-model="form.unit"
@@ -247,51 +187,12 @@
                 <option value="pcs">pcs</option>
                 <option value="box">box</option>
                 <option value="set">set</option>
-                <option value="bottle">bottle</option>
-                <option value="ml">ml</option>
-                <option value="mg">mg</option>
-                <option value="tube">tube</option>
-                <option value="cartridge">cartridge</option>
-                <option value="roll">roll</option>
-                <option value="pack">pack</option>
-                <option value="strip">strip</option>
               </select>
             </div>
           </div>
 
-          <!-- Price Per Unit -->
-          <div
-            class="w-full space-y-2 text-left flex flex-col"
-            v-if="form.type === 'Medication'"
-          >
-            <label class="font-semibold text-gray-700">Price per Unit</label>
-            <input
-              v-model.number="form.price_per_unit"
-              required
-              min="0"
-              type="number"
-              placeholder="e.g. 5.00"
-              step="0.01"
-              class="px-3 py-3 border w-full border-gray-600 rounded-md text-md text-gray-800"
-            />
-          </div>
-
-          <!-- Expiration Date -->
-          <div
-            v-if="form.type === 'Medication'"
-            class="w-full space-y-2 text-left flex flex-col"
-          >
-            <label class="font-semibold text-gray-700">Expiration Date</label>
-            <input
-              v-model="form.expiration"
-              required
-              type="date"
-              class="px-3 py-3 border w-full border-gray-600 rounded-md text-md text-gray-800"
-            />
-          </div>
-
           <!-- Image Upload -->
-          <div class="w-full space-y-2 text-left flex flex-col">
+          <div class="w-full space-y-2">
             <label class="font-semibold text-gray-700">Upload Image</label>
             <input
               type="file"
@@ -334,40 +235,36 @@
     <!-- Delete Confirmation Modal -->
     <div
       v-if="showDeleteModal"
-      class="fixed inset-0 bg-gray-800 bg-opacity-40 flex justify-center items-center z-50 w-min-screen"
+      class="fixed inset-0 bg-gray-800 bg-opacity-40 flex justify-center items-center z-50"
     ></div>
+
     <div
       v-if="showDeleteModal"
       class="rounded-xl shadow-lg w-[20vw] bg-white py-6 px-4 flex flex-col items-center fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
     >
       <div
-        class="rounded-full w-16 h-16 md:w-20 md:h-20 flex justify-center items-center bg-red-300 animate-pulse"
+        class="rounded-full w-16 h-16 flex justify-center items-center bg-red-300 animate-pulse"
       >
-        <icon
-          name="question"
-          class="w-8 h-8 md:w-10 md:h-10 text-white flex justify-center items-center"
-        />
+        <icon name="question" class="w-10 h-10 text-white" />
       </div>
 
-      <h1 class="text-[14px] md:text-[16px] font-semibold mt-4">
-        Delete Confirmation
-      </h1>
-      <p class="mt-2 text-[12px] md:text-[13px] text-center px-8">
+      <h1 class="text-[16px] font-semibold mt-4">Delete Confirmation</h1>
+      <p class="mt-2 text-[13px] text-center px-8">
         Are you sure you want to delete this record? This action cannot be
         undone.
       </p>
 
-      <div class="w-full h-[1px] rounded-md bg-gray-200 mt-4"></div>
+      <div class="w-full h-[1px] bg-gray-200 mt-4"></div>
 
       <div class="tracking-wide flex gap-2 mt-4">
         <button
-          class="bg-red-400 p-2 px-3 text-[11px] md:text-[13px] rounded-md text-white hover:bg-white border hover:border-red-800 hover:text-red-800 hover:shadow-md"
+          class="bg-red-400 p-2 px-3 text-[13px] rounded-md text-white hover:bg-white border hover:border-red-800 hover:text-red-800 hover:shadow-md"
           @click="showDeleteModal = false"
         >
           No, Cancel
         </button>
         <button
-          class="bg-green-400 p-2 px-3 text-[11px] md:text-[13px] rounded-md text-white hover:bg-white border hover:border-green-800 hover:text-green-800 hover:shadow-md"
+          class="bg-green-400 p-2 px-3 text-[13px] rounded-md text-white hover:bg-white border hover:border-green-800 hover:text-green-800 hover:shadow-md"
           @click="confirmDelete"
         >
           Yes, Delete
@@ -384,11 +281,12 @@ import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 pdfMake.vfs = pdfFonts.vfs;
 import { toast } from "vue3-toastify";
+import { useFetchDataStore } from "../../../../store/fetch-data-store";
+
 export default {
   name: "InventoryPage",
-  components: {
-    icon,
-  },
+  components: { icon },
+
   data() {
     return {
       showDeleteModal: false,
@@ -400,78 +298,65 @@ export default {
       selectedUnit: "",
       showModal: false,
       editIndex: null,
+
+      dentalCharts: [],
+      dentalLoading: false,
+      dentalError: null,
+
       form: {
         name: "",
         quantity: null,
         unit: "",
-        expiration: "No Date",
+        type: "Dental Tool",
         file: null,
         preview: null,
-        price_per_unit: null,
-        type: "",
-        selectedType: "",
-        dosage: "",
       },
     };
   },
-  watch: {
-    "form.type"(newType) {
-      if (newType === "Dental Tool") {
-        this.form.expiration = null; // JavaScript null
-      }
-    },
-  },
 
   computed: {
-    availableUnits() {
-      return [...new Set(this.inventories.map((item) => item.type))].filter(
-        Boolean
-      );
-    },
-
     filteredInventories() {
       return this.inventories.filter((item) => {
         const matchSearch = item.name
           .toLowerCase()
           .includes(this.searchQuery.toLowerCase());
-        const matchUnit = this.selectedUnit
+        const matchType = this.selectedUnit
           ? item.type === this.selectedUnit
           : true;
-        const matchType = this.selectedType
-          ? item.type === this.selectedType
-          : true;
-        return matchSearch && matchUnit && matchType;
+        return matchSearch && matchType;
       });
     },
   },
-  mounted() {
-    this.fetchInventories();
-  },
-  methods: {
-    isExpired(dateStr) {
-      if (!dateStr) return false;
-      const today = new Date();
-      const expDate = new Date(dateStr);
-      // Compare only date (ignore time)
-      return expDate.setHours(0, 0, 0, 0) < today.setHours(0, 0, 0, 0);
-    },
 
-    formatDate(dateStr) {
-      return new Date(dateStr).toLocaleDateString();
+  methods: {
+    async loadDentalCharts() {
+      const dentalStore = useFetchDataStore();
+      this.dentalLoading = true;
+      this.dentalError = null;
+
+      try {
+        await dentalStore.fetchDentalChart();
+        this.dentalCharts = dentalStore.dentalCharts;
+      } catch (err) {
+        this.dentalError = err.message || "Failed to load dental charts";
+      } finally {
+        this.dentalLoading = false;
+      }
     },
 
     async fetchInventories() {
       const res = await axios.get(
-        process.env.VUE_APP_API_BASE_URL + "/inventory/get-inventory"
+        `${process.env.VUE_APP_API_BASE_URL}/inventory/get-inventory`
       );
       this.inventories = res.data.map((item) => ({
         ...item,
         image: item.image
           ? `http://localhost:8000/inventory/inventory-image/${item.inventory_id}`
           : null,
-        id: item.inventory_id, // normalize the ID field
+        id: item.inventory_id,
       }));
     },
+
     openAddModal() {
       this.resetForm();
       this.showModal = true;
@@ -486,7 +371,7 @@ export default {
         name: "",
         quantity: null,
         unit: "",
-        expiration: "",
+        type: "Dental Tool",
         file: null,
         preview: null,
       };
@@ -496,11 +381,10 @@ export default {
     async confirmDelete() {
       try {
         await axios.delete(
-          `http://localhost:8000/inventory/delete/${this.deleteTarget}`
+          `${process.env.VUE_APP_API_BASE_URL}/inventory/delete/${this.deleteTarget}`
         );
         toast.success("Record deleted successfully");
-      } catch (err) {
-        console.error("Failed to delete:", err);
+      } catch {
         toast.error("Failed to delete record.");
       } finally {
         this.showDeleteModal = false;
@@ -509,21 +393,20 @@ export default {
         this.fetchInventories();
       }
     },
+
     editItem(item, index) {
       this.form = {
         name: item.name,
         quantity: item.quantity,
         unit: item.unit,
-        price_per_unit: item.price_per_unit,
-        expiration: item.expiration?.slice(0, 10),
+        type: "Dental Tool",
         file: null,
         preview: item.image,
-        type: item.type,
-        dosage: item.dosage || "",
       };
       this.editIndex = index;
       this.showModal = true;
     },
+
     handleImageUpload(e) {
       const file = e.target.files[0];
       if (file) {
@@ -537,49 +420,31 @@ export default {
       formData.append("name", this.form.name);
       formData.append("quantity", this.form.quantity);
       formData.append("unit", this.form.unit);
-      formData.append("type", this.form.type);
-      formData.append("dosage", this.form.dosage || "");
-
-      // Only append expiration if it has a value
-      if (this.form.expiration) {
-        formData.append("expiration", this.form.expiration);
-      }
-
-      // Only append expiration if it has a value
-      if (this.form.price_per_unit) {
-        formData.append("price_per_unit", this.form.price_per_unit);
-      }
-
-      // Only append image if it exists
-      if (this.form.file) {
-        formData.append("image", this.form.file);
-      }
+      formData.append("type", "Dental Tool");
+      if (this.form.file) formData.append("image", this.form.file);
 
       try {
         if (this.editIndex === null) {
-          // Create
           await axios.post(
-            process.env.VUE_APP_API_BASE_URL + "/inventory/add-inventory",
+            `${process.env.VUE_APP_API_BASE_URL}/inventory/add-inventory`,
             formData
           );
-          toast.success("Record is saved successfully");
+          toast.success("Record saved successfully");
         } else {
-          // Update
           const id = this.inventories[this.editIndex].id;
           await axios.patch(
-            `http://localhost:8000/inventory/update/${id}`,
+            `${process.env.VUE_APP_API_BASE_URL}/inventory/update/${id}`,
             formData
           );
-          toast.success("Record is saved successfully");
+          toast.success("Record updated successfully");
         }
-
-        this.fetchInventories();
+        await this.fetchInventories();
         this.closeModal();
-      } catch (err) {
-        console.error(err);
+      } catch {
         toast.error("Failed to save item.");
       }
     },
+
     deleteItem(id, index) {
       this.deleteTarget = id;
       this.deleteIndex = index;
@@ -587,32 +452,117 @@ export default {
     },
 
     exportToPDF() {
-      const body = [["Name", "Quantity", "Unit", "Expiration"]];
+      const body = [["Name", "Quantity", "Unit"]];
       this.inventories.forEach((item) => {
-        body.push([
-          item.name,
-          item.quantity.toString(),
-          item.unit,
-          this.formatDate(item.expiration),
-        ]);
+        body.push([item.name, item.quantity.toString(), item.unit]);
       });
 
       pdfMake
         .createPdf({
           content: [
-            { text: "Dental Inventory Report", style: "header" },
+            { text: "Dental Tool Inventory Report", style: "header" },
             { table: { headerRows: 1, body } },
           ],
           styles: {
             header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
           },
         })
-        .download("inventory.pdf");
+        .download("dental_tools_inventory.pdf");
     },
+
+    async deductInventoryInDatabase() {
+      if (!this.dentalCharts || this.dentalCharts.length === 0) {
+        console.warn("No dental charts loaded");
+        return;
+      }
+
+      // Only process charts that haven't been deducted
+      const chartsToDeduct = this.dentalCharts.filter(
+        (chart) => !chart.inventoryDeducted
+      );
+
+      if (chartsToDeduct.length === 0) {
+        console.log("All charts already deducted, skipping.");
+        return;
+      }
+
+      // Aggregate quantities per inventoryId
+      const inventoryMap = {};
+
+      chartsToDeduct.forEach((chart) => {
+        chart.teeth.forEach((tooth) => {
+          if (
+            !tooth.priceProcedure ||
+            !tooth.priceProcedure.procedureInventories
+          )
+            return;
+
+          tooth.priceProcedure.procedureInventories.forEach((pi) => {
+            if (inventoryMap[pi.inventory.inventory_id]) {
+              inventoryMap[pi.inventory.inventory_id] += pi.quantity;
+            } else {
+              inventoryMap[pi.inventory.inventory_id] = pi.quantity;
+            }
+          });
+        });
+      });
+
+      // Convert map to array of payloads
+      const payloads = Object.entries(inventoryMap).map(
+        ([inventoryId, quantity]) => ({
+          inventoryId: parseInt(inventoryId),
+          quantity,
+        })
+      );
+
+      console.log("Deduct payloads:", payloads);
+
+      // Send each deduction to backend
+      for (const payload of payloads) {
+        try {
+          await axios.patch(
+            `${process.env.VUE_APP_API_BASE_URL}/inventory/deduct`,
+            payload
+          );
+          console.log(
+            `Deducted inventory ${payload.inventoryId}: ${payload.quantity}`
+          );
+        } catch (err) {
+          console.error(
+            `Failed to deduct inventory ${payload.inventoryId}:`,
+            err.response?.data || err.message
+          );
+        }
+      }
+
+      // Mark charts as deducted in backend
+      for (const chart of chartsToDeduct) {
+        try {
+          await axios.patch(
+            `${process.env.VUE_APP_API_BASE_URL}/dental-chart/deduct-inventory/${chart.dental_id}`
+          );
+          chart.inventoryDeducted = true; // update local state
+        } catch (err) {
+          console.error(
+            `Failed to mark dental chart ${chart.dental_id} as deducted:`,
+            err.response?.data || err.message
+          );
+        }
+      }
+
+      // Refresh inventory list
+      await this.fetchInventories();
+    },
+  },
+
+  mounted() {
+    this.fetchInventories();
+    this.loadDentalCharts().then(() => {
+      console.log("Dental charts loaded:", this.dentalCharts);
+      this.deductInventoryInDatabase(); // now will actually process charts
+    });
   },
 };
 </script>
 
-<style scoped>
-/* Optional custom styles */
-</style>
+<style scoped></style>

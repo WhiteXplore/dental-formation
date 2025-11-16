@@ -72,7 +72,14 @@ export class DentalChartService {
 
   async findAll() {
     const charts = await this.dentalChartRepo.find({
-      relations: ['patient', 'user_accounts', 'teeth', 'teeth.priceProcedure'],
+      relations: [
+        'patient',
+        'user_accounts',
+        'teeth',
+        'teeth.priceProcedure',
+        'teeth.priceProcedure.procedureInventories',
+        'teeth.priceProcedure.procedureInventories.inventory',
+      ],
       order: { created_at: 'DESC' },
     });
 
@@ -180,5 +187,21 @@ export class DentalChartService {
         created_at: 'DESC',
       },
     });
+  }
+
+  async markInventoryDeducted(dentalId: number) {
+    const chart = await this.dentalChartRepo.findOne({
+      where: { dental_id: dentalId },
+    });
+    if (!chart) {
+      throw new Error('Dental chart not found');
+    }
+
+    chart.inventoryDeducted = true;
+    await this.dentalChartRepo.save(chart);
+
+    return {
+      message: `Inventory for dental chart ${dentalId} marked as deducted.`,
+    };
   }
 }

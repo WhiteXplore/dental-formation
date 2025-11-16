@@ -12,16 +12,19 @@ import { Type } from 'class-transformer';
 
 class MedicationDto {
   @IsNotEmpty()
-  @Type(() => Number) // ✅ Ensures inventory_id is transformed to number
-  @IsNumber()
-  inventory_id: number;
+  @IsString()
+  name: string;
 
   @IsOptional()
   @IsString()
-  prescribe_medication?: string;
+  type?: string;
+
+  @IsOptional()
+  @IsString()
+  dosage?: string;
 
   @IsNotEmpty()
-  @Type(() => Number) // ✅ Ensures pcs is transformed to number
+  @Type(() => Number)
   @IsNumber()
   @Min(1)
   pcs: number;
@@ -55,10 +58,4 @@ export class CreatePrescriptionDto {
   @ValidateNested({ each: true })
   @Type(() => MedicationDto)
   medications: MedicationDto[];
-
-  // ✅ ADDED:
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => MedicationDto)
-  prescribedMedications?: MedicationDto[];
 }

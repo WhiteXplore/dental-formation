@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Inventory } from './entities/inventory.entity';
@@ -50,5 +54,20 @@ export class InventoryService {
   async remove(id: number): Promise<void> {
     const item = await this.findOne(id);
     await this.inventoryRepository.remove(item);
+  }
+  async deductInventory(
+    inventoryId: number,
+    quantity: number,
+  ): Promise<Inventory> {
+    const item = await this.findOne(inventoryId);
+
+    if (item.quantity < quantity) {
+      throw new BadRequestException(
+        `Not enough inventory for ID ${inventoryId}. Available: ${item.quantity}, Required: ${quantity}`,
+      );
+    }
+
+    item.quantity -= quantity;
+    return this.inventoryRepository.save(item);
   }
 }

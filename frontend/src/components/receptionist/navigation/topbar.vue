@@ -21,7 +21,7 @@
           {{ user.first_name || "Guest" }}
         </h1>
         <h2 class="text-[12px]">
-          {{ user.position || "No Position" }}
+          {{ user.role || "No Role" }}
         </h2>
       </div>
 

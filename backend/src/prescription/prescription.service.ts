@@ -11,7 +11,6 @@ import { PrescribeMedication } from 'src/prescribe-medication/entities/prescribe
 import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { UpdatePrescriptionDto } from './dto/update-prescription.dto';
 import { DentalChart } from 'src/dental-chart/entities/dental-chart.entity';
-import { Inventory } from 'src/inventory/entities/inventory.entity';
 
 @Injectable()
 export class PrescriptionService {
@@ -24,9 +23,6 @@ export class PrescriptionService {
 
     @InjectRepository(DentalChart)
     private readonly dentalChartRepo: Repository<DentalChart>,
-
-    @InjectRepository(Inventory)
-    private readonly inventoryRepo: Repository<Inventory>,
   ) {}
 
   async create(createDto: CreatePrescriptionDto) {
@@ -58,16 +54,10 @@ export class PrescriptionService {
     await this.prescriptionRepo.save(prescription);
 
     for (const med of medications) {
-      const { inventory_id, pcs } = med;
+      const { name, type, dosage, pcs } = med;
 
-      const inventory = await this.inventoryRepo.findOne({
-        where: { inventory_id },
-      });
-
-      if (!inventory) {
-        throw new NotFoundException(
-          `Inventory with ID ${inventory_id} not found.`,
-        );
+      if (!name) {
+        throw new BadRequestException('Medication name is required.');
       }
 
       const pcsNumber = Number(pcs);
@@ -75,21 +65,14 @@ export class PrescriptionService {
         throw new BadRequestException(`Invalid number of pcs: ${pcs}`);
       }
 
-      if (inventory.quantity < pcsNumber) {
-        throw new BadRequestException(
-          `Insufficient stock for "${inventory.name}". Only ${inventory.quantity} left.`,
-        );
-      }
-
-      inventory.quantity -= pcsNumber;
-      await this.inventoryRepo.save(inventory);
-
       const prescribedMed = this.prescribedMedRepo.create({
         prescription,
-        inventory,
+        dental_chart: dentalChart,
+        name,
+        type,
+        dosage,
         pcs: pcsNumber,
         issued_date,
-        dental_chart: dentalChart,
       });
 
       await this.prescribedMedRepo.save(prescribedMed);
@@ -104,9 +87,8 @@ export class PrescriptionService {
         'dentalChart',
         'dentalChart.patient',
         'dentalChart.teeth',
-        'dentalChart.teeth.priceProcedure', // ✅ this is what you're missing
+        'dentalChart.teeth.priceProcedure',
         'prescribedMedications',
-        'prescribedMedications.inventory',
         'payments',
       ],
       order: { issued_date: 'DESC' },
@@ -120,7 +102,6 @@ export class PrescriptionService {
         'dentalChart',
         'dentalChart.patient',
         'prescribedMedications',
-        'prescribedMedications.inventory',
         'payments',
       ],
     });
@@ -183,34 +164,34 @@ export class PrescriptionService {
       await this.prescriptionRepo.save(prescription);
 
       if (Array.isArray(updateDto.medications)) {
+        // Delete old medications
         await this.prescribedMedRepo.delete({
           prescription: { prescription_id },
         });
 
+        // Insert new medications
         for (const med of updateDto.medications) {
-          const inventory = await this.inventoryRepo.findOneBy({
-            inventory_id: med.inventory_id,
-          });
+          const { name, type, dosage, pcs } = med;
 
-          if (!inventory) {
-            throw new NotFoundException(
-              `Inventory item with ID ${med.inventory_id} not found.`,
-            );
+          if (!name) {
+            throw new BadRequestException('Medication name is required.');
           }
 
-          const pcs = Number(med.pcs);
-          if (isNaN(pcs) || pcs <= 0) {
+          const pcsNumber = Number(pcs);
+          if (isNaN(pcsNumber) || pcsNumber <= 0) {
             throw new BadRequestException(
-              `Invalid pcs value for inventory ID ${med.inventory_id}.`,
+              `Invalid pcs value for medication "${name}".`,
             );
           }
 
           const newMedication = this.prescribedMedRepo.create({
             prescription,
-            inventory,
-            pcs,
-            issued_date: prescription.issued_date,
             dental_chart: prescription.dentalChart,
+            name,
+            type,
+            dosage,
+            pcs: pcsNumber,
+            issued_date: prescription.issued_date,
           });
 
           await this.prescribedMedRepo.save(newMedication);
@@ -236,14 +217,12 @@ export class PrescriptionService {
       );
     }
 
-    // Delete related prescribed medications first
     if (prescription.prescribedMedications?.length > 0) {
       await this.prescribedMedRepo.delete({
         prescription: { prescription_id },
       });
     }
 
-    // Then delete the prescription itself
     await this.prescriptionRepo.remove(prescription);
 
     return {

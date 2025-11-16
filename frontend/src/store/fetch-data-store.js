@@ -10,8 +10,10 @@ export const useFetchDataStore = defineStore("fetchData", {
     payments: [],
     dentalCharts: [],
     medications: [],
+    prescribemedication: [],
     inventories: [],
     useraccounts: [],
+
     prices: [],
     loading: false,
     error: null,
@@ -103,6 +105,21 @@ export const useFetchDataStore = defineStore("fetchData", {
         this.medications = response.data;
       } catch (err) {
         this.error = err.message || "Failed to fetch medications";
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async fetchPrecribeMedication() {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await axios.get(
+          process.env.VUE_APP_API_BASE_URL + "/prescribe-medication"
+        );
+        this.prescribemedication = response.data;
+      } catch (err) {
+        this.error = err.message || "Failed to fetch prescribemedication";
       } finally {
         this.loading = false;
       }

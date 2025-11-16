@@ -49,60 +49,50 @@ export default {
   },
   computed: {
     ...mapState(useFetchDataStore, ["medications"]),
+
     procedureSummary() {
       if (!Array.isArray(this.medications)) return [];
 
       const procedureMap = new Map();
+
+      // Count all procedures
       this.medications.forEach((item) => {
         const dentalChart = item.dentalChart;
-        const patient = dentalChart?.patient;
         const teeth = dentalChart?.teeth || [];
-        if (!patient) return;
 
-        const patientId = patient.patient_id;
         teeth.forEach((tooth) => {
           const procedure = tooth.priceProcedure;
           if (!procedure) return;
 
-          const procedureName = procedure.procedure_name;
-          const price = parseFloat(procedure.price || "0");
+          const name = procedure.procedure_name;
 
-          if (!procedureMap.has(procedureName)) {
-            procedureMap.set(procedureName, {
-              procedure: procedureName,
-              patients: new Set(),
+          if (!procedureMap.has(name)) {
+            procedureMap.set(name, {
+              procedure: name,
+              total: 0,
               revenue: 0,
             });
           }
 
-          const entry = procedureMap.get(procedureName);
-          entry.patients.add(patientId);
-          entry.revenue += price;
+          const entry = procedureMap.get(name);
+          entry.total += 1; // total number of procedures
+          entry.revenue += parseFloat(procedure.price || "0");
         });
       });
 
-      const allProcedures = [
-        "Check-Up",
-        "Extracted",
-        "Tooth Fillings",
-        "Braces",
-      ];
+      // Make sure all procedure types in database are included
+      const allProcedureNames = this.medications
+        .flatMap((m) => m.dentalChart?.teeth || [])
+        .map((t) => t.priceProcedure?.procedure_name)
+        .filter(Boolean);
 
-      allProcedures.forEach((name) => {
+      allProcedureNames.forEach((name) => {
         if (!procedureMap.has(name)) {
-          procedureMap.set(name, {
-            procedure: name,
-            patients: new Set(),
-            revenue: 0,
-          });
+          procedureMap.set(name, { procedure: name, total: 0, revenue: 0 });
         }
       });
 
-      return Array.from(procedureMap.values()).map((entry) => ({
-        procedure: entry.procedure,
-        patients: entry.patients.size,
-        revenue: entry.revenue,
-      }));
+      return Array.from(procedureMap.values());
     },
   },
   methods: {
@@ -110,9 +100,7 @@ export default {
       try {
         const response = await axios.get(
           process.env.VUE_APP_API_BASE_URL + "/auth/me",
-          {
-            withCredentials: true,
-          }
+          { withCredentials: true }
         );
         if (response.data) {
           this.user = response.data;
@@ -128,18 +116,13 @@ export default {
 
     renderChart() {
       const canvas = this.$refs.procedureChart;
-      if (!canvas) {
-        console.warn("Canvas not yet available — skipping chart render.");
-        return;
-      }
+      if (!canvas) return;
 
       const labels = this.procedureSummary.map((item) => item.procedure);
-      const data = this.procedureSummary.map((item) => item.patients);
+      const data = this.procedureSummary.map((item) => item.total);
 
-      // Destroy previous chart instance to avoid duplicates
-      if (this.chartInstance) {
-        this.chartInstance.destroy();
-      }
+      // Destroy previous chart instance
+      if (this.chartInstance) this.chartInstance.destroy();
 
       const ctx = canvas.getContext("2d");
       this.chartInstance = new Chart(ctx, {
@@ -169,7 +152,7 @@ export default {
             tooltip: {
               callbacks: {
                 label: (tooltipItem) =>
-                  `${tooltipItem.label}: ${tooltipItem.raw} patients`,
+                  `${tooltipItem.label}: ${tooltipItem.raw} procedures`,
               },
             },
           },
@@ -184,15 +167,10 @@ export default {
     await store.fetchMedications();
 
     this.$nextTick(() => {
-      const canvas = this.$refs.chartCanvas;
-      if (canvas) {
-        this.renderChart();
-      } else {
-        console.warn("Canvas not yet available — skipping chart render.");
-      }
+      this.renderChart();
     });
 
-    // Debounced resize listener
+    // Resize listener
     window.addEventListener("resize", () => {
       clearTimeout(this.resizeTimeout);
       this.resizeTimeout = setTimeout(() => this.renderChart(), 200);
@@ -209,7 +187,6 @@ export default {
   },
 
   watch: {
-    // Watch for store data updates and re-render
     procedureSummary: {
       deep: true,
       handler() {

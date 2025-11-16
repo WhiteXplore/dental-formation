@@ -130,4 +130,16 @@ export class DentalChartController {
     res.setHeader('Content-Type', chart.xray_mime_type || 'image/jpeg');
     res.send(chart.xray_image);
   }
+
+  @Patch('deduct-inventory/:id')
+  async deductInventory(@Param('id') id: number) {
+    try {
+      return await this.dentalChartService.markInventoryDeducted(id);
+    } catch (err) {
+      console.error('❌ Failed to mark inventory deducted:', err);
+      throw new BadRequestException(
+        err.message || 'Failed to mark inventory deducted.',
+      );
+    }
+  }
 }

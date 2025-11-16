@@ -55,6 +55,87 @@
             />
           </div>
 
+          <!-- Inventory Selection -->
+          <div class="flex flex-col gap-2 relative">
+            <label class="font-bold">Select Inventory Items:</label>
+            <input
+              type="text"
+              v-model="searchInventoryQuery"
+              @focus="showInventoryDropdown = true"
+              @blur="hideDropdown('inventory')"
+              class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+              placeholder="Search inventory..."
+            />
+
+            <!-- Dropdown -->
+            <div
+              v-if="showInventoryDropdown"
+              class="absolute left-0 top-full z-30 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto w-full mt-1"
+            >
+              <div
+                v-for="item in filteredInventories"
+                :key="item.inventory_id"
+                class="p-3 hover:bg-blue-50 cursor-pointer flex justify-between items-center border-b"
+                @mousedown.prevent="toggleInventory(item)"
+              >
+                <div class="flex flex-col">
+                  <span class="font-semibold text-gray-800">{{
+                    item.name
+                  }}</span>
+                  <span class="text-xs text-gray-600 italic"
+                    >{{ item.type }} • {{ item.quantity }} {{ item.unit }}</span
+                  >
+                </div>
+              </div>
+              <div
+                v-if="filteredInventories.length === 0"
+                class="p-3 text-gray-500 italic text-center text-sm"
+              >
+                No inventory found
+              </div>
+            </div>
+
+            <!-- Selected Inventories -->
+            <div
+              v-if="form.selected_inventories.length > 0"
+              class="mt-2 space-y-2"
+            >
+              <div
+                v-for="(item, index) in form.selected_inventories"
+                :key="item.inventory_id"
+                class="flex justify-between items-center border border-green-300 bg-white shadow-sm rounded-lg px-4 py-2"
+              >
+                <div class="flex flex-col w-full text-sm">
+                  <div class="flex justify-between items-center">
+                    <span>
+                      {{ item.name }}
+                      <span class="text-xs text-gray-500"
+                        >({{ item.type }} • {{ item.quantity }}
+                        {{ item.unit }})</span
+                      >
+                    </span>
+
+                    <input
+                      type="number"
+                      min="1"
+                      class="border rounded px-2 py-1 w-[70px] text-sm"
+                      v-model.number="item.selected_quantity"
+                      placeholder="pcs"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  @click="removeInventory(index)"
+                  class="ml-3 text-red-500 text-xs hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Status -->
           <div class="space-y-1.5 text-left flex flex-col">
             <label for="is_active" class="font-bold">Status:</label>
@@ -128,12 +209,63 @@ export default {
       form: {
         procedure_name: "",
         price: "",
+        inventory_id: "",
+        selected_inventories: [],
         is_active: "",
-        status_color: "", // New field
+        status_color: "",
       },
+      inventories: [],
+      searchInventoryQuery: "",
+      showInventoryDropdown: false,
+      loading: false,
+      error: null,
     };
   },
+  computed: {
+    filteredInventories() {
+      return this.inventories.filter(
+        (inv) =>
+          inv.name
+            .toLowerCase()
+            .includes(this.searchInventoryQuery.toLowerCase()) &&
+          !this.form.selected_inventories.find(
+            (i) => i.inventory_id === inv.inventory_id
+          )
+      );
+    },
+  },
+  created() {
+    this.fetchInventories();
+  },
   methods: {
+    hideDropdown(type) {
+      setTimeout(() => {
+        if (type === "inventory") this.showInventoryDropdown = false;
+      }, 150);
+    },
+    toggleInventory(item) {
+      this.form.selected_inventories.push({ ...item, selected_quantity: 1 });
+      this.searchInventoryQuery = "";
+      this.showInventoryDropdown = false;
+    },
+    removeInventory(index) {
+      this.form.selected_inventories.splice(index, 1);
+    },
+    async fetchInventories() {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await axios.get(
+          process.env.VUE_APP_API_BASE_URL + "/inventory/get-inventory"
+        );
+        this.inventories = response.data;
+      } catch (err) {
+        this.error = err.message || "Failed to fetch inventories";
+        toast.error(this.error);
+      } finally {
+        this.loading = false;
+      }
+    },
     async submitData() {
       const formEl = this.$refs.procedureForm;
       if (!formEl.checkValidity()) {
@@ -145,6 +277,11 @@ export default {
         const payload = {
           procedure_name: this.form.procedure_name,
           price: parseFloat(this.form.price),
+          inventory_ids: this.form.selected_inventories.map((i) => ({
+            inventory_id: i.inventory_id,
+            quantity: i.selected_quantity,
+          })),
+          inventory_id: this.form.selected_inventories[0]?.inventory_id || null, // first inventory
           is_active:
             this.form.is_active === true || this.form.is_active === "true",
           status_color: this.form.status_color,
@@ -156,6 +293,7 @@ export default {
           payload
         );
 
+        console.log("Send to Database ", payload);
         toast.success("Procedure added successfully!");
         new Audio(require("@/assets/add.mp3")).play();
 

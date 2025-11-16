@@ -16,7 +16,6 @@ export class PrescribeMedicationService {
     const newPrescribed = this.prescribeMedicationRepo.create({
       ...dto,
       dental_chart: { dental_id: dto.dental_chart },
-      inventory: { inventory_id: dto.inventory },
       prescription: { prescription_id: dto.prescription },
     });
 
@@ -30,7 +29,6 @@ export class PrescribeMedicationService {
       dental_chart: dto.dental_chart
         ? { dental_id: dto.dental_chart }
         : undefined,
-      inventory: dto.inventory ? { inventory_id: dto.inventory } : undefined,
       prescription: dto.prescription
         ? { prescription_id: dto.prescription }
         : undefined,
@@ -41,15 +39,30 @@ export class PrescribeMedicationService {
     return this.prescribeMedicationRepo.save(preload);
   }
 
+  async findByDentalChartId(dentalId: number) {
+    return await this.prescribeMedicationRepo.find({
+      where: { dental_chart: { dental_id: dentalId } },
+      relations: ['dental_chart', 'prescription'],
+    });
+  }
+
+  async findByPrescriptionId(prescriptionId: number) {
+    return await this.prescribeMedicationRepo.find({
+      where: { prescription: { prescription_id: prescriptionId } },
+      relations: ['dental_chart', 'prescription'],
+    });
+  }
+
   async findAll() {
     return await this.prescribeMedicationRepo.find({
-      relations: ['dental_chart', 'inventory', 'prescription'],
+      relations: ['dental_chart', 'prescription'],
     });
   }
 
   async findOne(id: number) {
     const found = await this.prescribeMedicationRepo.findOne({
       where: { prescribe_medication_id: id },
+      relations: ['dental_chart', 'prescription'],
     });
     if (!found) throw new NotFoundException('Prescription not found');
     return found;

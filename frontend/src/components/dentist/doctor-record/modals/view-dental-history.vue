@@ -3,7 +3,7 @@
     class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
   >
     <div
-      class="bg-white rounded-xl shadow-2xl overflow-y-auto border scrollbar-hidden"
+      class="bg-white rounded-2xl shadow-2xl overflow-y-auto scrollbar-hidden"
     >
       <!-- Header -->
       <div
@@ -16,30 +16,9 @@
           @click="$emit('close')"
         />
       </div>
-      <!-- Date Filter -->
-      <!-- Place this at the end of your template -->
-      <div class="w-full p-5">
-        <div class="flex justify-end items-center gap-2">
-          <label for="dateFilter" class="text-sm font-medium text-gray-700">
-            Filter by Date:
-          </label>
-          <select
-            id="dateFilter"
-            v-model="selectedDate"
-            @change="applyDateFilter"
-            class="border border-gray-300 px-3 py-2 text-sm rounded-md"
-            :disabled="availableDates.length <= 1"
-          >
-            <option value="">All Dates</option>
-            <option v-for="date in availableDates" :key="date" :value="date">
-              {{ formatDate(date) }}
-            </option>
-          </select>
-        </div>
-      </div>
 
       <!-- Body -->
-      <div class="p-2 text-[13px]">
+      <div class="text-[13px]">
         <div
           v-if="groupedHistory.length === 0"
           class="text-gray-500 text-center italic py-12"
@@ -51,128 +30,182 @@
           <div
             v-for="(record, index) in groupedHistory"
             :key="index"
-            class="border rounded-xl shadow p-6 bg-white"
+            class="p-5 bg-white"
           >
             <!-- Page 1: Patient Information -->
-            <div v-if="currentPage[index] === 1" class="mx-auto w-[30vw]">
-              <h3
-                class="text-lg font-semibold border-b pb-3 mb-6 text-gray-800"
-              >
-                Patient Information
-              </h3>
+            <div v-if="currentPage[index] === 1" class="mx-auto w-[45vw]">
+              <!-- Header -->
+              <div class="flex justify-between items-start">
+                <div
+                  class="flex flex-col justify-start items-start gap-2 mb-4 w-full"
+                >
+                  <h3
+                    class="text-2xl font-semibold text-[#2C3E50] flex items-center gap-2"
+                  >
+                    Patient Information
+                  </h3>
+                  <span
+                    class="text-sm text-gray-900 bg-green-100 px-3 py-1 rounded-full border border-gray-200"
+                  >
+                    Record ID: {{ record.dental_id }}
+                  </span>
+                </div>
+                <!-- Date Filter -->
 
+                <div class="flex justify-end items-center gap-2">
+                  <select
+                    id="dateFilter"
+                    v-model="selectedDate"
+                    @change="applyDateFilter"
+                    class="border border-gray-300 px-3 py-3 text-sm rounded-lg"
+                    :disabled="availableDates.length <= 1"
+                  >
+                    <option value="">All Dates</option>
+                    <option
+                      v-for="date in availableDates"
+                      :key="date"
+                      :value="date"
+                    >
+                      {{ formatDate(date) }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Card Container -->
               <div
-                class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 space-y-2 gap-y-4 text-gray-700 text-sm"
+                class="grid grid-cols-1 lg:grid-cols-2 gap-8 bg-white p-4 rounded-2xl border"
               >
-                <div class="flex justify-between">
-                  <span class="font-semibold text-gray-600">Full Name:</span>
-                  <span class="text-right">{{ record.patient }}</span>
-                </div>
+                <!-- Left Column -->
+                <div class="flex flex-col justify-between">
+                  <!-- Basic Info -->
+                  <div>
+                    <h4
+                      class="text-gray-700 font-semibold uppercase text-[13px] tracking-wide border-b border-gray-200 pb-2 mb-3"
+                    >
+                      Basic Information
+                    </h4>
+                    <div class="space-y-2 text-[14px] text-gray-700">
+                      <div class="flex justify-between">
+                        <span class="font-medium text-gray-600"
+                          >Full Name:</span
+                        >
+                        <span class="font-semibold text-gray-800">{{
+                          record.patient
+                        }}</span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span class="font-medium text-gray-600"
+                          >Birthdate:</span
+                        >
+                        <span>{{
+                          formatDate(record.patientDetails.birthdate)
+                        }}</span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span class="font-medium text-gray-600">Gender:</span>
+                        <span>{{ record.patientDetails.gender }}</span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span class="font-medium text-gray-600">Age:</span>
+                        <span>{{ record.patientDetails.age }}</span>
+                      </div>
+                    </div>
+                  </div>
 
-                <div class="flex justify-between">
-                  <span class="font-semibold text-gray-600">Birthdate:</span>
-                  <span class="text-right">{{
-                    formatDate(record.patientDetails.birthdate)
-                  }}</span>
-                </div>
-
-                <div class="flex justify-between">
-                  <span class="font-semibold text-gray-600">Gender:</span>
-                  <span class="text-right">{{
-                    record.patientDetails.gender
-                  }}</span>
-                </div>
-
-                <div class="flex justify-between">
-                  <span class="font-semibold text-gray-600">Age:</span>
-                  <span class="text-right">{{
-                    record.patientDetails.age
-                  }}</span>
-                </div>
-
-                <div class="flex justify-between">
-                  <span class="font-semibold text-gray-600">Religion:</span>
-                  <span class="text-right">{{
-                    record.patientDetails.religion
-                  }}</span>
-                </div>
-
-                <div class="flex justify-between">
-                  <span class="font-semibold text-gray-600">Nationality:</span>
-                  <span class="text-right">{{
-                    record.patientDetails.nationality
-                  }}</span>
-                </div>
-
-                <div class="flex justify-between">
-                  <span class="font-semibold text-gray-600"
-                    >Marital Status:</span
-                  >
-                  <span class="text-right">{{
-                    record.patientDetails.marital_status
-                  }}</span>
-                </div>
-
-                <div class="flex justify-between">
-                  <span class="font-semibold text-gray-600">Occupation:</span>
-                  <span class="text-right">{{
-                    record.patientDetails.occupation
-                  }}</span>
-                </div>
-
-                <div class="flex justify-between">
-                  <span class="font-semibold text-gray-600"
-                    >Dental Insurance:</span
-                  >
-                  <span class="text-right">{{
-                    record.patientDetails.dental_insurance
-                  }}</span>
-                </div>
-
-                <div class="flex justify-between">
-                  <span class="font-semibold text-gray-600"
-                    >Parent/Guardian:</span
-                  >
-                  <span class="text-right">{{
-                    record.patientDetails.parent_fullname
-                  }}</span>
-                </div>
-
-                <div class="flex justify-between">
-                  <span class="font-semibold text-gray-600"
-                    >Contact Number:</span
-                  >
-                  <span class="text-right">{{
-                    record.patientDetails.contact_number
-                  }}</span>
-                </div>
-
-                <div class="flex justify-between">
-                  <span class="font-semibold text-gray-600">Address:</span>
-                  <span class="text-right">{{
-                    record.patientDetails.address
-                  }}</span>
-                </div>
-
-                <div class="flex flex-col gap-1.5">
-                  <span class="font-semibold text-gray-600"
-                    >Medical History:</span
-                  >
-                  <div
-                    class="text-left whitespace-pre-line w-[100%] h-[10vh] bg-gray-50 border border-gray-300 rounded-md p-2"
-                  >
-                    {{ record.patientDetails.medical_history }}
+                  <!-- Demographics -->
+                  <div class="mt-8">
+                    <h4
+                      class="text-gray-700 font-semibold uppercase text-[13px] tracking-wide border-b border-gray-200 pb-2 mb-3"
+                    >
+                      Demographics
+                    </h4>
+                    <div class="space-y-2 text-[14px] text-gray-700">
+                      <div class="flex justify-between">
+                        <span class="font-medium text-gray-600">Religion:</span>
+                        <span>{{ record.patientDetails.religion }}</span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span class="font-medium text-gray-600"
+                          >Nationality:</span
+                        >
+                        <span>{{ record.patientDetails.nationality }}</span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span class="font-medium text-gray-600"
+                          >Marital Status:</span
+                        >
+                        <span>{{ record.patientDetails.marital_status }}</span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span class="font-medium text-gray-600"
+                          >Occupation:</span
+                        >
+                        <span>{{ record.patientDetails.occupation }}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div class="flex flex-col gap-1.5">
-                  <span class="font-semibold text-gray-600"
-                    >Dental History:</span
-                  >
-                  <div
-                    class="text-left whitespace-pre-line w-[100%] h-[10vh] bg-gray-50 border border-gray-300 rounded-md p-2"
-                  >
-                    {{ record.patientDetails.dental_history }}
+                <!-- Right Column -->
+                <div class="flex flex-col">
+                  <!-- Contact Details -->
+                  <div>
+                    <h4
+                      class="text-gray-700 font-semibold uppercase text-[13px] tracking-wide border-b border-gray-200 pb-2 mb-3"
+                    >
+                      Contact Information
+                    </h4>
+                    <div class="space-y-2 text-[14px] text-gray-700">
+                      <div class="flex justify-between">
+                        <span class="font-medium text-gray-600"
+                          >Contact Number:</span
+                        >
+                        <span>{{ record.patientDetails.contact_number }}</span>
+                      </div>
+                      <div class="flex flex-col">
+                        <span class="font-medium text-gray-600 mb-1"
+                          >Address:</span
+                        >
+                        <p
+                          class="text-gray-800 bg-gray-50 border border-gray-200 rounded-md p-3 text-sm leading-relaxed"
+                        >
+                          {{ record.patientDetails.address }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Additional Details -->
+                  <div class="mt-9">
+                    <h4
+                      class="text-gray-700 font-semibold uppercase text-[13px] tracking-wide border-b border-gray-200 pb-2 mb-2"
+                    >
+                      Additional Details
+                    </h4>
+                    <div class="space-y-2 text-[14px] text-gray-700">
+                      <div class="flex justify-between items-center">
+                        <span class="font-medium text-gray-600"
+                          >Parent/Guardian:</span
+                        >
+                        <span
+                          class="text-gray-800 font-medium truncate max-w-[55%] text-right"
+                        >
+                          {{ record.patientDetails.parent_fullname }}
+                        </span>
+                      </div>
+
+                      <div class="flex justify-between items-center">
+                        <span class="font-medium text-gray-600"
+                          >Dental Insurance:</span
+                        >
+                        <span
+                          class="text-gray-800 font-medium truncate max-w-[55%] text-right"
+                        >
+                          {{ record.patientDetails.dental_insurance }}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -181,7 +214,7 @@
             <!-- Page 2: Dental Chart Info -->
             <div
               v-else-if="currentPage[index] === 2"
-              class="w-[40vw] max-h-[60vh] overflow-y-auto 4"
+              class="w-[40vw] max-h-[70vh] overflow-y-auto 4"
             >
               <div
                 class="w-full flex justify-between gap-4 mb-6 text-gray-800 font-semibold"
@@ -189,7 +222,7 @@
                 <div class="space-y-1 w-full">
                   <p class="text-gray-500 font-medium">Patient</p>
                   <p
-                    class="p-3 bg-gray-50 border border-gray-100 rounded-md whitespace-pre-line break-words max-w-full shadow"
+                    class="p-3 bg-gray-50 border border-gray-200 rounded-md whitespace-pre-line break-words max-w-full"
                   >
                     {{ record.patient }}
                   </p>
@@ -197,7 +230,7 @@
                 <div class="space-y-1 w-full">
                   <p class="text-gray-500 font-medium">Dentist</p>
                   <p
-                    class="p-3 bg-gray-50 border border-gray-100 rounded-md whitespace-pre-line break-words max-w-full shadow"
+                    class="p-3 bg-gray-50 border border-gray-200 rounded-md whitespace-pre-line break-words max-w-full"
                   >
                     Dr. {{ record.user_accounts }}
                   </p>
@@ -205,7 +238,7 @@
                 <div class="space-y-1 w-full">
                   <p class="text-gray-500 font-medium">Date</p>
                   <p
-                    class="p-3 bg-gray-50 border border-gray-100 rounded-md whitespace-pre-line break-words max-w-full shadow"
+                    class="p-3 bg-gray-50 border border-gray-200 rounded-md whitespace-pre-line break-words max-w-full"
                   >
                     {{ formatDate(record.date) }}
                   </p>
@@ -216,7 +249,7 @@
               <div class="space-y-1 mb-6 max-w-full">
                 <p class="text-gray-500 font-medium">Procedure Notes</p>
                 <p
-                  class="text-gray-800 font-semibold p-3 bg-gray-50 border border-gray-100 rounded-md whitespace-pre-line break-words max-w-full shadow"
+                  class="text-gray-800 font-semibold p-3 bg-gray-50 border border-gray-200 rounded-md whitespace-pre-line break-words max-w-full"
                 >
                   {{ record.notes }}
                 </p>
@@ -302,36 +335,40 @@
                     </div>
                   </template>
                 </div>
-
-                <!-- Delete Button -->
-                <div class="mt-4 flex justify-end">
-                  <button
-                    class="bg-red-700 p-2 px-3 rounded-lg text-white hover:bg-white border hover:border-red-800 hover:text-red-800 hover:shadow-md"
-                    @click="deleteHistory(record.dental_id)"
-                  >
-                    Delete Record
-                  </button>
-                </div>
               </div>
             </div>
 
-            <!-- Pagination Buttons -->
-            <div class="flex justify-between mt-6">
-              <button
-                v-if="currentPage[index] > 1"
-                @click="prevPage(index)"
-                class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
-              >
-                Previous
-              </button>
+            <!-- Buttons: Previous / Next / Delete -->
+            <div class="flex justify-between items-center mt-6">
+              <!-- Left Side: Pagination -->
+              <div>
+                <button
+                  v-if="currentPage[index] > 1"
+                  @click="prevPage(index)"
+                  class="bg-gray-700 px-4 py-2 rounded-lg text-white hover:bg-white border hover:border-gray-800 hover:text-gray-800 hover:shadow-md"
+                >
+                  Previous
+                </button>
+              </div>
 
-              <button
-                v-if="currentPage[index] < 2"
-                @click="nextPage(index)"
-                class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-              >
-                Next
-              </button>
+              <!-- Right Side: Next or Delete -->
+              <div class="flex gap-2">
+                <button
+                  v-if="currentPage[index] < 2"
+                  @click="nextPage(index)"
+                  class="bg-green-700 px-4 py-2 rounded-lg text-white hover:bg-white border hover:border-green-800 hover:text-green-800 hover:shadow-md"
+                >
+                  Next
+                </button>
+
+                <!-- <button
+                  v-else
+                  class="bg-red-700 px-4 py-2 rounded-lg text-white hover:bg-white border hover:border-red-800 hover:text-red-800 hover:shadow-md"
+                  @click="deleteHistory(record.dental_id)"
+                >
+                  Delete Record
+                </button> -->
+              </div>
             </div>
           </div>
         </div>

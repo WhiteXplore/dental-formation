@@ -23,11 +23,11 @@ export class DentalChart {
   @Column({ type: 'int', nullable: true })
   patient_id: number;
 
-  @Column({ type: 'int', nullable: true })
-  dentist_id: number;
+  // @Column({ type: 'int', nullable: true })
+  // dentist_id: number;
 
-  @Column({ type: 'int', nullable: true })
-  price_procedure_id: number;
+  // @Column({ type: 'int', nullable: true })
+  // price_procedure_id: number;
 
   @ManyToOne(() => Patient, (patient) => patient.dentalCharts, {
     eager: true,
@@ -89,4 +89,7 @@ export class DentalChart {
 
   @UpdateDateColumn({ type: 'timestamp' })
   update_at: Date;
+
+  @Column({ default: false })
+  inventoryDeducted: boolean;
 }

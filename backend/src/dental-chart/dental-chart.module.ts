@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DentalChart } from './entities/dental-chart.entity';
 import { ToothChart } from './entities/tooth.entity';
 import { PriceProcedure } from 'src/price-procedure/entities/price-procedure.entity';
+import { Inventory } from 'src/inventory/entities/inventory.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([DentalChart, ToothChart, PriceProcedure]),

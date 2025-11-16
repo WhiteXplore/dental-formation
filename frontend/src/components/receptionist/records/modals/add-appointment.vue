@@ -151,7 +151,7 @@
                 required
                 class="w-full border px-2 py-3.5 border-gray-600 rounded-md text-md text-gray-800"
               >
-                <option disabled value="">Select appointment_status</option>
+                <option disabled value="">Select appointment status</option>
                 <option value="Walk-In">Walk-In</option>
                 <option value="No-Show">No-Show</option>
               </select>

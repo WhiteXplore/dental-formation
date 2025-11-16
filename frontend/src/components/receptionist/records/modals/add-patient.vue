@@ -90,7 +90,7 @@
                 v-model="form.age"
                 type="number"
                 id="age"
-                required
+                readonly
                 class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
                 placeholder="Enter age"
               />
@@ -265,6 +265,23 @@ export default {
       showInstituteDropdown: false,
     };
   },
+  watch: {
+    "form.birthdate"(newDate) {
+      if (!newDate) {
+        this.form.age = "";
+        return;
+      }
+      const today = new Date();
+      const birthDate = new Date(newDate);
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      this.form.age = age;
+    },
+  },
+
   methods: {
     async submitData() {
       const form = this.$refs.patientForm;

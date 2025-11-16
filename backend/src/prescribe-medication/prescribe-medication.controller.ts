@@ -22,6 +22,15 @@ export class PrescribeMedicationController {
   create(@Body() createDto: CreatePrescribeMedicationDto) {
     return this.prescribeMedicationService.create(createDto);
   }
+  @Get('dental-chart/:id')
+  findByDentalChart(@Param('id', ParseIntPipe) id: number) {
+    return this.prescribeMedicationService.findByDentalChartId(id);
+  }
+
+  @Get('prescription/:id')
+  findByPrescription(@Param('id', ParseIntPipe) id: number) {
+    return this.prescribeMedicationService.findByPrescriptionId(id);
+  }
 
   @Get()
   findAll() {

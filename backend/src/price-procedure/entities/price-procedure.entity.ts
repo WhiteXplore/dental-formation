@@ -2,18 +2,24 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
 } from 'typeorm';
+import { ProcedureInventory } from './price-procedure-inventory.entity';
 import { DentalChart } from 'src/dental-chart/entities/dental-chart.entity';
 import { ToothChart } from 'src/dental-chart/entities/tooth.entity';
+
 @Entity('price_procedures')
 export class PriceProcedure {
   @PrimaryGeneratedColumn()
   price_procedure_id: number;
 
-  @Column({ unique: true })
+  // Allow null so TypeScript is happy
+  @Column({ type: 'int', nullable: true })
+  inventory_id: number | null;
+
+  @Column()
   procedure_name: string;
 
   @Column('decimal', { precision: 10, scale: 2 })
@@ -22,14 +28,13 @@ export class PriceProcedure {
   @Column({ default: true })
   is_active: boolean;
 
-  @Column({ nullable: true })
+  @Column({ default: 'bg-gray-400' })
   status_color: string;
 
-  @CreateDateColumn()
-  created_at: Date;
-
-  @UpdateDateColumn()
-  updated_at: Date;
+  @OneToMany(() => ProcedureInventory, (pi) => pi.priceProcedure, {
+    cascade: true,
+  })
+  procedureInventories: ProcedureInventory[];
 
   @OneToMany(() => DentalChart, (dentalChart) => dentalChart.priceProcedure, {
     cascade: true,
@@ -40,4 +45,10 @@ export class PriceProcedure {
     cascade: true,
   })
   toothChart: ToothChart[];
+
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
 }
