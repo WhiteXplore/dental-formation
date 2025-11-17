@@ -8,14 +8,14 @@
     @click.stop
   >
     <div class="space-y-2 w-[150px]">
-      <router-link to="/profile-view" @click="toggleCloseProfile">
+      <!-- <router-link to="/profile-view" @click="toggleCloseProfile">
         <div
           class="flex items-center hover:bg-blue-500 hover:text-white rounded-md w-auto p-2 py-1 ml-2 gap-2"
         >
           <icon name="users" />
           <div>Profile</div>
         </div>
-      </router-link>
+      </router-link> -->
 
       <div
         class="flex items-center hover:bg-blue-500 hover:text-white rounded-md w-auto p-2 py-1 ml-2 gap-2"
