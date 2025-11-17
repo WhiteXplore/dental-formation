@@ -866,7 +866,9 @@ export default {
       try {
         for (const row of this.groupToDelete.rows) {
           const id = row.prescription_id;
-          await axios.delete(`http://localhost:8000/prescription/delete/${id}`);
+          await axios.delete(
+            process.env.VUE_APP_API_BASE_URL + `/prescription/delete/${id}`
+          );
         }
         toast.success("Prescription(s) deleted successfully.");
         await this.loadMedications();

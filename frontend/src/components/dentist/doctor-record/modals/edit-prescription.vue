@@ -330,7 +330,8 @@ export default {
 
       try {
         await axios.patch(
-          `http://localhost:8000/prescription/update-by-chart/${this.prescription.dentalChart.dental_id}`,
+          process.env.VUE_APP_API_BASE_URL +
+            `/prescription/update-by-chart/${this.prescription.dentalChart.dental_id}`,
           payload
         );
         toast.success("Prescription updated successfully!");

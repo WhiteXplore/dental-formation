@@ -351,7 +351,8 @@ export default {
       this.inventories = res.data.map((item) => ({
         ...item,
         image: item.image
-          ? `http://localhost:8000/inventory/inventory-image/${item.inventory_id}`
+          ? process.env.VUE_APP_API_BASE_URL +
+            `/inventory/inventory-image/${item.inventory_id}`
           : null,
         id: item.inventory_id,
       }));

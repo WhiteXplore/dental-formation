@@ -216,7 +216,8 @@ export default {
 
       try {
         await axios.patch(
-          `http://localhost:8000/user/update/${this.user.user_id}`,
+          process.env.VUE_APP_API_BASE_URL +
+            `/user/update/${this.user.user_id}`,
           payload
         );
         toast.success("User updated successfully!");

@@ -597,7 +597,8 @@ export default {
     async fetchAnotherUsers() {
       try {
         const response = await axios.get(
-          `http://localhost:8000/user/get-user/${this.user?.user_id}`,
+          process.env.VUE_APP_API_BASE_URL +
+            `/user/get-user/${this.user?.user_id}`,
           { withCredentials: true }
         );
 
@@ -624,7 +625,9 @@ export default {
         this.doctorAvailability === "available" ? "not-available" : "available";
 
       try {
-        const url = `http://localhost:8000/user/${this.user.user_id}/availability`;
+        const url =
+          process.env.VUE_APP_API_BASE_URL +
+          `/user/${this.user.user_id}/availability`;
         await axios.patch(url, {
           availability: this.doctorAvailability,
         });

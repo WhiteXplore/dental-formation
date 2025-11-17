@@ -223,7 +223,8 @@ export default {
         };
 
         await axios.patch(
-          `http://localhost:8000/prescription/update-by-chart/${this.record?.dentalChart?.dental_id}`,
+          process.env.VUE_APP_API_BASE_URL +
+            `/prescription/update-by-chart/${this.record?.dentalChart?.dental_id}`,
           payload
         );
 
@@ -255,7 +256,8 @@ export default {
 
       try {
         await axios.patch(
-          `http://localhost:8000/prescription/update-by-chart/${payload.dental_chart_id}`,
+          process.env.VUE_APP_API_BASE_URL +
+            `/prescription/update-by-chart/${payload.dental_chart_id}`,
           payload
         );
 

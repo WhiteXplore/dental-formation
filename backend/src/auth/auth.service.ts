@@ -50,11 +50,12 @@ export class AuthService {
 
     const token = this.jwtService.sign(payload, { expiresIn: '1h' });
 
-    // ✅ Important: Allow LAN + localhost cookies
+    // ✅ FIXED COOKIE SETTINGS FOR HTTPS + CROSS-ORIGIN
     res.cookie('jwt', token, {
       httpOnly: true,
-      secure: false, // only true if HTTPS
-      sameSite: 'lax', // allow localhost + 192.168.x.x
+      secure: true,
+      sameSite: 'none',
+      path: '/',
       maxAge: 60 * 60 * 1000,
     });
 

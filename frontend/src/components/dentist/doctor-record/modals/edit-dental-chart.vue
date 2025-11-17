@@ -282,7 +282,9 @@ export default {
 
           if (data.dental_id) {
             this.form.dental_id = data.dental_id;
-            this.xrayPreview = `http://localhost:8000/dental-chart/xray/${data.dental_id}`;
+            this.xrayPreview =
+              process.env.VUE_APP_API_BASE_URL +
+              `/dental-chart/xray/${data.dental_id}`;
           }
         }
       },
@@ -431,7 +433,8 @@ export default {
 
       try {
         await axios.patch(
-          `http://localhost:8000/dental-chart/update/${this.form.dental_id}`,
+          process.env.VUE_APP_API_BASE_URL +
+            `/dental-chart/update/${this.form.dental_id}`,
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },

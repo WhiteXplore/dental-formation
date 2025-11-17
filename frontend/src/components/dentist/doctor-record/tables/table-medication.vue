@@ -385,7 +385,8 @@ export default {
 
       try {
         await axios.delete(
-          `http://localhost:8000/prescription/delete/${this.selectedPrescriptionToDelete.prescription_id}`
+          process.env.VUE_APP_API_BASE_URL +
+            `/prescription/delete/${this.selectedPrescriptionToDelete.prescription_id}`
         );
 
         // Hide modal and refresh

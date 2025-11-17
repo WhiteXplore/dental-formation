@@ -353,7 +353,9 @@ export default {
       const patientId = this.recordToDelete.patient_id;
 
       axios
-        .delete(`http://localhost:8000/patient/delete-id/${patientId}`)
+        .delete(
+          process.env.VUE_APP_API_BASE_URL + `/patient/delete-id/${patientId}`
+        )
         .then(() => {
           this.recordToDelete = null;
           this.showDeleteModal = false;

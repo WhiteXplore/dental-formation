@@ -333,7 +333,7 @@ export default {
 
       const userId = this.recordToDelete.user_id;
       axios
-        .delete(`http://localhost:8000/user/${userId}`)
+        .delete(process.env.VUE_APP_API_BASE_URL + `/user/${userId}`)
         .then(() => {
           this.recordToDelete = null;
           this.showDeleteModal = false;

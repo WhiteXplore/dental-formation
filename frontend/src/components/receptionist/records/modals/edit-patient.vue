@@ -289,7 +289,8 @@ export default {
       try {
         // ✅ FIXED: Use patient.patient_id instead of patient.id
         const response = await axios.patch(
-          `http://localhost:8000/patient/update-patient/${this.patient.patient_id}`,
+          process.env.VUE_APP_API_BASE_URL +
+            `/patient/update-patient/${this.patient.patient_id}`,
           {
             ...this.form,
             dental_insurance:

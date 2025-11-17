@@ -326,7 +326,8 @@ export default {
 
       try {
         await axios.patch(
-          `http://localhost:8000/appointment/${this.form.appointment_id}`,
+          process.env.VUE_APP_API_BASE_URL +
+            `/appointment/${this.form.appointment_id}`,
           this.form
         );
 

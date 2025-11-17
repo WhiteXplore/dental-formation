@@ -260,12 +260,18 @@
                 <p class="text-gray-500 font-medium mb-2">X-Ray</p>
                 <div v-if="record.xray" class="max-w-full">
                   <a
-                    :href="`http://localhost:8000/dental-chart/xray/${record.dental_id}`"
+                    :href="
+                      process.env.VUE_APP_API_BASE_URL +
+                      `/dental-chart/xray/${record.dental_id}`
+                    "
                     target="_blank"
                     rel="noopener noreferrer"
                   >
                     <img
-                      :src="`http://localhost:8000/dental-chart/xray/${record.dental_id}`"
+                      :src="
+                        process.env.VUE_APP_API_BASE_URL +
+                        `/dental-chart/xray/${record.dental_id}`
+                      "
                       alt="X-Ray"
                       class="w-48 max-w-full h-auto rounded-lg shadow border object-contain"
                     />
@@ -485,7 +491,8 @@ export default {
     async fetchHistory() {
       try {
         const res = await axios.get(
-          `http://localhost:8000/dental-chart/history/${this.patientId}`
+          process.env.VUE_APP_API_BASE_URL +
+            `/dental-chart/history/${this.patientId}`
         );
         const rawHistory = res.data || [];
 
@@ -542,7 +549,7 @@ export default {
       if (!confirm("Are you sure you want to delete this dental record?"))
         return;
       axios
-        .delete(`http://localhost:8000/dental-chart/${dentalId}`)
+        .delete(process.env.VUE_APP_API_BASE_URL + `/dental-chart/${dentalId}`)
         .then(() => {
           this.groupedHistory = this.groupedHistory.filter(
             (g) => g.dental_id !== dentalId

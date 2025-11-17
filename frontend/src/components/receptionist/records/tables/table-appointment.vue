@@ -329,7 +329,10 @@ export default {
       const appointmentId = this.recordToDelete.appointment_id;
 
       axios
-        .delete(`http://localhost:8000/appointment/delete-id/${appointmentId}`)
+        .delete(
+          process.env.VUE_APP_API_BASE_URL +
+            `/appointment/delete-id/${appointmentId}`
+        )
         .then(() => {
           this.recordToDelete = null;
           this.showDeleteModal = false;
