@@ -36,6 +36,8 @@
               d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-5-5.917V5a2 2 0 10-4 0v.083A6 6 0 004 11v3.159c0 .538-.214 1.055-.595 1.436L2 17h5m5 0v1a3 3 0 11-6 0v-1m6 0H9"
             />
           </svg>
+
+          <!-- Unread Badge -->
           <span
             v-if="unreadCount > 0"
             :class="[
@@ -57,6 +59,7 @@
             class="flex justify-between items-center px-4 py-3 border-b border-gray-200 bg-gray-50"
           >
             <h3 class="font-semibold text-gray-700 text-sm">Notifications</h3>
+
             <button
               @click="markAllRead"
               class="text-xs text-green-600 hover:underline focus:outline-none"
@@ -68,7 +71,7 @@
           <ul class="max-h-60 overflow-y-auto">
             <li
               v-for="(notif, index) in notifications"
-              :key="notif.dental_id"
+              :key="notif.appointment_id"
               @click="handleNotificationClick(notif, index)"
               class="px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3 border-b border-gray-100"
             >
@@ -97,6 +100,7 @@
                       : `Viewed booking for ${notif.patient?.first_name} ${notif.patient?.last_name}`
                   }}
                 </p>
+
                 <p class="text-xs text-gray-400 mt-0.5">
                   {{
                     notif.notif_status === null
@@ -161,6 +165,7 @@ import { mapState } from "pinia";
 export default {
   name: "TopBarPage",
   components: { Profile },
+
   data() {
     return {
       isOpenProfile: false,
@@ -169,11 +174,13 @@ export default {
       notifications: [],
       unreadCount: 0,
       isPulsing: false,
-      apiBaseUrl: process.env.VUE_APP_API_BASE_URL + "/appointment", // ✅ corrected
+      apiBaseUrl: process.env.VUE_APP_API_BASE_URL + "/appointment",
     };
   },
+
   computed: {
     ...mapState(useFetchDataStore, ["appointments"]),
+
     formattedDate() {
       return new Date().toLocaleDateString("en-US", {
         year: "numeric",
@@ -182,6 +189,7 @@ export default {
         weekday: "long",
       });
     },
+
     formattedTime() {
       return new Date().toLocaleTimeString("en-US", {
         hour: "2-digit",
@@ -191,15 +199,15 @@ export default {
       });
     },
   },
+
   watch: {
     appointments: {
       immediate: true,
       handler(newAppointments) {
         if (this.user.role !== "Dentist") return;
 
-        // Map notifications
         this.notifications = newAppointments.map((appt) => ({
-          appointment_id: appt.appointment_id, // ✅ use correct id
+          appointment_id: appt.appointment_id,
           patient: appt.patient,
           procedure_date: appt.scheduled_date,
           notif_status: appt.notif_status || null,
@@ -209,31 +217,38 @@ export default {
         this.unreadCount = this.notifications.filter(
           (n) => n.notif_status === null
         ).length;
+
         this.isPulsing = this.unreadCount > 0;
       },
     },
   },
+
   methods: {
     toggleOpenProfile() {
       this.isOpenProfile = !this.isOpenProfile;
       this.isOpenNotifications = false;
     },
+
     toggleNotifications() {
       this.isOpenNotifications = !this.isOpenNotifications;
       this.isOpenProfile = false;
       if (this.isOpenNotifications) this.isPulsing = false;
     },
+
     markAllRead() {
       this.notifications.forEach((n) => (n.notif_status = "Viewed"));
       this.unreadCount = 0;
       this.isPulsing = false;
     },
+
     handleClickOutside(event) {
       const dropdowns = [
         this.$refs.profileDropdown,
         this.$refs.notificationDropdown,
       ];
+
       const icons = [this.$refs.profileIcon, this.$refs.notificationIcon];
+
       dropdowns.forEach((dropdown, index) => {
         if (
           dropdown &&
@@ -246,16 +261,17 @@ export default {
         }
       });
     },
+
     async fetchUser() {
       try {
         const response = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + `/auth/me`,
-          {
-            withCredentials: true,
-          }
+          process.env.VUE_APP_API_BASE_URL + "/auth/me",
+          { withCredentials: true }
         );
-        if (response.data) this.user = response.data;
-        else {
+
+        if (response.data) {
+          this.user = response.data;
+        } else {
           this.$router.push("/");
           location.reload();
         }
@@ -264,6 +280,7 @@ export default {
         this.$router.push("/");
       }
     },
+
     async loadAppointments() {
       if (this.user.role === "Dentist") {
         const store = useFetchDataStore();
@@ -271,23 +288,20 @@ export default {
       }
     },
 
-    // ✅ updated handler
     async handleNotificationClick(notif, index) {
       if (!notif?.appointment_id) {
-        console.error("Appointment ID is missing for notification:", notif);
+        console.error("Missing appointment ID:", notif);
         return;
       }
 
       try {
-        // Only update if notif_status is null
         if (notif.notif_status === null) {
           const response = await axios.patch(
-            `${this.apiBaseUrl}/${notif.appointment_id}`, // correct endpoint
+            `${this.apiBaseUrl}/${notif.appointment_id}`,
             { notif_status: "Viewed" },
             { withCredentials: true }
           );
 
-          // Update local notification
           this.notifications[index] = {
             ...this.notifications[index],
             notif_status: response.data.notif_status,
@@ -296,24 +310,23 @@ export default {
           this.unreadCount = this.notifications.filter(
             (n) => n.notif_status === null
           ).length;
-          this.isPulsing = this.unreadCount > 0;
         }
 
         this.isOpenNotifications = false;
         this.$router.push("/dental-chart");
       } catch (err) {
-        console.error(
-          "Failed to mark notification as viewed:",
-          err.response || err
-        );
+        console.error("Error updating notification:", err);
       }
     },
   },
+
   async mounted() {
     await this.fetchUser();
     if (this.user.role === "Dentist") this.loadAppointments();
+
     document.addEventListener("click", this.handleClickOutside);
   },
+
   beforeUnmount() {
     document.removeEventListener("click", this.handleClickOutside);
   },
