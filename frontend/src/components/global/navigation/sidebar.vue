@@ -172,25 +172,15 @@ export default {
             ],
           },
           {
-            title: "Graphs",
+            title: "Master Files",
             items: [
               {
-                name: "Report and Analytics",
-                icon: "graph",
-                children: [
-                  {
-                    name: "Monthly Summary",
-                    route: "/report-analytics",
-                  },
-                ],
+                name: "Patient History",
+                route: "/tracker",
+                icon: "general",
               },
-            ],
-          },
-          {
-            title: "Price and Supplies",
-            items: [
               {
-                name: "Storage Management",
+                name: "Item & Services",
                 icon: "inventory",
                 children: [
                   {
@@ -203,35 +193,55 @@ export default {
                   },
                 ],
               },
-            ],
-          },
-          {
-            title: "Reports",
-            items: [
               {
-                name: "Inventory Tracker",
+                name: "HMO's / Guarantors",
+                route: "/hmo-guarantors",
                 icon: "general",
-                children: [
-                  {
-                    name: "Transactions",
-                    route: "/tracker",
-                  },
-                ],
               },
             ],
           },
           {
-            title: "Users",
+            title: "Transactions",
             items: [
               {
-                name: "Account Management",
+                name: "Appointments",
+                route: "/appointments",
+                icon: "general",
+              },
+              {
+                name: "Cash Receipt",
+                route: "/billing-payments",
+                icon: "payment",
+              },
+              {
+                name: "Dental Charts",
+                route: "/recep-dental-chart",
+                icon: "clipboard",
+              },
+            ],
+          },
+          {
+            title: "Others",
+            items: [
+              {
+                name: "Monthly Summary",
+                route: "/report-analytics",
+                icon: "graph",
+              },
+              {
+                name: "Revenue Forcasting",
+                route: "/revenue-forcasting",
+                icon: "graph",
+              },
+              {
+                name: "Usage Consumption",
+                route: "/usage-consumption",
+                icon: "graph",
+              },
+              {
+                name: "System Users",
                 icon: "users",
-                children: [
-                  {
-                    name: "Users List",
-                    route: "/user-accounts",
-                  },
-                ],
+                route: "/user-accounts",
               },
             ],
           },
@@ -256,8 +266,12 @@ export default {
                 icon: "graph",
                 children: [
                   {
+                    name: "Appointment",
+                    route: "/dentist-appointments",
+                  },
+                  {
                     name: "Dental Charts",
-                    route: "/dental-chart",
+                    route: "/dentist-dental-chart",
                   },
                 ],
               },
@@ -267,14 +281,19 @@ export default {
             title: "Prescription Management",
             items: [
               {
-                name: "Prescription Records",
+                name: "Medication",
                 icon: "general",
-                children: [
-                  {
-                    name: "Medication",
-                    route: "/prescription-medication",
-                  },
-                ],
+                route: "/prescription-medication",
+              },
+            ],
+          },
+          {
+            title: "Reports",
+            items: [
+              {
+                name: "Monthly Income",
+                icon: "payment",
+                route: "/monthly-income",
               },
             ],
           },
@@ -287,42 +306,56 @@ export default {
               {
                 name: "Dashboard",
                 icon: "dashboard",
-                route: "/admin-dashboard",
+                route: "/receptionist-dashboard",
               },
             ],
           },
           {
-            title: "Graphs",
+            title: "Patient Management",
             items: [
               {
-                name: "Report and Analytics",
-                icon: "graph",
-                children: [
-                  { name: "Monthly Summary", route: "/report-analytics" },
-                ],
-              },
-            ],
-          },
-          {
-            title: "Price & Supplies",
-            items: [
-              {
-                name: "Storage Management",
-                icon: "inventory",
-                children: [
-                  { name: "Inventory", route: "/inventory" },
-                  { name: "Procedures", route: "/price-procedure" },
-                ],
-              },
-            ],
-          },
-          {
-            title: "Users",
-            items: [
-              {
-                name: "Account Management",
+                name: "Patient Records",
                 icon: "users",
-                children: [{ name: "Users List", route: "/user-accounts" }],
+                children: [
+                  { name: "Patients List", route: "/patient-records" },
+                  { name: "Appointment", route: "/appointments" },
+                  { name: "Dental Chart", route: "/recep-dental-chart" },
+                ],
+              },
+            ],
+          },
+          {
+            title: "Billing",
+            items: [
+              {
+                name: "Payment Records",
+                icon: "payment",
+                children: [
+                  {
+                    name: "Billing & Payments",
+                    route: "/billing-payments",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            title: "Reports",
+            items: [
+              {
+                name: "Dental Certificate",
+                icon: "clipboard",
+                route: "/dental-certificate",
+              },
+              {
+                name: "Outpatient List",
+                icon: "clipboard",
+                route: "/outpatient-list",
+              },
+              {
+                name: "Monthly Reports",
+                icon: "clipboard",
+                route: "/monthly-reports",
               },
             ],
           },
@@ -343,9 +376,7 @@ export default {
       this.expandDropdownForCurrentRoute(newPath);
     },
   },
-  mounted() {
-    this.fetchUser();
-  },
+
   methods: {
     toggleSidebar() {
       this.isExpanded = !this.isExpanded;
@@ -388,6 +419,9 @@ export default {
         this.$router.push("/");
       }
     },
+  },
+  mounted() {
+    this.fetchUser();
   },
 };
 </script>

@@ -22,6 +22,9 @@ export class PriceProcedure {
   @Column()
   procedure_name: string;
 
+  @Column()
+  procedure_type: string;
+
   @Column('decimal', { precision: 10, scale: 2 })
   price: number;
 

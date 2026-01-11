@@ -8,16 +8,18 @@
       <form class="text-sm text-gray-800">
         <!-- Header -->
         <div
-          class="flex items-center justify-between px-6 py-4 bg-blue-700 text-white"
+          class="w-full p-5 py-3 bg-[#34699A] text-white rounded-t-[15px] flex justify-between items-center border-b shadow"
         >
-          <div class="flex items-center gap-2">
-            <icon name="add-students" />
-            <h2 class="text-lg font-semibold">Prescription Summary</h2>
+          <div class="flex gap-1 items-center">
+            <icon :name="'eye'" />
+            <h1 class="font-bold tracking-wide text-lg">
+              Prescription Summary
+            </h1>
           </div>
           <icon
-            name="circle-close3"
-            class="cursor-pointer hover:scale-110 transition"
+            :name="'circle-close3'"
             @click="$emit('close')"
+            class="cursor-pointer"
           />
         </div>
 
@@ -25,11 +27,8 @@
         <div v-if="prescription" class="px-6 py-6 bg-gray-50 space-y-6">
           <!-- 🧑‍⚕️ Patient & Dentist Info -->
           <section>
-            <h3 class="text-md font-semibold text-gray-700 mb-3">
-              Patient Information
-            </h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="border p-4 rounded-md bg-white shadow-sm">
+              <div class="border p-4 rounded-xl bg-white">
                 <label class="block text-gray-500 text-xs mb-1"
                   >Patient Name</label
                 >
@@ -38,7 +37,7 @@
                   {{ prescription.dentalChart?.patient?.last_name }}
                 </div>
               </div>
-              <div class="border p-4 rounded-md bg-white shadow-sm">
+              <div class="border p-4 rounded-xl bg-white">
                 <label class="block text-gray-500 text-xs mb-1"
                   >Attending Dentist</label
                 >
@@ -50,45 +49,59 @@
             </div>
           </section>
 
-          <!-- 🦷 Teeth Involved -->
+          <!--  Teeth Involved -->
           <section>
             <h3
               class="text-md font-semibold text-gray-700 mb-2 flex items-center gap-2"
             >
-              🦷 Teeth Involved
+              Teeth Involved
             </h3>
-            <div class="border rounded-md bg-white shadow-sm p-4 space-y-2">
-              <ul class="list-disc list-inside text-gray-700">
-                <li
-                  v-for="tooth in prescription.dentalChart?.teeth || []"
-                  :key="tooth.tooth_number"
-                >
-                  <span class="font-medium"
-                    >Tooth {{ tooth.tooth_number }}</span
+            <div
+              class="border rounded-xl bg-white p-4 max-h-[40vh] overflow-y-auto"
+            >
+              <table class="min-w-full border-collapse text-gray-700">
+                <thead>
+                  <tr class="bg-gray-100">
+                    <th class="px-4 py-2 text-left font-medium">
+                      Tooth Number
+                    </th>
+                    <th class="px-4 py-2 text-left font-medium">Procedure</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="tooth in prescription.dentalChart?.teeth || []"
+                    :key="tooth.tooth_number"
+                    class="border-b hover:bg-gray-50"
                   >
-                  –
-                  <span class="text-gray-600">
-                    {{ tooth.priceProcedure?.procedure_name || "N/A" }}
-                  </span>
-                </li>
-                <li
-                  v-if="!prescription.dentalChart?.teeth?.length"
-                  class="text-gray-400 italic"
-                >
-                  No tooth involvement recorded.
-                </li>
-              </ul>
+                    <td class="px-4 py-2 font-medium">
+                      Tooth {{ tooth.tooth_number }}
+                    </td>
+                    <td class="px-4 py-2">
+                      {{ tooth.priceProcedure?.procedure_name || "N/A" }}
+                    </td>
+                  </tr>
+                  <tr v-if="!prescription.dentalChart?.teeth?.length">
+                    <td
+                      colspan="2"
+                      class="px-4 py-2 text-gray-400 italic text-center"
+                    >
+                      No tooth involvement recorded.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </section>
 
-          <!-- 💊 Medications -->
+          <!--  Medications -->
           <section>
             <h3
               class="text-md font-semibold text-gray-700 mb-2 flex items-center gap-2"
             >
-              💊 Prescribed Medications
+              Prescribed Medications
             </h3>
-            <div class="border rounded-md bg-white shadow-sm p-4 space-y-2">
+            <div class="border rounded-xl bg-white p-4 space-y-2">
               <ul class="list-disc list-inside text-gray-700">
                 <li
                   v-for="med in prescription.prescribedMedications || []"
@@ -109,14 +122,14 @@
             </div>
           </section>
 
-          <!-- 📋 Instructions -->
+          <!--  Instructions -->
           <section>
             <h3
               class="text-md font-semibold text-gray-700 mb-2 flex items-center gap-2"
             >
-              📋 Instructions
+              Instructions
             </h3>
-            <div class="border rounded-md bg-white shadow-sm p-4">
+            <div class="border rounded-xl bg-white p-4">
               <p class="text-gray-700">
                 {{ prescription.instruction || "No specific instructions." }}
               </p>
@@ -127,7 +140,7 @@
           <div class="flex justify-end pt-4 border-t border-gray-300">
             <button
               type="button"
-              class="px-5 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
+              class="bg-gray-300 p-2 px-3 rounded-lg text-gray-600 hover:bg-white border hover:border-gray-800 hover:text-gray-800 hover:shadow-md"
               @click="$emit('close')"
             >
               Close

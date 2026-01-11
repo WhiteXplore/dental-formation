@@ -27,7 +27,9 @@ export class ProcedureInventory {
   priceProcedure: PriceProcedure;
 
   @ManyToOne(() => Inventory, (inventory) => inventory.procedureInventories, {
+    onDelete: 'CASCADE',
     eager: true,
+    nullable: true,
   })
   @JoinColumn({ name: 'inventory_id' })
   inventory: Inventory;

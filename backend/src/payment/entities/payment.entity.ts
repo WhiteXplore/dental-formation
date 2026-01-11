@@ -27,6 +27,9 @@ export class Payment {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   payment_date: Date;
 
+  @Column({ default: false })
+  is_discharged: boolean;
+
   @ManyToOne(() => Prescription, (prescription) => prescription.payments, {
     onDelete: 'CASCADE',
   })

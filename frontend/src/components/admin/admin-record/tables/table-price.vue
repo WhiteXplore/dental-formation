@@ -66,10 +66,13 @@
                   <th
                     class="w-10 px-4 py-2 text-left rounded-tl-lg font-normal"
                   >
-                    ID
+                    No.
                   </th>
                   <th class="px-4 py-3 text-left font-normal">
                     Procedure Name
+                  </th>
+                  <th class="px-4 py-3 text-left font-normal">
+                    Procedure Type
                   </th>
                   <th class="px-4 py-3 text-left font-normal">
                     Procedure Color
@@ -89,6 +92,7 @@
                 >
                   <td class="px-4 py-2">{{ startIndex + index }}</td>
                   <td class="px-4 py-2">{{ procedure.procedure_name }}</td>
+                  <td class="px-4 py-2">{{ procedure.procedure_type }}</td>
                   <td class="px-[50px] py-2">
                     <span
                       class="inline-block w-5 h-5 rounded-full border border-gray-300"
@@ -181,7 +185,7 @@
     </div>
   </div>
   <addPrice v-if="isAdd" @close="closeView" @refresh="loadPrices" />
-  <editPrice
+  <addPrice
     v-if="isEdit"
     :procedure="selectedProcedure"
     @close="closeEdit"
@@ -235,7 +239,7 @@
 <script>
 import icon from "@/assets/icon.vue";
 import addPrice from "../modals/add-price.vue";
-import editPrice from "../modals/edit-price.vue";
+
 import { toast } from "vue3-toastify";
 import { useFetchDataStore } from "../../../../store/fetch-data-store";
 import { mapState } from "pinia";
@@ -246,7 +250,6 @@ export default {
   components: {
     icon,
     addPrice,
-    editPrice,
   },
   data() {
     return {

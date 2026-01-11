@@ -14,10 +14,19 @@
           d="M320-414v-306h120v306l-60-56-60 56Zm200 60v-526h120v406L520-354ZM120-216v-344h120v224L120-216Zm0 98 258-258 142 122 224-224h-64v-80h200v200h-80v-64L524-146 382-268 232-118H120Z"
         />
       </svg>
-      <span>Total Procedures </span>
+      <span>Total Procedures</span>
     </h3>
 
-    <div class="flex-grow flex justify-center items-center w-full p-8">
+    <!-- No data message -->
+    <div
+      v-if="!filteredProcedures.length"
+      class="flex-grow flex justify-center items-center text-gray-400 text-center p-8"
+    >
+      No Data Available
+    </div>
+
+    <!-- Chart -->
+    <div v-else class="flex-grow flex justify-center items-center w-full p-4">
       <canvas ref="procedureChart"></canvas>
     </div>
   </div>
@@ -32,7 +41,7 @@ import {
   ArcElement,
   DoughnutController,
 } from "chart.js";
-import { useFetchDataStore } from "../../../../store/fetch-data-store";
+import { useFetchDataStore } from "@/store/fetch-data-store";
 import { mapState } from "pinia";
 import axios from "axios";
 
@@ -40,6 +49,14 @@ Chart.register(Title, Tooltip, Legend, ArcElement, DoughnutController);
 
 export default {
   name: "ChartProcedureType",
+
+  props: {
+    filter: {
+      type: Object,
+      default: () => ({ year: null, month: null }),
+    },
+  },
+
   data() {
     return {
       user: null,
@@ -47,54 +64,67 @@ export default {
       resizeTimeout: null,
     };
   },
+
   computed: {
     ...mapState(useFetchDataStore, ["medications"]),
 
-    procedureSummary() {
+    filteredProcedures() {
       if (!Array.isArray(this.medications)) return [];
+
+      return this.medications.filter((item) => {
+        const dateStr = item.issued_date || item.dentalChart?.procedure_date;
+        if (!dateStr) return false;
+
+        const date = new Date(dateStr);
+        if (this.filter.year && date.getFullYear() !== Number(this.filter.year))
+          return false;
+        if (
+          this.filter.month &&
+          date.getMonth() + 1 !== Number(this.filter.month)
+        )
+          return false;
+
+        const teeth = item.dentalChart?.teeth || [];
+        return teeth.length > 0;
+      });
+    },
+
+    procedureSummary() {
+      if (!this.filteredProcedures.length) return [];
 
       const procedureMap = new Map();
 
-      // Count all procedures
-      this.medications.forEach((item) => {
-        const dentalChart = item.dentalChart;
-        const teeth = dentalChart?.teeth || [];
+      this.filteredProcedures.forEach((item) => {
+        const teeth = item.dentalChart?.teeth || [];
 
         teeth.forEach((tooth) => {
           const procedure = tooth.priceProcedure;
           if (!procedure) return;
 
           const name = procedure.procedure_name;
-
           if (!procedureMap.has(name)) {
-            procedureMap.set(name, {
-              procedure: name,
-              total: 0,
-              revenue: 0,
-            });
+            procedureMap.set(name, { procedure: name, total: 0, revenue: 0 });
           }
 
           const entry = procedureMap.get(name);
-          entry.total += 1; // total number of procedures
+          entry.total += 1;
           entry.revenue += parseFloat(procedure.price || "0");
         });
-      });
-
-      // Make sure all procedure types in database are included
-      const allProcedureNames = this.medications
-        .flatMap((m) => m.dentalChart?.teeth || [])
-        .map((t) => t.priceProcedure?.procedure_name)
-        .filter(Boolean);
-
-      allProcedureNames.forEach((name) => {
-        if (!procedureMap.has(name)) {
-          procedureMap.set(name, { procedure: name, total: 0, revenue: 0 });
-        }
       });
 
       return Array.from(procedureMap.values());
     },
   },
+
+  watch: {
+    procedureSummary: {
+      deep: true,
+      handler() {
+        this.$nextTick(() => this.renderChart());
+      },
+    },
+  },
+
   methods: {
     async fetchUser() {
       try {
@@ -102,12 +132,7 @@ export default {
           process.env.VUE_APP_API_BASE_URL + "/auth/me",
           { withCredentials: true }
         );
-        if (response.data) {
-          this.user = response.data;
-        } else {
-          this.$router.push("/");
-          location.reload();
-        }
+        this.user = response.data;
       } catch (error) {
         console.error("Failed to fetch user:", error);
         this.$router.push("/");
@@ -115,13 +140,14 @@ export default {
     },
 
     renderChart() {
+      if (!this.procedureSummary.length) return;
+
       const canvas = this.$refs.procedureChart;
       if (!canvas) return;
 
-      const labels = this.procedureSummary.map((item) => item.procedure);
-      const data = this.procedureSummary.map((item) => item.total);
+      const labels = this.procedureSummary.map((p) => p.procedure);
+      const data = this.procedureSummary.map((p) => p.total);
 
-      // Destroy previous chart instance
       if (this.chartInstance) this.chartInstance.destroy();
 
       const ctx = canvas.getContext("2d");
@@ -133,7 +159,13 @@ export default {
             {
               label: "Procedure Count",
               data,
-              backgroundColor: ["#60A5FA", "#F87171", "#FBBF24", "#34D399"],
+              backgroundColor: [
+                "#60A5FA",
+                "#F87171",
+                "#FBBF24",
+                "#34D399",
+                "#A78BFA",
+              ],
               borderColor: "#ffffff",
               borderWidth: 2,
               hoverOffset: 12,
@@ -166,11 +198,8 @@ export default {
     const store = useFetchDataStore();
     await store.fetchMedications();
 
-    this.$nextTick(() => {
-      this.renderChart();
-    });
+    this.$nextTick(() => this.renderChart());
 
-    // Resize listener
     window.addEventListener("resize", () => {
       clearTimeout(this.resizeTimeout);
       this.resizeTimeout = setTimeout(() => this.renderChart(), 200);
@@ -185,14 +214,13 @@ export default {
     }
     if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
   },
-
-  watch: {
-    procedureSummary: {
-      deep: true,
-      handler() {
-        this.$nextTick(() => this.renderChart());
-      },
-    },
-  },
 };
 </script>
+
+<style scoped>
+canvas {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+</style>

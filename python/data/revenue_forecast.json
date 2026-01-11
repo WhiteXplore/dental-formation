@@ -1,0 +1,89 @@
+{
+  "model": "Hybrid SARIMA + RandomForest",
+  "seasonality": "Weekly",
+  "forecast_days": 7,
+  "generated_at": "2026-01-11T11:47:28.243684",
+  "historical": [
+    {
+      "date": "2026-01-09 00:00:00+00:00",
+      "Clinic Share": 1920.0
+    },
+    {
+      "date": "2026-01-12 00:00:00+00:00",
+      "Clinic Share": 1440.0
+    },
+    {
+      "date": "2026-02-01 00:00:00+00:00",
+      "Clinic Share": 6400.0
+    },
+    {
+      "date": "2026-02-02 00:00:00+00:00",
+      "Clinic Share": 6400.0
+    },
+    {
+      "date": "2026-03-08 00:00:00+00:00",
+      "Clinic Share": 15360.0
+    },
+    {
+      "date": "2026-03-09 00:00:00+00:00",
+      "Clinic Share": 6400.0
+    }
+  ],
+  "forecast": [
+    {
+      "date": "2026-03-10 00:00:00+00:00",
+      "sarima_forecast": 6400.000000000002,
+      "hybrid_forecast": 11372.800000000003,
+      "difference": 4972.800000000001,
+      "absolute_difference": 4972.800000000001
+    },
+    {
+      "date": "2026-03-11 00:00:00+00:00",
+      "sarima_forecast": 7680.000000000002,
+      "hybrid_forecast": 12652.800000000003,
+      "difference": 4972.800000000001,
+      "absolute_difference": 4972.800000000001
+    },
+    {
+      "date": "2026-03-12 00:00:00+00:00",
+      "sarima_forecast": 7200.000000000002,
+      "hybrid_forecast": 12172.800000000003,
+      "difference": 4972.800000000001,
+      "absolute_difference": 4972.800000000001
+    },
+    {
+      "date": "2026-03-13 00:00:00+00:00",
+      "sarima_forecast": 12160.000000000002,
+      "hybrid_forecast": 17132.800000000003,
+      "difference": 4972.800000000001,
+      "absolute_difference": 4972.800000000001
+    },
+    {
+      "date": "2026-03-14 00:00:00+00:00",
+      "sarima_forecast": 12160.000000000002,
+      "hybrid_forecast": 17132.800000000003,
+      "difference": 4972.800000000001,
+      "absolute_difference": 4972.800000000001
+    },
+    {
+      "date": "2026-03-15 00:00:00+00:00",
+      "sarima_forecast": 21120.0,
+      "hybrid_forecast": 26092.8,
+      "difference": 4972.799999999999,
+      "absolute_difference": 4972.799999999999
+    },
+    {
+      "date": "2026-03-16 00:00:00+00:00",
+      "sarima_forecast": 12160.0,
+      "hybrid_forecast": 17132.8,
+      "difference": 4972.799999999999,
+      "absolute_difference": 4972.799999999999
+    }
+  ],
+  "summary": {
+    "avg_sarima": 11268.57142857143,
+    "avg_hybrid": 16241.371428571432,
+    "avg_difference": 4972.800000000001,
+    "max_expected_revenue": 26092.8
+  }
+}

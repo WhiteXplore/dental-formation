@@ -36,7 +36,7 @@ export class DentalChartController {
       } = {
         patient_id: Number(body.patient_id),
         user_id: Number(body.user_id),
-        price_procedure_id: Number(body.price_procedure_id), // ✅ This line is REQUIRED
+        price_procedure_id: Number(body.price_procedure_id),
         procedure_notes: body.procedure_notes || '',
         procedure_date:
           body.procedure_date && !isNaN(Date.parse(body.procedure_date))
@@ -45,8 +45,12 @@ export class DentalChartController {
         payment_amount: body.payment_amount
           ? parseFloat(body.payment_amount)
           : 0,
-        selected_teeth: JSON.parse(body.selected_teeth),
-        tooth_status_map: JSON.parse(body.tooth_status_map),
+        selected_teeth: JSON.parse(body.selected_teeth || '[]'),
+        tooth_status_map: JSON.parse(body.tooth_status_map || '{}'),
+        // ✅ NEW: parse additional items from JSON string
+        additional_items: body.additional_items
+          ? JSON.parse(body.additional_items)
+          : [],
         xray_image: file?.buffer || null,
         xray_mime_type: file?.mimetype || null,
       };
@@ -87,6 +91,10 @@ export class DentalChartController {
         tooth_status_map: body.tooth_status_map
           ? JSON.parse(body.tooth_status_map)
           : {},
+        // ✅ NEW: parse additional items for update
+        additional_items: body.additional_items
+          ? JSON.parse(body.additional_items)
+          : [],
         xray_image: file?.buffer || undefined,
         xray_mime_type: file?.mimetype || undefined,
       };

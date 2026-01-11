@@ -1,6 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { Appointment } from 'src/appointment/entities/appointment.entity';
 import { DentalChart } from 'src/dental-chart/entities/dental-chart.entity';
+
 @Entity('user_accounts')
 export class User_Accounts {
   @PrimaryGeneratedColumn('increment')
@@ -18,13 +19,13 @@ export class User_Accounts {
   @Column({ type: 'varchar', length: 255, nullable: true })
   license_no: string;
 
-  @Column({ type: 'varchar', length: 10, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   prc_type: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: false, unique: true })
   email: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: false })
   password: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
@@ -39,6 +40,16 @@ export class User_Accounts {
     default: 'not-available',
   })
   doctor_availability: 'available' | 'not-available';
+
+  // 🟦 Dentist Schedule Fields
+  @Column({ type: 'time', nullable: true })
+  schedule_start: string;
+
+  @Column({ type: 'time', nullable: true })
+  schedule_end: string;
+
+  @Column({ type: 'simple-array', nullable: true })
+  available_days: string[]; // e.g. ["Monday","Wednesday","Friday"]
 
   @OneToMany(() => Appointment, (appointment) => appointment.user_accounts)
   appointments: Appointment[];

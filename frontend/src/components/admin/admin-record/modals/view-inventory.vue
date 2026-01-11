@@ -11,13 +11,13 @@
       />
 
       <!-- Type Filter (Only Dental Tool now) -->
-      <select
+      <!-- <select
         v-model="selectedUnit"
         class="border border-gray-300 focus:ring-2 focus:ring-blue-500 px-4 py-3 rounded-lg w-full md:w-[10vw] transition"
       >
         <option value="">All Types</option>
         <option value="Dental Tool">Dental Tool</option>
-      </select>
+      </select> -->
 
       <!-- Action Buttons -->
       <div class="flex gap-2 ml-auto">

@@ -13,8 +13,10 @@
           class="w-full p-5 py-3 bg-[#34699A] text-white rounded-t-[15px] flex justify-between items-center border-b shadow"
         >
           <div class="flex gap-1 items-center">
-            <icon :name="'add-students'" />
-            <h1 class="font-bold tracking-wide text-lg">Add Procedure</h1>
+            <icon :name="isEdit ? 'edit' : 'add-students'" />
+            <h1 class="font-bold tracking-wide text-lg">
+              {{ isEdit ? "Edit Procedure" : "Add Procedure" }}
+            </h1>
           </div>
           <icon
             :name="'circle-close3'"
@@ -25,6 +27,23 @@
 
         <!-- Form -->
         <div class="p-5 w-[27vw] space-y-4">
+          <!-- Procedure Type -->
+          <div class="space-y-1.5 text-left flex flex-col">
+            <label for="procedure_type" class="font-bold"
+              >Procedure Type:</label
+            >
+            <select
+              v-model="form.procedure_type"
+              id="procedure_type"
+              required
+              class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+            >
+              <option disabled value="">Select procedure type</option>
+              <option value="Basic Procedure">Basic Procedure</option>
+              <option value="Special Case">Special Case</option>
+            </select>
+          </div>
+
           <!-- Procedure Name -->
           <div class="space-y-1.5 text-left flex flex-col">
             <label for="procedure_name" class="font-bold"
@@ -187,7 +206,7 @@
               class="bg-[#34699A] p-2 px-3 rounded-lg text-white hover:bg-white border hover:border-green-800 hover:text-green-800 hover:shadow-md"
               type="submit"
             >
-              Submit
+              {{ isEdit ? "Update" : "Submit" }}
             </button>
           </div>
         </div>
@@ -202,26 +221,34 @@ import { toast } from "vue3-toastify";
 import axios from "axios";
 
 export default {
-  name: "AddPriceProcedure",
+  name: "PriceProcedureModal",
   components: { icon },
+  props: {
+    procedure: {
+      type: Object,
+      default: null,
+    },
+  },
   data() {
     return {
       form: {
         procedure_name: "",
         price: "",
-        inventory_id: "",
         selected_inventories: [],
         is_active: "",
         status_color: "",
+        procedure_type: "",
       },
       inventories: [],
       searchInventoryQuery: "",
       showInventoryDropdown: false,
       loading: false,
-      error: null,
     };
   },
   computed: {
+    isEdit() {
+      return !!this.procedure;
+    },
     filteredInventories() {
       return this.inventories.filter(
         (inv) =>
@@ -236,15 +263,37 @@ export default {
   },
   created() {
     this.fetchInventories();
+    if (this.isEdit) {
+      this.populateForm();
+    }
   },
   methods: {
+    populateForm() {
+      this.form.procedure_name = this.procedure.procedure_name;
+      this.form.price = this.procedure.price;
+      this.form.is_active = this.procedure.is_active;
+      this.form.status_color = this.procedure.status_color;
+      this.form.procedure_type = this.procedure.procedure_type || "";
+      // Map procedureInventories to the form
+      this.form.selected_inventories =
+        this.procedure.procedureInventories
+          ?.filter((pi) => pi.inventory) // skip null inventories
+          .map((pi) => ({
+            ...pi.inventory,
+            selected_quantity: pi.quantity,
+          })) || [];
+    },
     hideDropdown(type) {
       setTimeout(() => {
         if (type === "inventory") this.showInventoryDropdown = false;
       }, 150);
     },
     toggleInventory(item) {
-      this.form.selected_inventories.push({ ...item, selected_quantity: 1 });
+      const exists = this.form.selected_inventories.find(
+        (i) => i.inventory_id === item.inventory_id
+      );
+      if (!exists)
+        this.form.selected_inventories.push({ ...item, selected_quantity: 1 });
       this.searchInventoryQuery = "";
       this.showInventoryDropdown = false;
     },
@@ -252,58 +301,50 @@ export default {
       this.form.selected_inventories.splice(index, 1);
     },
     async fetchInventories() {
-      this.loading = true;
-      this.error = null;
       try {
         const response = await axios.get(
           process.env.VUE_APP_API_BASE_URL + "/inventory/get-inventory"
         );
         this.inventories = response.data;
       } catch (err) {
-        this.error = err.message || "Failed to fetch inventories";
-        toast.error(this.error);
-      } finally {
-        this.loading = false;
+        toast.error("Failed to fetch inventories");
       }
     },
     async submitData() {
-      const formEl = this.$refs.procedureForm;
-      if (!formEl.checkValidity()) {
-        formEl.reportValidity();
-        return;
-      }
+      const payload = {
+        procedure_name: this.form.procedure_name,
+        price: parseFloat(this.form.price),
+        inventory_ids: this.form.selected_inventories.map((i) => ({
+          inventory_id: i.inventory_id,
+          quantity: i.selected_quantity,
+        })),
+        is_active:
+          this.form.is_active === true || this.form.is_active === "true",
+        status_color: this.form.status_color,
+        procedure_type: this.form.procedure_type, // <-- added
+      };
 
       try {
-        const payload = {
-          procedure_name: this.form.procedure_name,
-          price: parseFloat(this.form.price),
-          inventory_ids: this.form.selected_inventories.map((i) => ({
-            inventory_id: i.inventory_id,
-            quantity: i.selected_quantity,
-          })),
-          inventory_id: this.form.selected_inventories[0]?.inventory_id || null, // first inventory
-          is_active:
-            this.form.is_active === true || this.form.is_active === "true",
-          status_color: this.form.status_color,
-        };
-
-        await axios.post(
-          process.env.VUE_APP_API_BASE_URL +
-            "/price-procedure/add-price-procedure",
-          payload
-        );
-
-        console.log("Send to Database ", payload);
-        toast.success("Procedure added successfully!");
+        if (this.isEdit) {
+          await axios.patch(
+            process.env.VUE_APP_API_BASE_URL +
+              `/price-procedure/update/${this.procedure.price_procedure_id}`,
+            payload
+          );
+          toast.success("Procedure updated successfully!");
+        } else {
+          await axios.post(
+            process.env.VUE_APP_API_BASE_URL +
+              "/price-procedure/add-price-procedure",
+            payload
+          );
+          toast.success("Procedure added successfully!");
+        }
         new Audio(require("@/assets/add.mp3")).play();
-
         this.$emit("refresh");
         this.$emit("close");
-      } catch (error) {
-        toast.error(
-          error.response?.data?.message || "Failed to add procedure."
-        );
-        console.error(error);
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Failed to save procedure.");
       }
     },
   },

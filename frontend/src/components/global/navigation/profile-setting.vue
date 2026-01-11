@@ -18,10 +18,11 @@
       </router-link> -->
 
       <div
+        @click="toggleOpenLogout"
         class="flex items-center hover:bg-blue-500 hover:text-white rounded-md w-auto p-2 py-1 ml-2 gap-2"
       >
         <icon name="logout" />
-        <div @click="toggleOpenLogout">Logout</div>
+        <div>Logout</div>
       </div>
     </div>
   </div>

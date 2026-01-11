@@ -6,7 +6,7 @@
       <form
         @submit.prevent="submitData"
         ref="patientForm"
-        class="w-auto bg-white text-[13px] rounded-[15px] shadow-l p-0.5"
+        class="bg-white text-[13px] rounded-[15px] shadow-l p-0.5 w-[40vw]"
       >
         <!-- Header -->
         <div
@@ -24,109 +24,114 @@
         </div>
 
         <!-- Form Body -->
-        <div class="p-5 w-[30vw] space-y-3">
-          <!-- Issued Date -->
-          <div class="w-full space-y-1.5 text-left flex-col">
-            <label for="issued_date" class="font-bold">Issued Date:</label>
-            <input
-              v-model="form.issued_date"
-              type="date"
-              id="issued_date"
-              required
-              class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-            />
-          </div>
-
-          <!-- Patient Dropdown -->
-          <div class="w-full space-y-1.5 text-left relative">
-            <label for="patient_id" class="font-bold">Patient:</label>
-            <input
-              v-model="searchPatientQuery"
-              type="text"
-              placeholder="Search patient..."
-              class="px-3 py-3 border w-full border-gray-600 rounded-md text-md text-gray-800"
-              @focus="showPatientDropdown = true"
-              @blur="hideDropdown('patient')"
-            />
-            <div
-              v-if="showPatientDropdown"
-              class="absolute left-0 top-full w-full bg-white border border-gray-300 rounded-md max-h-40 overflow-y-auto z-10"
-            >
-              <div v-if="filteredPatients.length > 0">
-                <div
-                  v-for="dentalChart in filteredPatients"
-                  :key="dentalChart.dental_id"
-                  class="px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                  @mousedown="toggleDentalSelection(dentalChart)"
-                >
-                  <div class="flex gap-1 items-start">
-                    <input
-                      type="checkbox"
-                      :checked="form.user_id.includes(dentalChart.dental_id)"
-                      class="mr-2 mt-2"
-                    />
-                    <div class="flex flex-col">
-                      <div>
-                        {{ dentalChart.patient?.last_name }},
-                        {{ dentalChart.patient?.first_name }}
-                        {{ dentalChart.patient?.middle_name }} -
-                        {{ dentalChart.tooth_number }} -
-                        {{ dentalChart.status }}
+        <div class="p-5 space-y-3">
+          <div class="flex items-center gap-2">
+            <!-- Patient Dropdown -->
+            <div class="w-full space-y-1.5 text-left relative">
+              <label for="patient_id" class="font-bold">Patient:</label>
+              <input
+                v-model="searchPatientQuery"
+                type="text"
+                placeholder="Search patient..."
+                class="px-3 py-3 border w-full border-gray-600 rounded-md text-md text-gray-800"
+                @focus="showPatientDropdown = true"
+                @blur="hideDropdown('patient')"
+              />
+              <div
+                v-if="showPatientDropdown"
+                class="absolute left-0 top-full w-full bg-white border border-gray-300 rounded-md max-h-40 overflow-y-auto z-10"
+              >
+                <div v-if="filteredPatients.length > 0">
+                  <div
+                    v-for="dentalChart in filteredPatients"
+                    :key="dentalChart.dental_id"
+                    class="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                    @mousedown="toggleDentalSelection(dentalChart)"
+                  >
+                    <div class="flex gap-1 items-start">
+                      <input
+                        type="checkbox"
+                        :checked="form.user_id.includes(dentalChart.dental_id)"
+                        class="mr-2 mt-2"
+                      />
+                      <div class="flex flex-col">
+                        <div>
+                          {{ dentalChart.patient?.last_name }},
+                          {{ dentalChart.patient?.first_name }}
+                          {{ dentalChart.patient?.middle_name }} -
+                          <!-- {{ dentalChart.tooth_number }} - -->
+                          {{ dentalChart.status }}
+                        </div>
+                        <span class="italic text-gray-600">
+                          {{ formatDate(dentalChart.procedure_date) }}
+                        </span>
                       </div>
-                      <span class="italic text-gray-600">
-                        {{ formatDate(dentalChart.procedure_date) }}
-                      </span>
                     </div>
                   </div>
                 </div>
+                <div v-else class="px-3 py-2 text-gray-500 italic">
+                  No results found
+                </div>
               </div>
-              <div v-else class="px-3 py-2 text-gray-500 italic">
-                No results found
+
+              <!-- Selected Patients Display -->
+              <div v-if="form.user_id.length > 0" class="mt-2 space-y-2">
+                <div
+                  v-for="id in form.user_id"
+                  :key="id"
+                  class="flex justify-between items-center border border-green-300 bg-white shadow-sm rounded-lg px-4 py-3"
+                >
+                  <div class="text-sm text-gray-800 font-medium">
+                    {{ getPatientName(id) }}
+                    <!-- <div class="text-xs text-gray-500 whitespace-pre-line">
+                    {{ getToothInfo(id) }}
+                  </div> -->
+                  </div>
+                  <button
+                    type="button"
+                    @click="removeDentalSelection(id)"
+                    class="text-red-500 text-xs hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             </div>
-
-            <!-- Selected Patients Display -->
-            <div v-if="form.user_id.length > 0" class="mt-2 space-y-2">
-              <div
-                v-for="id in form.user_id"
-                :key="id"
-                class="flex justify-between items-center border border-green-300 bg-white shadow-sm rounded-lg px-4 py-3"
-              >
-                <div class="text-sm text-gray-800 font-medium">
-                  {{ getPatientName(id) }}
-                  <div class="text-xs text-gray-500 whitespace-pre-line">
-                    {{ getToothInfo(id) }}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  @click="removeDentalSelection(id)"
-                  class="text-red-500 text-xs hover:underline"
-                >
-                  Remove
-                </button>
-              </div>
+            <!-- Issued Date -->
+            <div class="w-full space-y-1.5 text-left flex-col">
+              <label for="issued_date" class="font-bold">Issued Date:</label>
+              <input
+                v-model="form.issued_date"
+                type="date"
+                id="issued_date"
+                required
+                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+              />
             </div>
           </div>
 
           <!-- Prescribe Medication -->
-          <div class="flex flex-col gap-2">
-            <div class="w-full space-y-2 text-left flex flex-col relative">
-              <label class="font-bold">Prescribe Medication:</label>
+          <div class="flex flex-col gap-2 relative">
+            <div class="w-full flex flex-col space-y-2">
+              <label class="font-bold text-gray-700"
+                >Prescribe Medication:</label
+              >
 
+              <!-- Search Input -->
               <input
                 type="text"
                 v-model="searchMedicationQuery"
                 @focus="showMedicationDropdown = true"
                 @blur="hideDropdown('medication')"
-                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+                class="w-full border px-3 py-3.5 border-gray-400 rounded-md text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 placeholder="Search medication..."
               />
 
-              <!-- Manual Medication Dropdown -->
+              <!-- Dropdown -->
               <div
                 v-if="showMedicationDropdown"
-                class="absolute left-0 top-full z-30 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto w-full mt-1"
+                class="absolute top-16 left-0 z-30 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto w-full"
+                @mouseleave="showMedicationDropdown = false"
               >
                 <div
                   v-for="(med, index) in filteredManualMedications"
@@ -138,9 +143,9 @@
                     <span class="font-semibold text-gray-800">{{
                       med.name
                     }}</span>
-                    <span class="text-xs text-gray-600 italic">
-                      {{ med.type }} • {{ med.dosage }}
-                    </span>
+                    <span class="text-xs text-gray-500 italic"
+                      >{{ med.type }} • {{ med.dosage }}</span
+                    >
                   </div>
                 </div>
 
@@ -155,39 +160,77 @@
               <!-- Selected Medications -->
               <div
                 v-if="form.prescribe_medications.length > 0"
-                class="mt-2 space-y-2"
+                class="mt-2 space-y-3 max-h-[25vh] overflow-auto"
               >
                 <div
                   v-for="(med, index) in form.prescribe_medications"
                   :key="index"
-                  class="flex justify-between items-center border border-green-300 bg-white shadow-sm rounded-lg px-4 py-2"
+                  class="flex flex-col border border-green-300 bg-white shadow-sm rounded-lg p-3 gap-3"
                 >
-                  <div class="flex flex-col w-full text-sm">
-                    <div class="flex justify-between items-center">
-                      <span>
-                        {{ med.name }}
-                        <span class="text-xs text-gray-500">
-                          ({{ med.type }} • {{ med.dosage }})
-                        </span>
-                      </span>
+                  <div class="flex justify-between items-center">
+                    <!-- Medication Info -->
+                    <div class="flex-1 w-[250px] text-sm">
+                      <span class="font-medium text-gray-800">{{
+                        med.name
+                      }}</span>
+                      <span class="text-xs text-gray-500"
+                        >({{ med.type }} • {{ med.dosage }})</span
+                      >
+                    </div>
+                    <!-- Remove Button -->
+                    <button
+                      type="button"
+                      @click="removeManualMedication(index)"
+                      class="text-red-500 text-xs hover:underline mt-2 md:mt-0"
+                    >
+                      <icon name="delete1" class="w-4" />
+                    </button>
+                  </div>
 
+                  <!-- Inputs -->
+                  <div
+                    class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 w-full"
+                  >
+                    <div class="flex flex-col">
+                      <label class="text-xs text-gray-500">PCS</label>
                       <input
                         type="number"
-                        min="1"
-                        class="border rounded px-2 py-1 w-[70px] text-sm"
+                        class="border rounded-full px-2 py-1 text-sm"
                         v-model.number="med.pcs"
                         placeholder="pcs"
                       />
                     </div>
-                  </div>
 
-                  <button
-                    type="button"
-                    @click="removeManualMedication(index)"
-                    class="ml-3 text-red-500 text-xs hover:underline"
-                  >
-                    Remove
-                  </button>
+                    <div class="flex flex-col">
+                      <label class="text-xs text-gray-500">Duration</label>
+                      <input
+                        type="text"
+                        class="border rounded-full px-2 py-1 text-sm w-full"
+                        v-model="med.duration"
+                        placeholder="days"
+                      />
+                    </div>
+
+                    <div class="flex flex-col">
+                      <label class="text-xs text-gray-500">Frequencies</label>
+                      <input
+                        type="text"
+                        class="border rounded-full px-2 py-1 text-sm w-full"
+                        v-model="med.frequencies"
+                        placeholder="times/day"
+                      />
+                    </div>
+
+                    <div class="flex flex-col">
+                      <label class="text-xs text-gray-500">Preparation</label>
+                      <input
+                        type="text"
+                        class="border rounded-full px-2 py-1 text-sm w-full"
+                        v-model="med.preparation"
+                        placeholder="before/after meal"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -345,6 +388,9 @@ export default {
           type: med.type,
           dosage: med.dosage,
           pcs: 1,
+          duration: med.duration,
+          frequencies: med.frequencies,
+          preparation: med.preparation,
         });
       } else {
         toast.info(`${med.name} already selected`);
@@ -364,13 +410,13 @@ export default {
       const { last_name, first_name, middle_name } = chart.patient;
       return `${last_name}, ${first_name} ${middle_name || ""}`;
     },
-    getToothInfo(id) {
-      const chart = this.dentalCharts.find((c) => c.dental_id === id);
-      if (!chart || !Array.isArray(chart.teeth)) return "No tooth info";
-      return chart.teeth
-        .map((tooth) => `Tooth ${tooth.tooth_number} - ${tooth.status}`)
-        .join(", ");
-    },
+    // getToothInfo(id) {
+    //   const chart = this.dentalCharts.find((c) => c.dental_id === id);
+    //   if (!chart || !Array.isArray(chart.teeth)) return "No tooth info";
+    //   return chart.teeth
+    //     .map((tooth) => `Tooth ${tooth.tooth_number} - ${tooth.status}`)
+    //     .join(", ");
+    // },
     isExpired(date) {
       if (!date) return false;
       return dayjs(date).isBefore(dayjs().startOf("day"));
@@ -450,6 +496,11 @@ export default {
 
       // Validate pcs for each medication
       for (const med of this.form.prescribe_medications) {
+        // Set pcs same as duration, frequencies, and preparation for saving
+        med.pcs = med.duration || 1; // or use any logic you want
+        med.frequencies = med.frequencies || 1;
+        med.preparation = med.preparation || "N/A";
+
         const pcsNumber = Number(med.pcs);
         if (!pcsNumber || pcsNumber <= 0) {
           toast.warning(`Please enter a valid quantity for ${med.name}`);
@@ -479,6 +530,9 @@ export default {
             name: med.name,
             type: med.type,
             dosage: med.dosage,
+            duration: med.duration,
+            frequencies: med.frequencies,
+            preparation: med.preparation,
             pcs: Number(med.pcs),
             issued_date: issuedDate,
           })),
@@ -508,6 +562,7 @@ export default {
         );
       }
     },
+
     async fetchUser() {
       try {
         const response = await axios.get(

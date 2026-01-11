@@ -28,15 +28,15 @@
           <!-- Patient Info -->
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-gray-600 font-medium mb-1"
-                >Patient Name</label
-              >
+              <label class="block text-gray-600 font-medium mb-1">
+                Patient Name
+              </label>
               <div class="font-semibold">{{ patientFullName }}</div>
             </div>
             <div class="text-right">
-              <label class="block text-gray-600 font-medium mb-1"
-                >Payment Status</label
-              >
+              <label class="block text-gray-600 font-medium mb-1">
+                Payment Status
+              </label>
               <div class="flex justify-end items-center gap-3">
                 <span
                   v-if="!isEditingStatus"
@@ -65,50 +65,111 @@
             </div>
           </div>
 
+          <!-- Payment Type -->
+          <div class="grid grid-cols-2 gap-4 items-end">
+            <div>
+              <label class="block text-gray-600 font-medium mb-1">
+                Payment Type
+              </label>
+              <select
+                v-model="form.payment_type"
+                @change="updatePaymentAndGuarantor"
+                class="border border-gray-300 rounded-md px-3 py-1 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Cash">Cash</option>
+                <option value="Credit">Credit</option>
+              </select>
+            </div>
+
+            <!-- HMO / Guarantor -->
+            <div v-if="form.payment_type === 'Credit'" class="relative">
+              <label class="block text-gray-600 font-medium mb-1">
+                HMO / Guarantor
+              </label>
+              <input
+                type="text"
+                v-model="searchQuery"
+                @focus="showDropdown = true"
+                @input="showDropdown = true"
+                @blur="hideDropdown"
+                placeholder="Search HMO / Guarantor..."
+                class="border border-gray-300 rounded-md px-3 py-1 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+
+              <ul
+                v-show="showDropdown && filteredData.length"
+                class="absolute z-50 bg-white border border-gray-300 rounded-md w-full mt-1 max-h-48 overflow-y-auto shadow-lg"
+              >
+                <li
+                  v-for="item in filteredData"
+                  :key="item.hmo_guarantor_id"
+                  @mousedown.prevent="selectGuarantor(item)"
+                  class="px-3 py-2 cursor-pointer hover:bg-blue-100"
+                >
+                  {{ item.first_name }} {{ item.middle_name }}
+                  {{ item.last_name }} - {{ item.company }}
+                </li>
+              </ul>
+            </div>
+          </div>
+
           <!-- Tooth Procedure -->
           <div v-if="form.teeth?.length">
             <label class="block text-gray-600 font-semibold mb-2">
               Tooth Procedure Details
             </label>
             <div
-              class="border border-gray-200 rounded-lg overflow-hidden divide-y"
+              class="border border-gray-200 rounded-lg max-h-[40vh] overflow-y-auto"
             >
-              <div
-                v-for="(tooth, index) in form.teeth"
-                :key="index"
-                class="flex justify-between items-center px-4 py-3"
-              >
-                <div>
-                  <div class="font-medium">Tooth #{{ tooth.tooth_number }}</div>
-                  <div class="text-gray-500 text-xs">
-                    <span v-if="tooth.priceProcedure">
-                      {{ tooth.priceProcedure.procedure_name }}
-                    </span>
-                    <span v-else class="italic text-gray-400">
-                      No procedure assigned
-                    </span>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <div class="text-xs text-gray-500">Procedure Fee</div>
-                  <div class="text-green-700 font-semibold">
-                    ₱{{
-                      tooth.priceProcedure
-                        ? parseFloat(tooth.priceProcedure.price).toFixed(2)
-                        : "0.00"
-                    }}
-                  </div>
-                </div>
-              </div>
-              <!-- Procedures Total -->
-              <div
-                class="flex justify-between items-center px-4 py-3 bg-gray-50 font-semibold"
-              >
-                <div>Total (Procedures)</div>
-                <div class="text-green-700">
-                  ₱{{ procedureTotal.toFixed(2) }}
-                </div>
-              </div>
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-gray-600 font-medium">
+                      Tooth #
+                    </th>
+                    <th class="px-4 py-2 text-left text-gray-600 font-medium">
+                      Procedure
+                    </th>
+                    <th class="px-4 py-2 text-right text-gray-600 font-medium">
+                      Fee (₱)
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  <tr
+                    v-for="(tooth, index) in form.teeth"
+                    :key="index"
+                    class="hover:bg-gray-50"
+                  >
+                    <td class="px-4 py-3 font-medium">
+                      #{{ tooth.tooth_number }}
+                    </td>
+                    <td class="px-4 py-3 text-gray-500">
+                      <span v-if="tooth.priceProcedure">
+                        {{ tooth.priceProcedure.procedure_name }}
+                      </span>
+                      <span v-else class="italic text-gray-400">
+                        No procedure assigned
+                      </span>
+                    </td>
+                    <td
+                      class="px-4 py-3 text-right text-green-700 font-semibold"
+                    >
+                      ₱{{
+                        tooth.priceProcedure
+                          ? Number(tooth.priceProcedure.price).toLocaleString(
+                              "en-PH",
+                              {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }
+                            )
+                          : "0.00"
+                      }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -118,7 +179,12 @@
               Grand Total Payment
             </label>
             <span class="text-2xl font-bold text-green-600">
-              ₱{{ totalPayment.toFixed(2) }}
+              ₱{{
+                totalPayment.toLocaleString("en-PH", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
+              }}
             </span>
           </div>
         </div>
@@ -144,7 +210,6 @@ import { toast } from "vue3-toastify";
 import axios from "axios";
 import { useFetchDataStore } from "@/store/fetch-data-store";
 import dayjs from "dayjs";
-import { toRaw } from "vue";
 
 export default {
   name: "PatientBillingSummary",
@@ -154,11 +219,15 @@ export default {
   data() {
     return {
       isEditingStatus: false,
+      searchQuery: "",
+      showDropdown: false,
+      selectedGuarantor: null,
       form: {
         dental_ids: [],
         patient_id: "",
         dentist_id: "",
         payment_status: "For Payment",
+        payment_type: "Cash",
         issued_date: dayjs().format("YYYY-MM-DD"),
         instruction: "",
         patient_payment: 0,
@@ -172,12 +241,7 @@ export default {
     patientFullName() {
       const patient = this.record?.dentalChart?.patient;
       if (!patient) return "No patient info";
-
-      const firstName = patient.first_name || "";
-      const middleName = patient.middle_name || "";
-      const lastName = patient.last_name || "";
-
-      return `${lastName}, ${firstName} ${middleName}`.trim();
+      return `${patient.last_name}, ${patient.first_name} ${patient.middle_name}`.trim();
     },
     procedureTotal() {
       return this.form.teeth.reduce((sum, tooth) => {
@@ -190,6 +254,17 @@ export default {
     totalPayment() {
       return this.procedureTotal;
     },
+    filteredData() {
+      const query = this.searchQuery.toLowerCase().trim();
+      if (!query) return this.fetchDataStore.hmoGuarantors || [];
+      return this.fetchDataStore.hmoGuarantors.filter(
+        (item) =>
+          item.first_name.toLowerCase().includes(query) ||
+          item.middle_name.toLowerCase().includes(query) ||
+          item.last_name.toLowerCase().includes(query) ||
+          item.company.toLowerCase().includes(query)
+      );
+    },
   },
 
   watch: {
@@ -197,47 +272,69 @@ export default {
       handler(newRecord) {
         if (!newRecord) return;
 
-        this.form.issued_date =
-          dayjs(newRecord?.dentalChart?.created_at).format("YYYY-MM-DD") || "";
-        this.form.dental_ids = [newRecord.dentalChart?.dental_id].filter(
-          Boolean
-        );
-
         this.form.payment_status = newRecord?.payment_status || "For Payment";
+        this.form.payment_type = newRecord?.payment_type || "Cash";
         this.form.instruction = newRecord?.instruction || "";
         this.form.teeth = newRecord?.dentalChart?.teeth || [];
-
         this.form.patient_payment = this.totalPayment;
+
+        if (newRecord?.hmoGuarantor) {
+          this.selectedGuarantor = newRecord.hmoGuarantor;
+          this.searchQuery = `${this.selectedGuarantor.first_name} ${this.selectedGuarantor.middle_name} ${this.selectedGuarantor.last_name} - ${this.selectedGuarantor.company}`;
+        }
       },
       immediate: true,
     },
   },
 
   methods: {
+    selectGuarantor(item) {
+      this.selectedGuarantor = item;
+      this.searchQuery = `${item.first_name} ${item.middle_name} ${item.last_name} - ${item.company}`;
+      this.showDropdown = false;
+      this.updatePaymentAndGuarantor();
+    },
+    hideDropdown() {
+      setTimeout(() => (this.showDropdown = false), 150);
+    },
+    async updatePaymentAndGuarantor() {
+      try {
+        const payload = {
+          payment_type: this.form.payment_type,
+          hmo_guarantor_id: this.selectedGuarantor?.hmo_guarantor_id || null,
+        };
+        await axios.patch(
+          `${process.env.VUE_APP_API_BASE_URL}/prescription/update-by-chart/${this.record?.dentalChart?.dental_id}`,
+          payload
+        );
+        toast.success("Payment type and HMO/Guarantor updated successfully!");
+        this.$emit("refresh");
+      } catch (error) {
+        console.error(error.response?.data || error.message);
+        toast.error("Failed to update Payment Type or HMO/Guarantor.");
+      }
+    },
     async updatePaymentStatus() {
       try {
         const payload = {
           payment_status: this.form.payment_status,
           patient_payment: this.form.patient_payment,
           issued_date: this.form.issued_date,
+          payment_type: this.form.payment_type,
+          hmo_guarantor_id: this.selectedGuarantor?.hmo_guarantor_id || null,
         };
-
         await axios.patch(
-          process.env.VUE_APP_API_BASE_URL +
-            `/prescription/update-by-chart/${this.record?.dentalChart?.dental_id}`,
+          `${process.env.VUE_APP_API_BASE_URL}/prescription/update-by-chart/${this.record?.dentalChart?.dental_id}`,
           payload
         );
-
         toast.success("Payment status updated");
-        new Audio(require("@/assets/add.mp3")).play();
         this.isEditingStatus = false;
         this.$emit("refresh");
       } catch (error) {
-        console.error("Update error:", error);
+        console.error(error);
         toast.error("Failed to update payment status.");
       }
     },
-
     async submitData() {
       const form = this.$refs.patientForm;
       if (!form.checkValidity()) {
@@ -249,24 +346,23 @@ export default {
         prescription_id: this.record?.prescription?.prescription_id,
         dental_chart_id: this.record?.dentalChart?.dental_id,
         payment_status: this.form.payment_status,
+        payment_type: this.form.payment_type,
+        patient_payment: this.form.patient_payment,
         issued_date: this.form.issued_date,
         instruction: this.form.instruction,
-        patient_payment: this.form.patient_payment,
+        hmo_guarantor_id: this.selectedGuarantor?.hmo_guarantor_id || null,
       };
 
       try {
         await axios.patch(
-          process.env.VUE_APP_API_BASE_URL +
-            `/prescription/update-by-chart/${payload.dental_chart_id}`,
+          `${process.env.VUE_APP_API_BASE_URL}/prescription/update-by-chart/${payload.dental_chart_id}`,
           payload
         );
-
         toast.success("Prescription updated successfully!");
-        new Audio(require("@/assets/add.mp3")).play();
         this.$emit("refresh");
         this.$emit("close");
       } catch (error) {
-        console.error("Submit error:", error.response?.data || error.message);
+        console.error(error.response?.data || error.message);
         toast.error("Failed to update prescription.");
       }
     },
@@ -274,9 +370,7 @@ export default {
 
   async mounted() {
     await this.fetchDataStore.fetchDentalChart();
-    console.log("Record:", toRaw(this.record));
-    console.log("dentalChart:", toRaw(this.record?.dentalChart));
-    console.log("teeth:", toRaw(this.record?.dentalChart?.teeth));
+    await this.fetchDataStore.fetchHMOGuarantors();
   },
 };
 </script>

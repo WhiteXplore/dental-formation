@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="text-sm flex justify-between">
         <div class="text-[13px] text-text mt-4 font-regular">
-          Pages / Price Procedure
+          Pages / Patient History
         </div>
 
         <button
@@ -68,7 +68,7 @@
                 >
                   <tr>
                     <th
-                      class="w-10 px-4 py-2 text-left rounded-tl-lg font-normal"
+                      class="w-52 px-4 py-2 text-left rounded-tl-lg font-normal"
                     >
                       Transaction ID
                     </th>
@@ -77,7 +77,7 @@
                     </th>
                     <th class="px-4 py-3 text-left font-normal">Dentist</th>
                     <th class="px-4 py-3 text-left font-normal">Issued Date</th>
-                    <th class="px-4 py-3 text-left rounded-tr-lg font-normal">
+                    <th class="px-4 py-3 text-center rounded-tr-lg font-normal">
                       Actions
                     </th>
                   </tr>

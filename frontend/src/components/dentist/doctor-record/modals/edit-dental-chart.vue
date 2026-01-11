@@ -210,6 +210,89 @@
               ></textarea>
             </div>
 
+            <div class="flex flex-col gap-2 relative">
+              <label class="font-bold"
+                >Select Additional Inventory Items:</label
+              >
+              <input
+                type="text"
+                v-model="searchInventoryQuery"
+                @focus="showInventoryDropdown = true"
+                @blur="hideDropdown('inventory')"
+                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+                placeholder="Search inventory..."
+              />
+
+              <!-- Dropdown -->
+              <div
+                v-if="showInventoryDropdown"
+                class="absolute left-0 top-full z-30 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto w-full mt-1"
+              >
+                <div
+                  v-for="item in filteredInventories"
+                  :key="item.inventory_id"
+                  class="p-3 hover:bg-blue-50 cursor-pointer flex justify-between items-center border-b"
+                  @mousedown.prevent="toggleInventory(item)"
+                >
+                  <div class="flex flex-col">
+                    <span class="font-semibold text-gray-800">{{
+                      item.name
+                    }}</span>
+                    <span class="text-xs text-gray-600 italic"
+                      >{{ item.type }} • {{ item.quantity }}
+                      {{ item.unit }}</span
+                    >
+                  </div>
+                </div>
+                <div
+                  v-if="filteredInventories.length === 0"
+                  class="p-3 text-gray-500 italic text-center text-sm"
+                >
+                  No inventory found
+                </div>
+              </div>
+
+              <!-- Selected Inventories -->
+              <div
+                v-if="form.selected_inventories.length > 0"
+                class="mt-2 space-y-2"
+              >
+                <div
+                  v-for="(item, index) in form.selected_inventories"
+                  :key="item.inventory_id"
+                  class="flex justify-between items-center border border-green-300 bg-white shadow-sm rounded-lg px-4 py-2"
+                >
+                  <div class="flex flex-col w-full text-sm">
+                    <div class="flex justify-between items-center">
+                      <span>
+                        {{ item.name }}
+                        <span class="text-xs text-gray-500"
+                          >({{ item.type }} • {{ item.quantity }}
+                          {{ item.unit }})</span
+                        >
+                      </span>
+
+                      <input
+                        type="number"
+                        min="1"
+                        class="border rounded px-2 py-1 w-[70px] text-sm"
+                        v-model.number="item.selected_quantity"
+                        placeholder="pcs"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    @click="removeInventory(index)"
+                    class="ml-3 text-red-500 text-xs hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div class="tracking-wide flex justify-end gap-2 mt-4">
               <button
                 type="button"
@@ -252,6 +335,91 @@ export default {
       default: null,
     },
   },
+
+  data() {
+    return {
+      user: null,
+      form: {
+        patient_id: "",
+        user_id: "",
+        price_procedure_id: "",
+        scheduled_date: "",
+        appointment_status: "",
+        appointment_time: "",
+        medical_history: "",
+        procedure_notes: "",
+        procedure_date: new Date().toISOString().slice(0, 10),
+        selected_teeth: [],
+        selected_inventories: [], // ✅ ADD THIS
+      },
+      searchInventoryQuery: "",
+      showInventoryDropdown: false,
+
+      searchPatientQuery: "",
+      showPatientDropdown: false,
+      selectedTeeth: [],
+      xrayFile: null,
+      xrayPreview: null,
+      toothStatusMap: {},
+      toothRows: [
+        [55, 54, 53, 52, 51, 61, 62, 63, 64, 65],
+        [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28],
+        [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38],
+        [85, 84, 83, 82, 81, 71, 72, 73, 74, 75],
+      ],
+      inventories: [],
+    };
+  },
+  computed: {
+    ...mapState(useFetchDataStore, ["appointments", "prices", "inventories"]),
+    filteredPatients() {
+      const query = this.searchPatientQuery.toLowerCase();
+      if (!query) return this.appointments;
+      return this.appointments.filter((a) =>
+        `${a.patient.last_name}, ${a.patient.first_name} ${
+          a.patient.middle_name || ""
+        }`
+          .toLowerCase()
+          .includes(query)
+      );
+    },
+    filteredInventories() {
+      const query = this.searchInventoryQuery.toLowerCase();
+
+      return this.inventories.filter((inv) => {
+        // hide already selected inventories
+        const alreadySelected = this.form.selected_inventories.some(
+          (i) => i.inventory_id === inv.inventory_id
+        );
+
+        if (alreadySelected) return false;
+
+        if (!query) return true;
+
+        return (
+          inv.name.toLowerCase().includes(query) ||
+          inv.type.toLowerCase().includes(query)
+        );
+      });
+    },
+
+    statusColors() {
+      const colors = {};
+      this.prices.forEach((p) => {
+        if (p.is_active) {
+          colors[p.price_procedure_id] = p.status_color;
+        }
+      });
+      return colors;
+    },
+    procedureNameMap() {
+      const map = {};
+      this.prices.forEach((p) => {
+        map[p.price_procedure_id] = p.procedure_name;
+      });
+      return map;
+    },
+  },
   watch: {
     existingData: {
       handler(data) {
@@ -291,67 +459,32 @@ export default {
       immediate: true,
     },
   },
-  data() {
-    return {
-      user: null,
-      form: {
-        patient_id: "",
-        user_id: "",
-        price_procedure_id: "",
-        scheduled_date: "",
-        appointment_status: "",
-        appointment_time: "",
-        medical_history: "",
-        procedure_notes: "",
-        procedure_date: new Date().toISOString().slice(0, 10),
-        selected_teeth: [],
-      },
-      searchPatientQuery: "",
-      showPatientDropdown: false,
-      selectedTeeth: [],
-      xrayFile: null,
-      xrayPreview: null,
-      toothStatusMap: {},
-      toothRows: [
-        [55, 54, 53, 52, 51, 61, 62, 63, 64, 65],
-        [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28],
-        [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38],
-        [85, 84, 83, 82, 81, 71, 72, 73, 74, 75],
-      ],
-    };
-  },
-  computed: {
-    ...mapState(useFetchDataStore, ["appointments", "prices"]),
-    filteredPatients() {
-      const query = this.searchPatientQuery.toLowerCase();
-      if (!query) return this.appointments;
-      return this.appointments.filter((a) =>
-        `${a.patient.last_name}, ${a.patient.first_name} ${
-          a.patient.middle_name || ""
-        }`
-          .toLowerCase()
-          .includes(query)
-      );
-    },
-    statusColors() {
-      const colors = {};
-      this.prices.forEach((p) => {
-        if (p.is_active) {
-          colors[p.price_procedure_id] = p.status_color;
-        }
-      });
-      return colors;
-    },
-    procedureNameMap() {
-      const map = {};
-      this.prices.forEach((p) => {
-        map[p.price_procedure_id] = p.procedure_name;
-      });
-      return map;
-    },
-  },
   methods: {
-    ...mapActions(useFetchDataStore, ["fetchAppointments", "fetchPrices"]),
+    ...mapActions(useFetchDataStore, [
+      "fetchAppointments",
+      "fetchPrices",
+      "fetchInventories",
+    ]),
+    toggleInventory(item) {
+      const exists = this.form.selected_inventories.some(
+        (i) => i.inventory_id === item.inventory_id
+      );
+
+      if (!exists) {
+        this.form.selected_inventories.push({
+          ...item,
+          selected_quantity: 1,
+        });
+      }
+
+      this.searchInventoryQuery = "";
+      this.showInventoryDropdown = false;
+    },
+
+    removeInventory(index) {
+      this.form.selected_inventories.splice(index, 1);
+    },
+
     selectPatient(appointment) {
       this.form.patient_id = appointment.patient.patient_id;
       // Removed this line to prevent dentist change:

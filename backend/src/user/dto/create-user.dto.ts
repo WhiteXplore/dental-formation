@@ -1,5 +1,11 @@
-// create-user.dto.ts
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  IsNotEmpty,
+  IsArray,
+  IsIn,
+} from 'class-validator';
 
 export class CreateUserDto {
   @IsOptional()
@@ -36,4 +42,19 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   status?: string;
+
+  // 🟦 Dentist schedule fields
+
+  @IsOptional()
+  @IsString()
+  schedule_start?: string; // "09:00"
+
+  @IsOptional()
+  @IsString()
+  schedule_end?: string; // "17:00"
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  available_days?: string[]; // ["Monday","Friday"]
 }

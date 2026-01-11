@@ -7,7 +7,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { ProcedureInventory } from 'src/price-procedure/entities/price-procedure-inventory.entity';
-
+import { AdditionalItems } from 'src/dental-chart/entities/additional_items.entity';
 @Entity('inventory')
 export class Inventory {
   @PrimaryGeneratedColumn()
@@ -36,4 +36,13 @@ export class Inventory {
 
   @OneToMany(() => ProcedureInventory, (ppi) => ppi.inventory)
   procedureInventories: ProcedureInventory[];
+
+  @OneToMany(
+    () => AdditionalItems,
+    (addItems) => addItems.additionalInventory,
+    {
+      cascade: true,
+    },
+  )
+  addItems: AdditionalItems[];
 }

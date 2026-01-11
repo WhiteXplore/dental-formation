@@ -3,8 +3,8 @@
     <h3 class="text-lg font-semibold text-gray-700 mb-3">
       Monthly Income Trend
     </h3>
-    <div class="h-[calc(100%-2rem)]">
-      <canvas ref="incomeChart" class="w-full h-full"></canvas>
+    <div class="flex-grow">
+      <canvas ref="incomeChart" width="400" height="360"></canvas>
     </div>
   </div>
 </template>
@@ -22,7 +22,7 @@ import {
   LineController,
 } from "chart.js";
 import { mapState } from "pinia";
-import { useFetchDataStore } from "@/store/fetch-data-store"; // ✅ adjust path as needed
+import { useFetchDataStore } from "@/store/fetch-data-store"; // adjust path
 import dayjs from "dayjs";
 
 Chart.register(
@@ -38,23 +38,56 @@ Chart.register(
 
 export default {
   name: "MonthlyIncomeTrend",
+
+  props: {
+    filter: {
+      type: Object,
+      default: () => ({ year: null, month: null }),
+    },
+  },
+
   computed: {
     ...mapState(useFetchDataStore, ["medications"]),
+
+    filteredMedications() {
+      if (!Array.isArray(this.medications)) return [];
+
+      return this.medications.filter((item) => {
+        const dateStr = item.issued_date || item.dentalChart?.procedure_date;
+        if (!dateStr) return false;
+
+        const date = new Date(dateStr);
+
+        if (this.filter.year && date.getFullYear() !== Number(this.filter.year))
+          return false;
+        if (
+          this.filter.month &&
+          date.getMonth() + 1 !== Number(this.filter.month)
+        )
+          return false;
+
+        return true;
+      });
+    },
   },
+
   watch: {
-    medications: {
+    filteredMedications: {
       handler() {
         this.renderIncomeChart();
       },
       immediate: true,
     },
   },
+
   methods: {
     renderIncomeChart() {
       const incomePerMonth = {};
 
-      this.medications.forEach((item) => {
+      this.filteredMedications.forEach((item) => {
         const date = item.issued_date || item.dentalChart?.procedure_date;
+        if (!date) return;
+
         const month = dayjs(date).format("MMM");
 
         let toothRevenue = 0;
@@ -75,13 +108,11 @@ export default {
 
         const totalRevenue = toothRevenue + medRevenue;
 
-        if (!incomePerMonth[month]) {
-          incomePerMonth[month] = 0;
-        }
+        if (!incomePerMonth[month]) incomePerMonth[month] = 0;
         incomePerMonth[month] += totalRevenue;
       });
 
-      // Sort months
+      // Sort months in calendar order
       const monthOrder = [
         "Jan",
         "Feb",
@@ -100,11 +131,9 @@ export default {
       const sortedData = sortedMonths.map((m) => incomePerMonth[m]);
 
       const ctx = this.$refs.incomeChart;
+      if (!ctx) return;
 
-      // Destroy existing chart if needed
-      if (this._chartInstance) {
-        this._chartInstance.destroy();
-      }
+      if (this._chartInstance) this._chartInstance.destroy();
 
       this._chartInstance = new Chart(ctx, {
         type: "line",
@@ -123,9 +152,15 @@ export default {
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false, // ← important
           plugins: {
             legend: { position: "top" },
-            title: { display: true, text: "Monthly Income Trend" },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { callback: (val) => `₱${val.toLocaleString()}` },
+            },
           },
         },
       });

@@ -14,7 +14,7 @@
         >
           <div class="flex gap-1 items-center">
             <icon :name="'add-students'" />
-            <h1 class="font-bold tracking-wide text-lg">Add Dental Chart</h1>
+            <h1 class="font-bold tracking-wide text-lg">Add Dental Charssst</h1>
           </div>
           <icon
             :name="'circle-close3'"

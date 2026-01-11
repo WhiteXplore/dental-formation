@@ -61,8 +61,10 @@
                 class="bg-[#34699A] text-white sticky top-0 z-10 tracking-wide"
               >
                 <tr>
-                  <th class="px-4 py-2 text-left font-normal rounded-tl-lg">
-                    #
+                  <th
+                    class="w-10 px-4 py-2 text-left font-normal rounded-tl-lg"
+                  >
+                    No.
                   </th>
                   <th class="px-4 py-2 text-left font-normal">
                     Tooth & Status

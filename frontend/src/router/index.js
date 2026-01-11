@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import LoginView from "@/views/LoginView.vue";
 import globalSidebar from "@/components/global/navigation/sidebar.vue";
-import receptionistSidebar from "../components/receptionist/navigation/sidebar.vue";
+// import receptionistSidebar from "../components/receptionist/navigation/sidebar.vue";
 // import dentistSidebar from "../components/dentist/navigation/sidebar.vue";
 // import adminSidebar from "../components/admin/navigation/sidebar.vue";
 import NotFound from "@/views/404.vue";
@@ -16,13 +16,13 @@ const routes = [
   {
     path: "/receptionist-navigation",
     name: "receptionist-navigation",
-    component: receptionistSidebar,
+    component: globalSidebar,
     children: [
       {
         path: "/receptionist-dashboard",
         name: "receptionist-dashboard",
         component: () =>
-          import("@/components/receptionist/dashboard/dashboard.vue"),
+          import("@/components/receptionist/recep-dashboard/dashboard.vue"),
         meta: { requiresAuth: true, role: "Receptionist" },
       },
 
@@ -34,20 +34,21 @@ const routes = [
         children: [],
         meta: { requiresAuth: true, role: "Receptionist" },
       },
-
       {
         path: "/appointments",
         name: "appointments",
         component: () =>
           import("@/components/receptionist/records/appointment.vue"),
-        children: [],
-        meta: { requiresAuth: true, role: "Receptionist" },
+        meta: {
+          requiresAuth: true,
+          roles: ["Receptionist", "Admin"],
+        },
       },
       {
         path: "/recep-dental-chart",
         name: "recep-dental-chart",
         component: () => import("@/components/receptionist/records/charts.vue"),
-        meta: { requiresAuth: true, role: "Receptionist" },
+        meta: { requiresAuth: true, roles: ["Receptionist", "Admin"] },
       },
       {
         path: "/billing-payments",
@@ -55,7 +56,34 @@ const routes = [
         component: () =>
           import("@/components/receptionist/records/billing.vue"),
         children: [],
+        meta: { requiresAuth: true, roles: ["Receptionist", "Admin"] },
+      },
+
+      {
+        path: "/outpatient-list",
+        name: "outpatient-list",
+        component: () =>
+          import("@/components/receptionist/records/outpatient.vue"),
+        children: [],
+        meta: { requiresAuth: true, roles: ["Receptionist", "Admin"] },
+      },
+      {
+        path: "/dental-certificate",
+        name: "dental-certificate",
+        component: () =>
+          import("@/components/receptionist/records/certificate.vue"),
+        children: [],
         meta: { requiresAuth: true, role: "Receptionist" },
+      },
+      {
+        path: "/monthly-reports",
+        name: "monthly-reports",
+        component: () =>
+          import("@/components/receptionist/records/monthly.vue"),
+        meta: {
+          requiresAuth: true,
+          roles: ["Receptionist", "Admin"],
+        },
       },
     ],
   },
@@ -74,13 +102,19 @@ const routes = [
       },
 
       {
-        path: "/dentist-appointment",
-        name: "dentist-appointment",
+        path: "/dentist-appointments",
+        name: "dentist-appointments",
         component: () =>
-          import("@/components/dentist/doctor-record/appointment.vue"),
+          import("@/components/receptionist/records/appointment.vue"),
+        children: [],
         meta: { requiresAuth: true, role: "Dentist" },
       },
-
+      {
+        path: "/dentist-dental-chart",
+        name: "dentist-dental-chart",
+        component: () => import("@/components/receptionist/records/charts.vue"),
+        meta: { requiresAuth: true, role: "Dentist" },
+      },
       {
         path: "/view-patient",
         name: "view-patient",
@@ -100,6 +134,13 @@ const routes = [
         name: "prescription-medication",
         component: () =>
           import("@/components/dentist/doctor-record/medication.vue"),
+        meta: { requiresAuth: true, role: "Dentist" },
+      },
+      {
+        path: "/monthly-income",
+        name: "monthly-income",
+        component: () =>
+          import("@/components/dentist/doctor-record/monthly-income.vue"),
         meta: { requiresAuth: true, role: "Dentist" },
       },
     ],
@@ -149,6 +190,26 @@ const routes = [
         name: "tracker",
         component: () =>
           import("@/components/admin/admin-record/inventory-tracker.vue"),
+        meta: { requiresAuth: true, role: "Admin" },
+      },
+      {
+        path: "/hmo-guarantors",
+        name: "hmo-guarantors",
+        component: () =>
+          import("@/components/admin/admin-record/hmo-guarantors.vue"),
+        meta: { requiresAuth: true, role: "Admin" },
+      },
+      {
+        path: "/usage-consumption",
+        name: "usage-consumption",
+        component: () => import("@/components/admin/admin-record/usage.vue"),
+        meta: { requiresAuth: true, role: "Admin" },
+      },
+      {
+        path: "/revenue-forcasting",
+        name: "revenue-forcasting",
+        component: () =>
+          import("@/components/admin/admin-record/forcasting.vue"),
         meta: { requiresAuth: true, role: "Admin" },
       },
     ],

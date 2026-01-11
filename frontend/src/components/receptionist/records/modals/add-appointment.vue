@@ -14,7 +14,9 @@
         >
           <div class="flex gap-1 items-center">
             <icon :name="'add-students'" />
-            <h1 class="font-bold tracking-wide text-lg">Add Appointment</h1>
+            <h1 class="font-bold tracking-wide text-lg">
+              {{ isEditMode ? "Edit" : "Add" }} Appointmentss
+            </h1>
           </div>
           <icon
             :name="'circle-close3'"
@@ -25,6 +27,29 @@
 
         <!-- Form Body -->
         <div class="p-5 w-[30vw] space-y-3">
+          <!-- Date and Time -->
+          <div class="flex gap-2 items-center w-full">
+            <div class="w-full space-y-1.5 text-left flex flex-col">
+              <label for="scheduled_date" class="font-bold">Date:</label>
+              <input
+                v-model="form.scheduled_date"
+                type="date"
+                id="scheduled_date"
+                required
+                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+              />
+            </div>
+            <div class="w-full space-y-1.5 text-left flex flex-col">
+              <label for="appointment_time" class="font-bold">Time:</label>
+              <input
+                v-model="form.appointment_time"
+                type="time"
+                id="appointment_time"
+                required
+                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+              />
+            </div>
+          </div>
           <!-- Patient Dropdown -->
           <div class="w-full space-y-1.5 text-left relative">
             <label for="patient_id" class="font-bold">Patient:</label>
@@ -68,37 +93,52 @@
               @focus="showDentistDropdown = true"
               @blur="hideDropdown('dentist')"
             />
+
             <div
               v-if="showDentistDropdown"
               class="absolute left-0 top-full w-full bg-white border border-gray-300 rounded-md max-h-40 overflow-y-auto z-10"
             >
-              <div v-if="filteredDentist.length > 0">
+              <div v-if="filteredDentists.length > 0">
                 <div
-                  v-for="dentist in filteredDentist"
+                  v-for="dentist in filteredDentists"
                   :key="dentist.user_id"
                   class="px-3 py-2 flex justify-between items-center cursor-pointer"
-                  :class="
-                    dentist.doctor_availability === 'available'
-                      ? 'hover:bg-gray-100'
-                      : 'opacity-50 cursor-not-allowed'
-                  "
-                  @mousedown="
-                    dentist.doctor_availability === 'available' &&
-                      selectDentist(dentist)
-                  "
+                  :class="{
+                    'hover:bg-gray-100': dentist.isAvailable,
+                    'opacity-50 cursor-not-allowed': !dentist.isAvailable,
+                  }"
+                  @mousedown.prevent="selectDentist(dentist)"
                 >
-                  <span>
-                    Dr. {{ dentist.last_name }}, {{ dentist.first_name }}
-                    {{ dentist.middle_name }}
-                  </span>
+                  <div class="flex flex-col">
+                    <span>
+                      Dr. {{ dentist.last_name }}, {{ dentist.first_name }}
+                      {{ dentist.middle_name }}
+                    </span>
+                    <div class="flex flex-wrap gap-1 mt-1">
+                      <span
+                        v-for="day in Array.isArray(dentist.available_days)
+                          ? dentist.available_days
+                          : [dentist.available_days]"
+                        :key="day"
+                        class="px-2 py-0.5 rounded-full text-xs font-medium text-white bg-blue-500"
+                      >
+                        {{ day }}
+                      </span>
+                    </div>
+
+                    <span class="text-gray-600 text-sm">
+                      {{ dentist.schedule_start }} - {{ dentist.schedule_end }}
+                    </span>
+                  </div>
+
                   <span
                     :class="
-                      dentist.doctor_availability === 'available'
+                      dentist.isAvailable
                         ? 'text-green-600 font-semibold'
                         : 'text-red-600 font-semibold'
                     "
                   >
-                    ({{ dentist.doctor_availability }})
+                    ({{ dentist.isAvailable ? "available" : "not-available" }})
                   </span>
                 </div>
               </div>
@@ -108,44 +148,12 @@
             </div>
           </div>
 
-          <!-- Date and Time -->
-          <div class="flex gap-2 items-center w-full">
-            <div class="w-full space-y-1.5 text-left flex flex-col">
-              <label for="scheduled_date" class="font-bold">Date:</label>
-              <input
-                v-model="form.scheduled_date"
-                type="date"
-                id="scheduled_date"
-                required
-                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-              />
-            </div>
-            <div class="w-full space-y-1.5 text-left flex flex-col">
-              <label for="appointment_time" class="font-bold">Time:</label>
-              <select
-                v-model="form.appointment_time"
-                id="appointment_time"
-                required
-                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-              >
-                <option disabled value="">Select Time</option>
-                <option
-                  v-for="time in availableTimes"
-                  :key="time"
-                  :value="time"
-                >
-                  {{ time }}
-                </option>
-              </select>
-            </div>
-          </div>
-
           <!-- Appointment Status -->
           <div class="flex flex-col gap-2">
             <div class="w-full space-y-2 text-left flex flex-col">
-              <label for="appointment_status" class="font-bold">
-                Appointment Status:
-              </label>
+              <label for="appointment_status" class="font-bold"
+                >Appointment Status:</label
+              >
               <select
                 v-model="form.appointment_status"
                 required
@@ -170,7 +178,6 @@
             >
               Cancel
             </button>
-
             <button
               class="bg-[#34699A] p-2 px-3 rounded-lg text-white hover:bg-white border hover:border-green-800 hover:text-green-800 hover:shadow-md"
               type="submit"
@@ -181,92 +188,21 @@
         </div>
       </form>
     </div>
-
-    <!-- Conflict Modal -->
     <div
-      v-if="conflictModal"
-      class="fixed inset-0 flex justify-center items-center bg-gray-800 bg-opacity-40 z-50"
+      v-if="showConflictModal"
+      class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
     >
-      <div
-        class="bg-white rounded-2xl shadow-2xl w-[420px] md:w-[550px] p-8 relative overflow-hidden animate-fadeInUp"
-      >
-        <!-- Warning Icon -->
-        <div class="w-full flex justify-center">
-          <div
-            class="flex items-center justify-center w-20 h-20 rounded-full bg-red-100 mb-5 shadow-inner"
+      <div class="bg-white p-5 rounded-md shadow-lg w-[25vw]">
+        <h2 class="font-bold text-lg mb-3">Conflict Warning</h2>
+        <p>{{ conflictMessage }}</p>
+        <div class="flex justify-end mt-4">
+          <button
+            @click="showConflictModal = false"
+            class="bg-[#34699A] text-white px-3 py-2 rounded hover:bg-blue-700"
           >
-            <svg
-              class="w-12 h-12 text-red-600"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <circle cx="12" cy="12" r="10" class="text-red-200" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-          </div>
+            OK
+          </button>
         </div>
-
-        <!-- Title -->
-        <h2
-          class="text-2xl md:text-3xl font-bold text-gray-800 mb-3 text-center tracking-tight"
-        >
-          Schedule Conflict Detected
-        </h2>
-
-        <!-- Message Box -->
-        <div
-          class="w-full px-5 py-3 mb-6 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 text-blue-700 text-center text-sm md:text-base font-medium shadow-sm"
-        >
-          Please select another time with at least a
-          <strong>1-hour interval</strong>.
-        </div>
-
-        <!-- Conflict Details -->
-        <div
-          class="w-full space-y-3 text-gray-700 text-sm md:text-base bg-gray-50 rounded-xl px-5 py-4 border border-gray-200"
-        >
-          <div class="flex justify-between">
-            <span class="font-semibold text-gray-600">Patient:</span>
-            <span class="font-semibold text-gray-900">{{
-              conflictData.patientName
-            }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="font-semibold text-gray-600">Dentist:</span>
-            <span class="font-semibold text-gray-900">{{
-              conflictData.dentistName
-            }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="font-semibold text-gray-600">Date:</span>
-            <span class="font-semibold text-gray-900">{{
-              conflictData.date
-            }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="font-semibold text-gray-600">Time:</span>
-            <span class="font-semibold text-gray-900">{{
-              conflictData.time
-            }}</span>
-          </div>
-        </div>
-
-        <!-- Divider -->
-        <div class="w-full border-t border-gray-200 my-6"></div>
-
-        <!-- Action Button -->
-        <button
-          class="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold w-full py-3 rounded-xl shadow-md hover:scale-[1.02] hover:shadow-lg transition-all duration-300"
-          @click="conflictModal = false"
-        >
-          Okay, Got It
-        </button>
       </div>
     </div>
   </div>
@@ -281,12 +217,22 @@ import { mapState, mapActions } from "pinia";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import isBetween from "dayjs/plugin/isBetween";
+dayjs.extend(isBetween);
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export default {
   name: "AddAppointment",
   components: { icon },
+
+  props: {
+    editData: {
+      type: Object,
+      default: null,
+    },
+  },
+
   data() {
     return {
       form: {
@@ -297,16 +243,29 @@ export default {
         appointment_time: "",
         medical_history: "",
       },
+
       searchPatientQuery: "",
       searchDentistQuery: "",
       showPatientDropdown: false,
       showDentistDropdown: false,
-      conflictModal: false,
-      conflictData: null,
+
+      showConflictModal: false,
+      conflictMessage: "",
+      loggedUser: null,
     };
   },
+
   computed: {
-    ...mapState(useFetchDataStore, ["patients", "dentists", "appointments"]),
+    ...mapState(useFetchDataStore, [
+      "patients",
+      "dentists",
+      "appointments",
+      "medications",
+    ]),
+
+    isEditMode() {
+      return !!this.editData;
+    },
 
     filteredPatients() {
       const query = this.searchPatientQuery.toLowerCase();
@@ -318,32 +277,56 @@ export default {
       );
     },
 
-    filteredDentist() {
+    filteredDentists() {
       const query = this.searchDentistQuery.toLowerCase();
       return this.dentists
         .filter((d) => d.role === "Dentist")
+        .filter(
+          (d) =>
+            d.status !== "Inactive" &&
+            d.status !== "InActive" &&
+            d.status !== "Not Active"
+        ) // <-- exclude inactive dentists
         .filter((d) =>
           `${d.last_name}, ${d.first_name} ${d.middle_name || ""}`
             .toLowerCase()
             .includes(query)
-        );
-    },
+        )
+        .map((d) => {
+          let isAvailable = false;
 
-    availableTimes() {
-      const times = [];
-      let hour = 8;
-      let minute = 0;
-      while (hour < 17 || (hour === 17 && minute === 0)) {
-        const formattedHour = hour.toString().padStart(2, "0");
-        const formattedMinute = minute.toString().padStart(2, "0");
-        times.push(`${formattedHour}:${formattedMinute}`);
-        minute += 30;
-        if (minute === 60) {
-          minute = 0;
-          hour++;
-        }
-      }
-      return times;
+          if (
+            d.doctor_availability === "available" &&
+            d.available_days?.length &&
+            d.schedule_start &&
+            d.schedule_end &&
+            this.form.scheduled_date &&
+            this.form.appointment_time
+          ) {
+            const selectedDay = dayjs(this.form.scheduled_date).format("dddd");
+            const apptTime = dayjs(
+              `${this.form.scheduled_date} ${this.form.appointment_time}`,
+              "YYYY-MM-DD HH:mm"
+            );
+            const startTime = dayjs(
+              `${this.form.scheduled_date} ${d.schedule_start}`,
+              "YYYY-MM-DD HH:mm"
+            );
+            const endTime = dayjs(
+              `${this.form.scheduled_date} ${d.schedule_end}`,
+              "YYYY-MM-DD HH:mm"
+            );
+
+            if (
+              d.available_days.includes(selectedDay) &&
+              apptTime.isBetween(startTime, endTime, null, "[]")
+            ) {
+              isAvailable = true;
+            }
+          }
+
+          return { ...d, isAvailable };
+        });
     },
   },
 
@@ -352,6 +335,7 @@ export default {
       "fetchPatients",
       "fetchDentist",
       "fetchAppointments",
+      "fetchMedications",
     ]),
 
     selectPatient(patient) {
@@ -363,8 +347,10 @@ export default {
     },
 
     selectDentist(dentist) {
-      if (dentist.doctor_availability !== "available") {
-        toast.warning("This dentist is not available.");
+      if (!dentist.isAvailable) {
+        toast.warning(
+          "This dentist is not available for the selected date/time."
+        );
         return;
       }
       this.form.user_id = dentist.user_id;
@@ -380,101 +366,168 @@ export default {
         if (type === "dentist") this.showDentistDropdown = false;
       }, 150);
     },
+    checkDentistConflict() {
+      if (
+        !this.form.user_id ||
+        !this.form.scheduled_date ||
+        !this.form.appointment_time
+      )
+        return false;
 
+      const selectedDateTime = dayjs(
+        `${this.form.scheduled_date} ${this.form.appointment_time}`
+      ).tz("Asia/Manila");
+
+      const dentistAppointments = this.appointments.filter(
+        (appt) => appt.user_id === this.form.user_id
+      );
+
+      for (let appt of dentistAppointments) {
+        // Convert stored UTC date to Manila
+        const apptDateTime = dayjs(appt.scheduled_date)
+          .tz("Asia/Manila")
+          .hour(appt.appointment_time.split(":")[0])
+          .minute(appt.appointment_time.split(":")[1]);
+
+        if (selectedDateTime.isSame(apptDateTime, "day")) {
+          const diffMinutes = Math.abs(
+            selectedDateTime.diff(apptDateTime, "minute")
+          );
+          if (diffMinutes < 120) {
+            this.conflictMessage = `This dentist already has an appointment at ${appt.appointment_time}. Please pick a time at least 2 hours apart.`;
+            return true;
+          }
+        }
+      }
+
+      return false;
+    },
+    // 🚀 ADD + EDIT FUNCTION
     async submitData() {
-      const form = this.$refs.patientForm;
-      if (!form.checkValidity()) {
-        form.reportValidity();
+      const formEl = this.$refs.patientForm;
+      if (!formEl.checkValidity()) {
+        formEl.reportValidity();
         return;
       }
 
-      const inputDate = dayjs(this.form.scheduled_date).format("YYYY-MM-DD");
-      const inputTime = this.form.appointment_time;
-      const dentistId = this.form.user_id;
-      const selectedTime = dayjs(
-        `${inputDate} ${inputTime}`,
-        "YYYY-MM-DD HH:mm"
-      );
+      // Fetch latest appointments
+      await this.fetchAppointments();
 
-      // check 1-hour conflict
-      const conflict = this.appointments.find((a) => {
-        if (a.user_id !== dentistId) return false;
-        const apptTime = dayjs(
-          `${dayjs(a.scheduled_date).format("YYYY-MM-DD")} ${
-            a.appointment_time
-          }`,
-          "YYYY-MM-DD HH:mm"
-        );
-        const diff = Math.abs(apptTime.diff(selectedTime, "minute"));
-        return diff < 60;
-      });
-
-      if (conflict) {
-        const patient = this.patients.find(
-          (p) => p.patient_id === conflict.patient_id
-        );
-        const dentist = this.dentists.find((d) => d.user_id === dentistId);
-        this.conflictData = {
-          patientName: `${patient.last_name}, ${patient.first_name} ${
-            patient.middle_name || ""
-          }`,
-          dentistName: `Dr. ${dentist.last_name}, ${dentist.first_name} ${
-            dentist.middle_name || ""
-          }`,
-          date: dayjs(conflict.scheduled_date).format("YYYY-MM-DD"),
-          time: conflict.appointment_time,
-        };
-        this.conflictModal = true;
+      // Check conflict
+      if (this.checkDentistConflict()) {
+        this.showConflictModal = true;
         return;
       }
 
       try {
-        // ✅ Timezone fix — convert to Manila time before sending
         const manilaDate = dayjs(this.form.scheduled_date)
           .tz("Asia/Manila")
           .format("YYYY-MM-DD");
 
-        await axios.post(
-          process.env.VUE_APP_API_BASE_URL + "/appointment/add-appointment",
-          {
-            ...this.form,
-            scheduled_date: manilaDate,
-          }
-        );
+        if (!this.isEditMode) {
+          await axios.post(
+            process.env.VUE_APP_API_BASE_URL + "/appointment/add-appointment",
+            {
+              ...this.form,
+              scheduled_date: manilaDate,
+            }
+          );
+          toast.success("Appointment added successfully!");
+        } else {
+          await axios.patch(
+            process.env.VUE_APP_API_BASE_URL +
+              `/appointment/${this.editData.appointment_id}`,
+            {
+              ...this.form,
+              scheduled_date: manilaDate,
+              notif_status: null,
+              notif_viewed_at: null,
+            }
+          );
+          toast.success("Appointment updated successfully!");
+        }
 
-        toast.success("Appointment added successfully!");
-        const audio = new Audio(require("@/assets/add.mp3"));
-        audio.play();
+        new Audio(require("@/assets/add.mp3")).play();
         this.$emit("refresh");
         this.$emit("close");
       } catch (error) {
         console.error(error);
-        toast.error("Failed to add appointment.");
+        toast.error("Failed to save appointment.");
+      }
+    },
+    async fetchUser() {
+      try {
+        const response = await axios.get(
+          process.env.VUE_APP_API_BASE_URL + "/auth/me",
+          { withCredentials: true }
+        );
+        if (response.data) this.loggedUser = response.data;
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+      }
+    },
+    setEditForm() {
+      const manilaDate = dayjs(this.editData.scheduled_date)
+        .tz("Asia/Manila")
+        .format("YYYY-MM-DD");
+
+      this.form = {
+        patient_id: this.editData.patient_id,
+        user_id: this.editData.user_id,
+        scheduled_date: manilaDate,
+        appointment_time: this.editData.appointment_time,
+        appointment_status: this.editData.appointment_status,
+        medical_history: this.editData.medical_history,
+      };
+
+      // Auto-fill patient
+      const patient = this.patients.find(
+        (p) => p.patient_id === this.editData.patient_id
+      );
+      if (patient) {
+        this.searchPatientQuery = `${patient.last_name}, ${
+          patient.first_name
+        } ${patient.middle_name || ""}`;
+      }
+
+      // Auto-fill dentist
+      const dentist = this.dentists.find(
+        (d) => d.user_id === this.editData.user_id
+      );
+      if (dentist) {
+        this.searchDentistQuery = `Dr. ${dentist.last_name}, ${
+          dentist.first_name
+        } ${dentist.middle_name || ""}`;
+      }
+
+      // If logged-in user is the same dentist, override to ensure correct selection
+      if (
+        this.loggedUser?.role === "Dentist" &&
+        this.loggedUser.sub === this.editData.user_id
+      ) {
+        this.form.user_id = this.loggedUser.sub;
+        this.searchDentistQuery = `Dr. ${this.loggedUser.last_name}, ${
+          this.loggedUser.first_name
+        } ${this.loggedUser.middle_name || ""}`;
       }
     },
   },
 
-  mounted() {
+  async mounted() {
+    await this.fetchUser(); // fetch logged-in user
     this.fetchPatients();
     this.fetchDentist();
     this.fetchAppointments();
+
+    if (this.isEditMode) {
+      this.setEditForm();
+    } else if (this.loggedUser?.role === "Dentist") {
+      // Auto-fill dentist if logged-in user is dentist
+      this.form.user_id = this.loggedUser.sub;
+      this.searchDentistQuery = `Dr. ${this.loggedUser.last_name}, ${
+        this.loggedUser.first_name
+      } ${this.loggedUser.middle_name || ""}`;
+    }
   },
 };
 </script>
-
-<style scoped>
-@keyframes fadeInUp {
-  from {
-    transform: translateY(40px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.animate-fadeInUp {
-  animation: fadeInUp 0.3s ease-out;
-}
-</style>

@@ -24,6 +24,15 @@ export class PrescribeMedication {
   @Column({ type: 'varchar', length: 255, nullable: true })
   dosage: string; // Medication dosage
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  duration: string; // Medication duration
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  frequencies: string; // Medication frequencies
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  preparation: string; // Medication preparation
+
   @Column({ type: 'int' })
   pcs: number; // Quantity
 

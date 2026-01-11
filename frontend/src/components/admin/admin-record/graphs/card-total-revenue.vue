@@ -38,98 +38,100 @@
 <script>
 import { useFetchDataStore } from "../../../../store/fetch-data-store";
 import { mapState } from "pinia";
-import axios from "axios";
 import icon from "@/assets/icon.vue";
+
 export default {
-  name: "TableDentalChart",
-  components: {
-    icon,
-  },
-  data() {
-    return {
-      currentPage: 1,
-      itemsPerPage: 10,
-      searchQuery: "",
-      isAdd: false,
-      isTable: true,
-      editGroup: null,
-      isEdit: false,
-      isViewMedication: false,
-      selectedPrescriptionId: null,
-      user: null,
-    };
+  name: "CardTotalRevenue",
+
+  components: { icon },
+
+  /* ✅ NEW FILTER PROP */
+  props: {
+    filter: {
+      type: Object,
+      default: () => ({
+        year: null,
+        month: null,
+      }),
+    },
   },
 
   computed: {
     ...mapState(useFetchDataStore, ["medications"]),
 
-    doctorRevenue() {
+    /* ✅ FILTERED MEDICATIONS */
+    filteredMedications() {
       if (!Array.isArray(this.medications)) return [];
 
+      return this.medications.filter((item) => {
+        const dateStr = item?.dentalChart?.procedure_date;
+        if (!dateStr) return false;
+
+        const date = new Date(dateStr);
+
+        if (
+          this.filter.year &&
+          date.getFullYear() !== Number(this.filter.year)
+        ) {
+          return false;
+        }
+
+        if (
+          this.filter.month &&
+          date.getMonth() + 1 !== Number(this.filter.month)
+        ) {
+          return false;
+        }
+
+        return true;
+      });
+    },
+
+    /* ✅ DOCTOR REVENUE (FILTERED) */
+    doctorRevenue() {
       const doctorMap = new Map();
 
-      this.medications.forEach((item) => {
-        const dentalChart = item.dentalChart;
-        const doctor = dentalChart?.user_accounts;
-        const patient = dentalChart?.patient;
-        const teeth = dentalChart?.teeth || [];
-        // const prescribedMedications = item.prescribedMedications || [];
+      this.filteredMedications.forEach((item) => {
+        const chart = item.dentalChart;
+        const doctor = chart?.user_accounts;
+        const patient = chart?.patient;
+        const teeth = chart?.teeth || [];
 
         if (!doctor || !patient) return;
 
-        const doctorId = doctor.user_id;
-        const patientId = patient.patient_id;
-
         const revenueFromTeeth = teeth.reduce((sum, tooth) => {
-          const priceStr = tooth.priceProcedure?.price || "0";
-          return sum + parseFloat(priceStr);
+          return sum + Number(tooth?.priceProcedure?.price || 0);
         }, 0);
 
-        // const revenueFromMeds = prescribedMedications.reduce((sum, med) => {
-        //   const unitPrice = parseFloat(med.inventory?.price_per_unit || "0");
-        //   const pcs = med.pcs || 0;
-        //   return sum + unitPrice * pcs;
-        // }, 0);
-
-        const totalRevenue = revenueFromTeeth;
-
-        if (!doctorMap.has(doctorId)) {
-          doctorMap.set(doctorId, {
-            name: `${doctor.first_name} ${doctor.last_name}`,
-            patients: new Set(),
+        if (!doctorMap.has(doctor.user_id)) {
+          doctorMap.set(doctor.user_id, {
             revenue: 0,
           });
         }
 
-        const doctorEntry = doctorMap.get(doctorId);
-        doctorEntry.patients.add(patientId);
-        doctorEntry.revenue += totalRevenue;
+        doctorMap.get(doctor.user_id).revenue += revenueFromTeeth;
       });
 
-      return Array.from(doctorMap.values()).map((doc) => ({
-        name: doc.name,
-        patients: doc.patients.size,
-        revenue: doc.revenue,
-      }));
+      return Array.from(doctorMap.values());
     },
 
+    /* ✅ TOTAL REVENUE SUMMARY */
     totalRevenueSummary() {
-      const revenue = this.doctorRevenue.reduce(
-        (sum, doc) => sum + doc.revenue,
-        0
-      );
-      const fill = Math.min((revenue / 100000) * 100, 100);
+      const revenue = this.doctorRevenue.reduce((sum, d) => sum + d.revenue, 0);
 
-      let bgTrack = "bg-yellow-100";
-      let bgFill = "bg-yellow-500";
-      let color = "text-yellow-600";
-      let trendColor = "text-yellow-500";
+      const goal = 100000;
+      const fill = Math.min((revenue / goal) * 100, 100);
+
+      let bgTrack = "bg-green-100";
+      let bgFill = "bg-green-500";
+      let color = "text-green-600";
+      let trendColor = "text-green-500";
 
       if (revenue < 3000) {
-        bgTrack = "bg-red-100";
-        bgFill = "bg-red-500";
-        color = "text-red-600";
-        trendColor = "text-red-500";
+        bgTrack = "bg-blue-100";
+        bgFill = "bg-blue-500";
+        color = "text-blue-600";
+        trendColor = "text-blue-500";
       } else if (revenue < 7000) {
         bgTrack = "bg-yellow-100";
         bgFill = "bg-yellow-500";
@@ -140,11 +142,13 @@ export default {
       return {
         title: "Total Revenue",
         value: `₱${revenue.toLocaleString()}`,
-        label: "This Month",
+        label:
+          this.filter.month || this.filter.year
+            ? "Filtered Period"
+            : "All Time",
         trend: `${fill.toFixed(1)}% goal`,
         color,
         trendColor,
-        icon: "💰",
         fill,
         bgTrack,
         bgFill,
@@ -152,31 +156,9 @@ export default {
     },
   },
 
-  methods: {
-    async loadMedications() {
-      const store = useFetchDataStore();
-      await store.fetchMedications();
-    },
-
-    async fetchUser() {
-      try {
-        const response = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/auth/me",
-          {
-            withCredentials: true,
-          }
-        );
-        this.user = response.data;
-      } catch (error) {
-        console.error("User fetch failed:", error);
-        this.$router.push("/");
-      }
-    },
-  },
-
-  async mounted() {
-    await this.fetchUser();
-    await this.loadMedications();
+  mounted() {
+    const store = useFetchDataStore();
+    store.fetchMedications();
   },
 };
 </script>

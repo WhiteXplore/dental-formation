@@ -55,6 +55,16 @@ export class PrescriptionController {
     return this.prescriptionService.update(existing.prescription_id, updateDto);
   }
 
+  @Patch('discharge-prescription/:id')
+  async dischargePrescription(
+    @Param('id') id: string,
+    @Body('is_discharged') isDischarged: boolean,
+  ) {
+    return this.prescriptionService.update(+id, {
+      is_discharged: isDischarged,
+    });
+  }
+
   @Delete('delete/:id')
   remove(@Param('id') id: string) {
     return this.prescriptionService.remove(+id);

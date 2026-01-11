@@ -2,24 +2,24 @@
   <div
     class="bg-white py-1 rounded-t-lg flex justify-between items-center p-6 shadow px-5"
   >
-    <!-- Left Section: Title -->
+    <!-- Left -->
     <div class="text-green-900 font-semibold text-[16px] tracking-wide">
       ToothFormation
     </div>
 
-    <!-- Center Section: Current Date & Time -->
+    <!-- Center -->
     <div class="text-center mr-52">
       <div class="text-[14px]">{{ formattedDate }}</div>
       <div class="text-[14px]">{{ formattedTime }}</div>
     </div>
 
-    <!-- Right Section -->
+    <!-- Right -->
     <div class="flex gap-4 items-center text-right relative">
-      <!-- Dentist Notification Bell -->
+      <!-- Notification Bell -->
       <template v-if="user.role === 'Dentist'">
         <div
           ref="notificationIcon"
-          class="relative cursor-pointer text-[13px] hover:text-green-600"
+          class="relative cursor-pointer hover:text-green-600"
           @click="toggleNotifications"
         >
           <svg
@@ -37,11 +37,10 @@
             />
           </svg>
 
-          <!-- Unread Badge -->
           <span
             v-if="unreadCount > 0"
             :class="[
-              'absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full',
+              'absolute top-0 right-0 px-1.5 py-1 text-xs font-bold text-white bg-red-600 rounded-full',
               { 'pulse-bg': isPulsing },
             ]"
           >
@@ -49,20 +48,20 @@
           </span>
         </div>
 
-        <!-- Dentist Notifications Dropdown -->
+        <!-- Dropdown -->
         <div
           v-if="isOpenNotifications"
           ref="notificationDropdown"
-          class="absolute top-12 right-16 w-72 bg-white shadow-xl rounded-2xl z-50 border border-gray-200 overflow-hidden"
+          class="absolute top-12 right-16 w-72 bg-white shadow-xl rounded-2xl z-50 border overflow-hidden"
+          @mouseleave="isOpenNotifications = false"
         >
           <div
-            class="flex justify-between items-center px-4 py-3 border-b border-gray-200 bg-gray-50"
+            class="flex justify-between items-center px-4 py-3 border-b bg-gray-50"
           >
-            <h3 class="font-semibold text-gray-700 text-sm">Notifications</h3>
-
+            <h3 class="font-semibold text-sm">Notifications</h3>
             <button
               @click="markAllRead"
-              class="text-xs text-green-600 hover:underline focus:outline-none"
+              class="text-xs text-green-600 hover:underline"
             >
               Mark all as read
             </button>
@@ -73,48 +72,24 @@
               v-for="(notif, index) in notifications"
               :key="notif.appointment_id"
               @click="handleNotificationClick(notif, index)"
-              class="px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3 border-b border-gray-100"
+              class="px-4 py-3 cursor-pointer border-b"
+              :class="
+                notif.notif_status === null ? 'bg-green-50' : 'hover:bg-gray-50'
+              "
             >
-              <div class="flex-shrink-0">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-5 w-5 text-green-500 mt-1"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13 16h-1v-4h-1m1-4h.01M12 20h.01M6.938 6.938l1.414 1.414M17.657 17.657l1.414 1.414M6.938 17.657l1.414-1.414M17.657 6.938l1.414-1.414"
-                  />
-                </svg>
-              </div>
-
-              <div class="flex-1">
-                <p class="text-sm text-gray-700 font-medium">
-                  {{
-                    notif.notif_status === null
-                      ? `New booking for ${notif.patient?.first_name} ${notif.patient?.last_name}`
-                      : `Viewed booking for ${notif.patient?.first_name} ${notif.patient?.last_name}`
-                  }}
-                </p>
-
-                <p class="text-xs text-gray-400 mt-0.5">
-                  {{
-                    notif.notif_status === null
-                      ? notif.procedure_date
-                        ? new Date(notif.procedure_date).toLocaleString()
-                        : "Just now"
-                      : notif.notif_viewed_at
-                      ? `Last viewed: ${new Date(
-                          notif.notif_viewed_at
-                        ).toLocaleString()}`
-                      : "Viewed"
-                  }}
-                </p>
-              </div>
+              <p class="text-sm font-medium">
+                New booking for {{ notif.patient?.first_name }}
+                {{ notif.patient?.last_name }}
+              </p>
+              <p class="text-xs text-gray-400">
+                <span v-if="notif.notif_status === null">
+                  {{ new Date(notif.procedure_date).toLocaleString() }}
+                </span>
+                <span v-else>
+                  Viewed •
+                  {{ new Date(notif.notif_viewed_at).toLocaleString() }}
+                </span>
+              </p>
             </li>
 
             <li
@@ -130,29 +105,24 @@
       <!-- User Info -->
       <div>
         <h1 class="text-[13px] font-semibold">
-          {{ user.last_name }}, {{ user.first_name || "Guest" }}
+          {{ user.last_name }}, {{ user.first_name }}
         </h1>
-        <h2 class="text-[12px]">{{ user.role || "No role" }}</h2>
+        <h2 class="text-[12px]">{{ user.role }}</h2>
       </div>
 
-      <!-- Profile Picture -->
+      <!-- Profile -->
       <div
         ref="profileIcon"
-        class="text-[13px] cursor-pointer hover:border-green-600 border-2 rounded-full z-20"
+        class="cursor-pointer border-2 rounded-full"
         @click="toggleOpenProfile"
       >
-        <img
-          src="../../../assets/img/users.png"
-          alt="Profile Picture"
-          class="w-8 h-8 rounded-full object-cover"
-        />
+        <img src="../../../assets/img/users.png" class="w-8 h-8 rounded-full" />
       </div>
     </div>
   </div>
 
-  <!-- Profile Dropdown -->
   <div class="absolute top-[70px] right-6 z-50" ref="profileDropdown">
-    <Profile v-if="isOpenProfile" :userId="user.sub || user.user_id" />
+    <Profile v-if="isOpenProfile" :userId="user.sub" />
   </div>
 </template>
 
@@ -168,12 +138,12 @@ export default {
 
   data() {
     return {
-      isOpenProfile: false,
-      isOpenNotifications: false,
       user: {},
       notifications: [],
       unreadCount: 0,
       isPulsing: false,
+      isOpenProfile: false,
+      isOpenNotifications: false,
       apiBaseUrl: process.env.VUE_APP_API_BASE_URL + "/appointment",
     };
   },
@@ -183,10 +153,10 @@ export default {
 
     formattedDate() {
       return new Date().toLocaleDateString("en-US", {
+        weekday: "long",
         year: "numeric",
         month: "long",
         day: "2-digit",
-        weekday: "long",
       });
     },
 
@@ -203,27 +173,43 @@ export default {
   watch: {
     appointments: {
       immediate: true,
-      handler(newAppointments) {
-        if (this.user.role !== "Dentist") return;
-
-        this.notifications = newAppointments.map((appt) => ({
-          appointment_id: appt.appointment_id,
-          patient: appt.patient,
-          procedure_date: appt.scheduled_date,
-          notif_status: appt.notif_status || null,
-          notif_viewed_at: appt.notif_viewed_at || null,
-        }));
-
-        this.unreadCount = this.notifications.filter(
-          (n) => n.notif_status === null
-        ).length;
-
-        this.isPulsing = this.unreadCount > 0;
+      handler() {
+        this.buildNotifications();
+      },
+    },
+    user: {
+      immediate: true,
+      deep: true,
+      handler() {
+        this.buildNotifications();
       },
     },
   },
 
   methods: {
+    buildNotifications() {
+      if (!this.user?.sub || this.user.role !== "Dentist") return;
+
+      const dentistId = this.user.sub;
+
+      this.notifications = this.appointments
+        .filter((a) => a.user_id === dentistId)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .map((a) => ({
+          appointment_id: a.appointment_id,
+          patient: a.patient,
+          procedure_date: a.scheduled_date,
+          notif_status: a.notif_status, // ✅ KEEP
+          notif_viewed_at: a.notif_viewed_at, // ✅ KEEP
+        }));
+
+      this.unreadCount = this.notifications.filter(
+        (n) => n.notif_status === null
+      ).length;
+
+      this.isPulsing = this.unreadCount > 0;
+    },
+
     toggleOpenProfile() {
       this.isOpenProfile = !this.isOpenProfile;
       this.isOpenNotifications = false;
@@ -232,103 +218,66 @@ export default {
     toggleNotifications() {
       this.isOpenNotifications = !this.isOpenNotifications;
       this.isOpenProfile = false;
-      if (this.isOpenNotifications) this.isPulsing = false;
-    },
-
-    markAllRead() {
-      this.notifications.forEach((n) => (n.notif_status = "Viewed"));
-      this.unreadCount = 0;
       this.isPulsing = false;
     },
 
-    handleClickOutside(event) {
-      const dropdowns = [
-        this.$refs.profileDropdown,
-        this.$refs.notificationDropdown,
-      ];
-
-      const icons = [this.$refs.profileIcon, this.$refs.notificationIcon];
-
-      dropdowns.forEach((dropdown, index) => {
-        if (
-          dropdown &&
-          !dropdown.contains(event.target) &&
-          icons[index] &&
-          !icons[index].contains(event.target)
-        ) {
-          if (index === 0) this.isOpenProfile = false;
-          if (index === 1) this.isOpenNotifications = false;
-        }
-      });
-    },
-
     async fetchUser() {
-      try {
-        const response = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/auth/me",
-          { withCredentials: true }
-        );
-
-        if (response.data) {
-          this.user = response.data;
-        } else {
-          this.$router.push("/");
-          location.reload();
-        }
-      } catch (err) {
-        console.error("Failed to fetch user:", err);
-        this.$router.push("/");
-      }
+      const res = await axios.get(
+        process.env.VUE_APP_API_BASE_URL + "/auth/me",
+        { withCredentials: true }
+      );
+      this.user = res.data;
     },
 
     async loadAppointments() {
-      if (this.user.role === "Dentist") {
-        const store = useFetchDataStore();
-        await store.fetchAppointments();
-      }
+      const store = useFetchDataStore();
+      await store.fetchAppointments();
     },
-
     async handleNotificationClick(notif, index) {
-      if (!notif?.appointment_id) {
-        console.error("Missing appointment ID:", notif);
-        return;
+      if (notif.notif_status === null) {
+        await axios.patch(
+          `${this.apiBaseUrl}/${notif.appointment_id}`,
+          { notif_status: "Viewed" },
+          { withCredentials: true }
+        );
+
+        this.notifications[index].notif_status = "Viewed";
+        this.notifications[index].notif_viewed_at = new Date();
+
+        if (this.unreadCount > 0) this.unreadCount--;
       }
 
-      try {
-        if (notif.notif_status === null) {
-          const response = await axios.patch(
-            `${this.apiBaseUrl}/${notif.appointment_id}`,
+      this.isOpenNotifications = false;
+      this.$router.push("/dentist-appointments");
+    },
+    async markAllRead() {
+      const unread = this.notifications.filter((n) => n.notif_status === null);
+
+      await Promise.all(
+        unread.map((n) =>
+          axios.patch(
+            `${this.apiBaseUrl}/${n.appointment_id}`,
             { notif_status: "Viewed" },
             { withCredentials: true }
-          );
+          )
+        )
+      );
 
-          this.notifications[index] = {
-            ...this.notifications[index],
-            notif_status: response.data.notif_status,
-          };
+      this.notifications = this.notifications.map((n) => ({
+        ...n,
+        notif_status: "Viewed",
+        notif_viewed_at: new Date(),
+      }));
 
-          this.unreadCount = this.notifications.filter(
-            (n) => n.notif_status === null
-          ).length;
-        }
-
-        this.isOpenNotifications = false;
-        this.$router.push("/dental-chart");
-      } catch (err) {
-        console.error("Error updating notification:", err);
-      }
+      this.unreadCount = 0;
+      this.isPulsing = false;
     },
   },
 
   async mounted() {
     await this.fetchUser();
-    if (this.user.role === "Dentist") this.loadAppointments();
-
+    await this.loadAppointments();
     document.addEventListener("click", this.handleClickOutside);
-  },
-
-  beforeUnmount() {
-    document.removeEventListener("click", this.handleClickOutside);
   },
 };
 </script>
@@ -345,7 +294,6 @@ export default {
     box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
   }
 }
-
 .pulse-bg {
   animation: pulse-bg 1.5s infinite;
 }

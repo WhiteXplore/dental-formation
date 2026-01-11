@@ -13,6 +13,9 @@ import { PrescriptionModule } from './prescription/prescription.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { PrescribeMedicationModule } from './prescribe-medication/prescribe-medication.module';
 import { PriceProcedureModule } from './price-procedure/price-procedure.module';
+import { HmoGuarantorsModule } from './hmo-guarantors/hmo-guarantors.module';
+import { RevenueModule } from './revenue/revenue.module';
+import { ForecastModule } from './forecast/forecast.module';
 
 @Module({
   imports: [
@@ -45,6 +48,9 @@ import { PriceProcedureModule } from './price-procedure/price-procedure.module';
     InventoryModule,
     PrescribeMedicationModule,
     PriceProcedureModule,
+    HmoGuarantorsModule,
+    RevenueModule,
+    ForecastModule,
   ],
 })
 export class AppModule {}

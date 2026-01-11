@@ -7,10 +7,11 @@ import {
   Min,
   ValidateNested,
   ArrayMinSize,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-class MedicationDto {
+export class MedicationDto {
   @IsNotEmpty()
   @IsString()
   name: string;
@@ -22,6 +23,18 @@ class MedicationDto {
   @IsOptional()
   @IsString()
   dosage?: string;
+
+  @IsOptional()
+  @IsString()
+  duration?: string;
+
+  @IsOptional()
+  @IsString()
+  frequencies?: string;
+
+  @IsOptional()
+  @IsString()
+  preparation?: string;
 
   @IsNotEmpty()
   @Type(() => Number)
@@ -49,9 +62,22 @@ export class CreatePrescriptionDto {
   @Min(0)
   patient_payment?: number;
 
+  @IsOptional()
+  @IsString()
+  payment_type?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  hmo_guarantor_id?: number | null;
+
   @IsNotEmpty()
   @IsDateString()
   issued_date: Date;
+
+  @IsOptional()
+  @IsBoolean()
+  is_discharged?: boolean;
 
   @IsNotEmpty()
   @ArrayMinSize(1)

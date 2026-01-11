@@ -1,13 +1,14 @@
 <template>
-  <div v-if="isTable" class=" ">
+  <div v-if="isTable">
+    <!-- Header -->
     <div class="text-sm flex justify-between">
       <div class="text-[13px] text-text mt-4 font-regular">
         Pages / Appointment
       </div>
 
       <div
-        @click="toggleAdd"
-        class="flex items-center gap-2 px-4 py-2 border text-green-600 border-green-600 rounded-xl over:bg-green-700 hover:shadow-lg cursor-pointer transition duration-200"
+        @click="openAddModal"
+        class="flex items-center gap-2 px-4 py-2 border text-green-600 border-green-600 rounded-xl hover:bg-green-700 hover:shadow-lg cursor-pointer transition duration-200"
       >
         <div
           class="p-1 bg-[#34699A] bg-opacity-20 rounded-full flex items-center justify-center"
@@ -18,8 +19,9 @@
       </div>
     </div>
 
-    <div class="text-[14px] bg-white rounded-xl">
-      <div class="mt-4 overflow-x-auto border p-2 rounded-xl">
+    <!-- Table & Controls -->
+    <div class="text-[14px] bg-white rounded-xl mt-4">
+      <div class="overflow-x-auto border p-2 rounded-xl">
         <!-- Top controls -->
         <div class="text-gray-700 flex justify-between items-start mt-1">
           <!-- Items Per Page -->
@@ -65,7 +67,7 @@
                   <th
                     class="w-10 px-4 py-2 text-left rounded-tl-lg font-normal"
                   >
-                    ID
+                    No.
                   </th>
                   <th class="px-4 py-3 text-left font-normal">Dentist</th>
                   <th class="px-4 py-3 text-left font-normal">Patient</th>
@@ -86,16 +88,17 @@
                   <td class="px-4 py-2 text-left">{{ startIndex + index }}</td>
 
                   <td class="px-4 py-2 text-left">
-                    Dr.
-                    {{ appointment_data.user_accounts?.last_name }},
+                    Dr. {{ appointment_data.user_accounts?.last_name }},
                     {{ appointment_data.user_accounts?.first_name }}
-                    {{ appointment_data.user_accounts?.midle_name }}
+                    {{ appointment_data.user_accounts?.middle_name }}
                   </td>
+
                   <td class="px-4 py-2 text-left">
                     {{ appointment_data.patient?.last_name }},
                     {{ appointment_data.patient?.first_name }}
-                    {{ appointment_data.patient?.midle_name }}
+                    {{ appointment_data.patient?.middle_name }}
                   </td>
+
                   <td class="px-4 py-2 text-left">
                     {{ formatScheduledDate(appointment_data.scheduled_date) }}
                   </td>
@@ -112,7 +115,7 @@
                     <div class="flex gap-2">
                       <button
                         class="px-3 py-1 h-8 border border-green-300 hover:bg-green-200 text-green-800 rounded-lg flex items-center gap-1"
-                        @click="toggleEdit(appointment_data)"
+                        @click="openEditModal(appointment_data)"
                       >
                         <icon name="edit" /> Edit
                       </button>
@@ -125,8 +128,9 @@
                     </div>
                   </td>
                 </tr>
+
                 <tr v-if="paginatedData.length === 0">
-                  <td colspan="5" class="text-center py-8 text-gray-400">
+                  <td colspan="7" class="text-center py-8 text-gray-400">
                     No records found
                   </td>
                 </tr>
@@ -138,10 +142,8 @@
         <!-- Pagination -->
         <div class="flex justify-between items-center mt-4">
           <div class="text-gray-700">
-            <span>
-              Showing {{ startIndex }} to {{ endIndex }} of
-              {{ filteredData.length }} entries
-            </span>
+            Showing {{ startIndex }} to {{ endIndex }} of
+            {{ filteredData.length }} entries
           </div>
           <div class="flex items-center">
             <button
@@ -155,7 +157,7 @@
               <button
                 @click="changePage(page)"
                 :class="{
-                  ' bg-[#34699A] text-white': currentPage === page,
+                  'bg-[#34699A] text-white': currentPage === page,
                   'bg-gray-200 text-gray-700': currentPage !== page,
                 }"
                 class="px-3 py-1 mx-1 rounded-md hover:bg-green-300"
@@ -175,19 +177,19 @@
       </div>
     </div>
   </div>
-  <addAppointment v-if="isAdd" @close="closeView" @refresh="loadAppointments" />
 
-  <editAppointment
-    v-if="showEditModal && selectedAppointments"
-    :appointment="selectedAppointments"
-    @close="closeModal"
+  <!-- Add/Edit Appointment Modal -->
+  <addAppointment
+    v-if="showAppointmentModal"
+    :editData="appointmentToEdit"
+    @close="closeAppointmentModal"
     @refresh="loadAppointments"
   />
 
   <!-- Delete Confirmation Modal -->
   <div
     v-if="showDeleteModal"
-    class="fixed inset-0 bg-gray-800 bg-opacity-40 flex justify-center items-center z-50 w-min-screen"
+    class="fixed inset-0 bg-gray-800 bg-opacity-40 flex justify-center items-center z-50"
   ></div>
   <div
     v-if="showDeleteModal"
@@ -196,10 +198,7 @@
     <div
       class="rounded-full w-16 h-16 md:w-20 md:h-20 flex justify-center items-center bg-red-300 animate-pulse"
     >
-      <icon
-        name="question"
-        class="w-8 h-8 md:w-10 md:h-10 text-white flex justify-center items-center"
-      />
+      <icon name="question" class="w-8 h-8 md:w-10 md:h-10 text-white" />
     </div>
 
     <h1 class="text-[14px] md:text-[16px] font-semibold mt-4">
@@ -231,48 +230,70 @@
 <script>
 import icon from "@/assets/icon.vue";
 import addAppointment from "../modals/add-appointment.vue";
-import editAppointment from "../modals/edit-appointment.vue";
 import { toast } from "vue3-toastify";
 import { useFetchDataStore } from "../../../../store/fetch-data-store";
 import { mapState } from "pinia";
 import axios from "axios";
 import dayjs from "dayjs";
+
 export default {
   name: "TableAppointment",
   components: {
     icon,
     addAppointment,
-    editAppointment,
   },
   data() {
     return {
       currentPage: 1,
       itemsPerPage: 10,
       searchQuery: "",
-      isAdd: false,
-      isEdit: false,
+      showAppointmentModal: false,
+      appointmentToEdit: null,
       isTable: true,
-      isUploadData: false,
       showDeleteModal: false,
       recordToDelete: null,
-      selectedAppointments: null,
-      showEditModal: false,
+      loggedUser: null,
     };
   },
   computed: {
     ...mapState(useFetchDataStore, ["appointments"]),
+    // Filter appointments by role
+    filteredAppointmentsByUser() {
+      if (!this.loggedUser) return [];
 
+      const fullAccessRoles = ["Receptionist", "Admin"];
+
+      if (fullAccessRoles.includes(this.loggedUser.role)) {
+        return this.appointments;
+      }
+
+      if (this.loggedUser.role === "Dentist") {
+        return this.appointments.filter(
+          (appt) => appt.user_accounts?.user_id === this.loggedUser.sub
+        );
+      }
+
+      return [];
+    },
+
+    // Then apply search filter on top
     filteredData() {
       const query = this.searchQuery.toLowerCase();
-      return this.appointments.filter((item) =>
-        `${item.first_name} ${item.middle_name} ${item.last_name}`
+      return this.filteredAppointmentsByUser.filter((item) =>
+        `${item.user_accounts?.first_name} ${
+          item.user_accounts?.middle_name || ""
+        } ${item.user_accounts?.last_name} ${item.patient?.first_name} ${
+          item.patient?.middle_name || ""
+        } ${item.patient?.last_name}`
           .toLowerCase()
           .includes(query)
       );
     },
+
     totalPages() {
       return Math.ceil(this.filteredData.length / this.itemsPerPage) || 1;
     },
+
     paginatedData() {
       const start = (this.currentPage - 1) * this.itemsPerPage;
       return this.filteredData.slice(start, start + this.itemsPerPage);
@@ -290,84 +311,81 @@ export default {
       return Array.from({ length: this.totalPages }, (_, i) => i + 1);
     },
     tableHeightClass() {
-      const count = this.paginatedData.length;
-      return count <= 10 ? "h-auto" : "h-[65vh]";
+      return this.paginatedData.length <= 10 ? "h-auto" : "h-[65vh]";
     },
   },
   methods: {
     formatScheduledDate(date) {
       return dayjs(date).format("MMMM DD, YYYY");
     },
-
     async loadAppointments() {
       const store = useFetchDataStore();
       await store.fetchAppointments();
     },
-    toggleUploadData() {
-      this.isUploadData = true;
-      this.isTable = true;
+    openAddModal() {
+      this.appointmentToEdit = null;
+      this.showAppointmentModal = true;
     },
-    toggleAdd() {
-      this.isAdd = true;
-      this.isTable = true;
+    openEditModal(appointment) {
+      this.appointmentToEdit = appointment;
+      this.showAppointmentModal = true;
     },
-
-    toggleEdit(item) {
-      this.selectedAppointments = item;
-      this.showEditModal = true;
+    closeAppointmentModal() {
+      this.showAppointmentModal = false;
+      this.appointmentToEdit = null;
     },
     toggleDelete(item) {
       this.recordToDelete = item;
       this.showDeleteModal = true;
     },
     confirmDelete() {
-      if (!this.recordToDelete || isNaN(this.recordToDelete.appointment_id)) {
-        toast.error("Invalid program ID.");
+      if (!this.recordToDelete) {
+        toast.error("Invalid appointment.");
         return;
       }
-
-      const appointmentId = this.recordToDelete.appointment_id;
-
+      const id = this.recordToDelete.appointment_id;
       axios
         .delete(
-          process.env.VUE_APP_API_BASE_URL +
-            `/appointment/delete-id/${appointmentId}`
+          `${process.env.VUE_APP_API_BASE_URL}/appointment/delete-id/${id}`
         )
         .then(() => {
-          this.recordToDelete = null;
           this.showDeleteModal = false;
-          // Play sound after successful delete
+          this.recordToDelete = null;
           const audio = new Audio(require("@/assets/delete.mp3"));
           audio.play();
-
           this.loadAppointments();
           toast.success("Record deleted successfully");
         })
-        .catch((error) => {
-          console.error("Delete failed:", error);
+        .catch(() => {
           toast.error("Failed to delete record.");
         });
     },
     changePage(page) {
       this.currentPage = Math.max(1, Math.min(page, this.totalPages));
     },
-    closeView() {
-      this.isAdd = false;
-      this.isUploadData = false;
-    },
-    closeModal() {
-      this.showEditModal = false;
-      this.selectedAppointments = null;
-    },
-    handleBackToTable() {
-      this.isEdit = false;
-      this.isAdd = false;
-      this.isUploadData = false;
-      this.isTable = true;
+    async fetchUser() {
+      try {
+        const response = await axios.get(
+          process.env.VUE_APP_API_BASE_URL + "/auth/me",
+          { withCredentials: true }
+        );
+
+        if (response.data) {
+          this.loggedUser = response.data; // <-- store logged-in user
+          console.log("Authenticated User:", this.loggedUser);
+        } else {
+          this.$router.push("/");
+          location.reload();
+        }
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+        this.$router.push("/");
+      }
     },
   },
   mounted() {
     this.loadAppointments();
+    this.fetchUser();
   },
 };
 </script>

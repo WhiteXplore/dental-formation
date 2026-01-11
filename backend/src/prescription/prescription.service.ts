@@ -11,7 +11,7 @@ import { PrescribeMedication } from 'src/prescribe-medication/entities/prescribe
 import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { UpdatePrescriptionDto } from './dto/update-prescription.dto';
 import { DentalChart } from 'src/dental-chart/entities/dental-chart.entity';
-
+import { HmoGuarantor } from 'src/hmo-guarantors/entities/hmo-guarantor.entity';
 @Injectable()
 export class PrescriptionService {
   constructor(
@@ -23,6 +23,9 @@ export class PrescriptionService {
 
     @InjectRepository(DentalChart)
     private readonly dentalChartRepo: Repository<DentalChart>,
+
+    @InjectRepository(HmoGuarantor) // ✅ add HMO repo
+    private readonly hmoRepo: Repository<HmoGuarantor>,
   ) {}
 
   async create(createDto: CreatePrescriptionDto) {
@@ -54,7 +57,8 @@ export class PrescriptionService {
     await this.prescriptionRepo.save(prescription);
 
     for (const med of medications) {
-      const { name, type, dosage, pcs } = med;
+      const { name, type, dosage, pcs, duration, frequencies, preparation } =
+        med;
 
       if (!name) {
         throw new BadRequestException('Medication name is required.');
@@ -73,6 +77,9 @@ export class PrescriptionService {
         dosage,
         pcs: pcsNumber,
         issued_date,
+        duration: duration || '', // keep as string
+        frequencies: frequencies || '', // keep as string
+        preparation: preparation || '', // keep as string
       });
 
       await this.prescribedMedRepo.save(prescribedMed);
@@ -88,8 +95,11 @@ export class PrescriptionService {
         'dentalChart.patient',
         'dentalChart.teeth',
         'dentalChart.teeth.priceProcedure',
+        'dentalChart.teeth.priceProcedure.procedureInventories',
+        'dentalChart.teeth.priceProcedure.procedureInventories.inventory', // <-- add this
         'prescribedMedications',
         'payments',
+        'hmoGuarantor',
       ],
       order: { issued_date: 'DESC' },
     });
@@ -126,7 +136,7 @@ export class PrescriptionService {
     try {
       const prescription = await this.prescriptionRepo.findOne({
         where: { prescription_id },
-        relations: ['dentalChart'],
+        relations: ['dentalChart', 'hmoGuarantor'], // include HMO relation
       });
 
       if (!prescription) {
@@ -135,6 +145,7 @@ export class PrescriptionService {
         );
       }
 
+      // Update dental chart if provided
       if (
         updateDto.dental_chart_id &&
         updateDto.dental_chart_id !== prescription.dentalChart?.dental_id
@@ -151,31 +162,53 @@ export class PrescriptionService {
 
         prescription.dentalChart = dentalChart;
       }
+      // Update HMO/Guarantor
+      if (updateDto.hmo_guarantor_id !== undefined) {
+        if (updateDto.hmo_guarantor_id === null) {
+          prescription.hmoGuarantor = null; // remove link
+        } else {
+          // fetch full HMO entity from its repository
+          const hmo = await this.hmoRepo.findOne({
+            where: { hmo_guarantor_id: updateDto.hmo_guarantor_id },
+          });
 
+          if (!hmo) {
+            throw new NotFoundException(
+              `HMO Guarantor with ID ${updateDto.hmo_guarantor_id} not found.`,
+            );
+          }
+
+          prescription.hmoGuarantor = hmo; // assign full entity
+        }
+      }
+
+      // Update main prescription fields
       prescription.payment_status =
         updateDto.payment_status ?? prescription.payment_status;
+      prescription.payment_type =
+        updateDto.payment_type ?? prescription.payment_type;
       prescription.issued_date =
         updateDto.issued_date ?? prescription.issued_date;
       prescription.instruction =
         updateDto.instruction ?? prescription.instruction;
       prescription.patient_payment =
         updateDto.patient_payment ?? prescription.patient_payment;
+      prescription.is_discharged =
+        updateDto.is_discharged ?? prescription.is_discharged;
 
       await this.prescriptionRepo.save(prescription);
 
+      // Handle medications update if any
       if (Array.isArray(updateDto.medications)) {
-        // Delete old medications
         await this.prescribedMedRepo.delete({
           prescription: { prescription_id },
         });
 
-        // Insert new medications
         for (const med of updateDto.medications) {
           const { name, type, dosage, pcs } = med;
 
-          if (!name) {
+          if (!name)
             throw new BadRequestException('Medication name is required.');
-          }
 
           const pcsNumber = Number(pcs);
           if (isNaN(pcsNumber) || pcsNumber <= 0) {
@@ -184,7 +217,7 @@ export class PrescriptionService {
             );
           }
 
-          const newMedication = this.prescribedMedRepo.create({
+          const newMed = this.prescribedMedRepo.create({
             prescription,
             dental_chart: prescription.dentalChart,
             name,
@@ -194,7 +227,7 @@ export class PrescriptionService {
             issued_date: prescription.issued_date,
           });
 
-          await this.prescribedMedRepo.save(newMedication);
+          await this.prescribedMedRepo.save(newMed);
         }
       }
 

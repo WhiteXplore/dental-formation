@@ -40,14 +40,14 @@ import { useFetchDataStore } from "@/store/fetch-data-store";
 import { mapState } from "pinia";
 import axios from "axios";
 import icon from "@/assets/icon.vue";
+
 export default {
   name: "TableDentalChart",
-  components: {
-    icon,
-  },
+  components: { icon },
+
   data() {
     return {
-      user: null,
+      user: null, // authenticated user
     };
   },
 
@@ -55,10 +55,33 @@ export default {
     ...mapState(useFetchDataStore, ["appointments"]),
 
     walkInSummary() {
+      // If user not loaded yet, return default
+      if (!this.user) {
+        return {
+          title: "Walk-In Patients",
+          value: "0",
+          label: "This Month",
+          trend: "0% goal",
+          color: "text-gray-600",
+          trendColor: "text-gray-500",
+          icon: "🚶‍♂️",
+          fill: 0,
+          bgTrack: "bg-gray-100",
+          bgFill: "bg-gray-500",
+        };
+      }
+
       const uniqueWalkInPatients = new Set();
 
       this.appointments.forEach((appointment) => {
-        if (appointment.appointment_status === "Walk-In") {
+        // Admin sees all Walk-In patients
+        const isAdmin =
+          this.user.role === "Admin" || this.user.role === "Receptionist";
+
+        if (
+          appointment.appointment_status === "Walk-In" &&
+          (isAdmin || appointment.user_id === this.user.sub)
+        ) {
           const patientId = appointment.patient?.patient_id;
           if (patientId) uniqueWalkInPatients.add(patientId);
         }
@@ -67,21 +90,22 @@ export default {
       const total = uniqueWalkInPatients.size;
       const fill = Math.min((total / 500) * 100, 100); // 500 is the goal
 
+      // Set colors based on total
       let bgTrack = "bg-blue-100";
       let bgFill = "bg-blue-500";
       let color = "text-blue-600";
       let trendColor = "text-blue-500";
 
-      if (total < 30) {
-        bgTrack = "bg-red-100";
-        bgFill = "bg-red-500";
+      if (total < 1) {
         color = "text-red-600";
         trendColor = "text-red-500";
-      } else if (total < 80) {
-        bgTrack = "bg-yellow-100";
-        bgFill = "bg-yellow-500";
-        color = "text-yellow-600";
-        trendColor = "text-yellow-500";
+        bgTrack = "bg-red-100";
+        bgFill = "bg-red-500";
+      } else if (total < 60) {
+        color = "text-blue-600";
+        trendColor = "text-blue-500";
+        bgTrack = "bg-blue-100";
+        bgFill = "bg-yelbluelow-500";
       }
 
       return {
@@ -104,9 +128,7 @@ export default {
       try {
         const response = await axios.get(
           process.env.VUE_APP_API_BASE_URL + "/auth/me",
-          {
-            withCredentials: true,
-          }
+          { withCredentials: true }
         );
         this.user = response.data;
       } catch (error) {

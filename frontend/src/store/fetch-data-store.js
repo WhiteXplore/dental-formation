@@ -13,13 +13,28 @@ export const useFetchDataStore = defineStore("fetchData", {
     prescribemedication: [],
     inventories: [],
     useraccounts: [],
-
+    hmoGuarantors: [],
     prices: [],
     loading: false,
     error: null,
   }),
 
   actions: {
+    async fetchHMOGuarantors() {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await axios.get(
+          process.env.VUE_APP_API_BASE_URL +
+            "/hmo-guarantors/get-hmo-guarantors"
+        );
+        this.hmoGuarantors = response.data;
+      } catch (err) {
+        this.error = err.message || "Failed to fetch hmoGuarantors";
+      } finally {
+        this.loading = false;
+      }
+    },
     async fetchPatients() {
       this.loading = true;
       this.error = null;

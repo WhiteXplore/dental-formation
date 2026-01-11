@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { PriceProcedure } from './entities/price-procedure.entity';
 import { ProcedureInventory } from './entities/price-procedure-inventory.entity';
 import { Inventory } from 'src/inventory/entities/inventory.entity';
@@ -23,18 +23,20 @@ export class PriceProcedureService {
     // Step 1: create main procedure
     const procedure = this.priceProcedureRepo.create({
       procedure_name: dto.procedure_name,
+      procedure_type: dto.procedure_type,
       price: dto.price,
-      is_active: dto.is_active,
-      status_color: dto.status_color,
-      inventory_id: dto.inventory_ids?.[0]?.inventory_id ?? null,
+      is_active: dto.is_active ?? true,
+      status_color: dto.status_color ?? 'bg-gray-400',
     });
 
     const savedProcedure = await this.priceProcedureRepo.save(procedure);
 
     // Step 2: create ProcedureInventory if any
     if (dto.inventory_ids?.length) {
-      const inventoryEntities = await this.inventoryRepo.findBy({
-        inventory_id: dto.inventory_ids.map((i) => i.inventory_id) as any,
+      const inventoryEntities = await this.inventoryRepo.find({
+        where: {
+          inventory_id: In(dto.inventory_ids.map((i) => i.inventory_id)),
+        },
       });
 
       const procedureInventories = dto.inventory_ids.map((inv) => {
@@ -42,15 +44,14 @@ export class PriceProcedureService {
           (i) => i.inventory_id === inv.inventory_id,
         );
         return this.procedureInventoryRepo.create({
-          priceProcedure: savedProcedure, // single entity, not array
+          priceProcedure: savedProcedure,
           inventory: inventoryEntity,
-          quantity: inv.quantity,
+          quantity: inv.quantity || 1,
         });
       });
 
       await this.procedureInventoryRepo.save(procedureInventories);
-      savedProcedure.procedureInventories =
-        procedureInventories as ProcedureInventory[];
+      savedProcedure.procedureInventories = procedureInventories;
     }
 
     return savedProcedure;
@@ -83,22 +84,26 @@ export class PriceProcedureService {
 
     Object.assign(record, {
       procedure_name: dto.procedure_name ?? record.procedure_name,
+      procedure_type: dto.procedure_type ?? record.procedure_type,
       price: dto.price ?? record.price,
       is_active: dto.is_active ?? record.is_active,
       status_color: dto.status_color ?? record.status_color,
-      inventory_id: dto.inventory_ids?.[0]?.inventory_id ?? record.inventory_id, // update single inventory_id if provided
     });
 
     const updatedProcedure = await this.priceProcedureRepo.save(record);
 
     // Update inventories if provided
     if (dto.inventory_ids) {
+      // Remove old inventories
       await this.procedureInventoryRepo.delete({
         priceProcedure: { price_procedure_id },
       });
 
-      const inventoryEntities = await this.inventoryRepo.findBy({
-        inventory_id: dto.inventory_ids.map((i) => i.inventory_id) as any,
+      // Create new inventories
+      const inventoryEntities = await this.inventoryRepo.find({
+        where: {
+          inventory_id: In(dto.inventory_ids.map((i) => i.inventory_id)),
+        },
       });
 
       const procedureInventories = dto.inventory_ids.map((inv) => {
@@ -108,7 +113,7 @@ export class PriceProcedureService {
         return this.procedureInventoryRepo.create({
           priceProcedure: updatedProcedure,
           inventory: inventoryEntity,
-          quantity: inv.quantity,
+          quantity: inv.quantity || 1,
         });
       });
 

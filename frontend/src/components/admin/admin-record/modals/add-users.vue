@@ -13,8 +13,10 @@
           class="w-full p-5 py-3 bg-[#34699A] text-white rounded-t-[15px] flex justify-between items-center border-b shadow"
         >
           <div class="flex gap-1 items-center">
-            <icon :name="'add-students'" />
-            <h1 class="font-bold tracking-wide text-lg">Add User Account</h1>
+            <icon :name="isEditMode ? 'edit' : 'add-students'" />
+            <h1 class="font-bold tracking-wide text-lg">
+              {{ isEditMode ? "Edit User Account" : "Add User Account" }}
+            </h1>
           </div>
           <icon
             :name="'circle-close3'"
@@ -24,7 +26,7 @@
         </div>
 
         <div class="p-5 w-[30vw] space-y-3">
-          <!-- Row 1 -->
+          <!-- Row 1: Names -->
           <div class="flex gap-2">
             <div class="w-full space-y-1.5 text-left flex flex-col">
               <label for="first_name" class="font-bold">First Name:</label>
@@ -43,7 +45,6 @@
                 v-model="form.middle_name"
                 type="text"
                 id="middle_name"
-                required
                 class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
                 placeholder="Enter middle name"
               />
@@ -61,62 +62,7 @@
             </div>
           </div>
 
-          <!-- Row 2 -->
-          <div class="flex gap-2">
-            <div class="w-full space-y-1.5 text-left flex flex-col">
-              <label for="license_no" class="font-bold">License No:</label>
-              <input
-                v-model="form.license_no"
-                type="text"
-                id="license_no"
-                required
-                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-                placeholder="Enter license no"
-              />
-            </div>
-          </div>
-
-          <div class="flex gap-2">
-            <div class="w-full space-y-1.5 text-left flex flex-col">
-              <label for="license_no" class="font-bold">PRC:</label>
-              <input
-                v-model="form.prc_type"
-                type="text"
-                id="license_no"
-                required
-                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-                placeholder="Enter typoe of prc "
-              />
-            </div>
-          </div>
-
-          <!-- Row 3 -->
-          <div class="flex gap-2">
-            <div class="w-full space-y-1.5 text-left flex flex-col">
-              <label for="email" class="font-bold">Email:</label>
-              <input
-                v-model="form.email"
-                type="email"
-                id="email"
-                required
-                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-                placeholder="Enter email"
-              />
-            </div>
-            <div class="w-full space-y-1.5 text-left flex flex-col">
-              <label for="password" class="font-bold">Password:</label>
-              <input
-                v-model="form.password"
-                type="password"
-                id="password"
-                required
-                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-                placeholder="Enter password"
-              />
-            </div>
-          </div>
-
-          <!-- Row 4 -->
+          <!-- Role -->
           <div class="flex gap-2">
             <div class="w-full space-y-1.5 text-left flex flex-col">
               <label for="role" class="font-bold">Role:</label>
@@ -132,6 +78,118 @@
                 <option value="Dentist">Dentist</option>
               </select>
             </div>
+          </div>
+
+          <!-- Dentist-only fields -->
+          <div v-if="form.role === 'Dentist'" class="space-y-3">
+            <div class="flex gap-2">
+              <div class="w-full space-y-1.5 flex flex-col">
+                <label class="font-bold">License No:</label>
+                <input
+                  v-model="form.license_no"
+                  type="text"
+                  class="w-full border px-3 py-3 border-gray-600 rounded-md"
+                  placeholder="Enter license no"
+                  required
+                />
+              </div>
+              <div class="w-full space-y-1.5 flex flex-col">
+                <label class="font-bold">PRC Type:</label>
+                <input
+                  v-model="form.prc_type"
+                  type="text"
+                  class="w-full border px-3 py-3 border-gray-600 rounded-md"
+                  placeholder="Enter PRC type"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="flex gap-2">
+              <div class="w-full space-y-1.5 flex flex-col">
+                <label class="font-bold">Schedule Start Time:</label>
+                <input
+                  v-model="form.schedule_start"
+                  type="time"
+                  class="w-full border px-3 py-3 border-gray-600 rounded-md"
+                />
+              </div>
+              <div class="w-full space-y-1.5 flex flex-col">
+                <label class="font-bold">Schedule End Time:</label>
+                <input
+                  v-model="form.schedule_end"
+                  type="time"
+                  class="w-full border px-3 py-3 border-gray-600 rounded-md"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-1.5 text-left flex flex-col">
+              <label class="font-bold">Days Available:</label>
+              <div class="grid grid-cols-3 gap-2">
+                <label
+                  v-for="day in days"
+                  :key="day"
+                  class="flex items-center gap-1"
+                >
+                  <input
+                    type="checkbox"
+                    :value="day"
+                    v-model="form.available_days"
+                  />
+                  <span>{{ day }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Email & Password -->
+          <div class="flex gap-2">
+            <div class="w-full space-y-1.5 text-left flex flex-col">
+              <label for="email" class="font-bold">Email:</label>
+              <input
+                v-model="form.email"
+                type="email"
+                id="email"
+                required
+                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+                placeholder="Enter email"
+              />
+            </div>
+
+            <div class="w-full space-y-1.5 text-left flex flex-col">
+              <label class="font-bold">Password:</label>
+
+              <!-- Edit mode: show change password button -->
+              <div v-if="isEditMode && !showPasswordInput">
+                <button
+                  type="button"
+                  class="w-full bg-yellow-400 text-black px-3 py-3 rounded-md hover:bg-yellow-300"
+                  @click="showPasswordInput = true"
+                >
+                  Change Password
+                </button>
+              </div>
+
+              <!-- Password input -->
+              <div v-else>
+                <input
+                  v-model="form.password"
+                  type="password"
+                  id="password"
+                  :required="!isEditMode || showPasswordInput"
+                  class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+                  placeholder="Enter password"
+                />
+                <small v-if="isEditMode" class="text-gray-500 text-xs">
+                  Leave blank to keep current password
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status -->
+          <div class="flex gap-2">
             <div class="w-full space-y-1.5 text-left flex flex-col">
               <label for="status" class="font-bold">Status:</label>
               <select
@@ -147,25 +205,22 @@
             </div>
           </div>
 
-          <!-- Divider -->
-          <div class="w-full h-[1px] rounded-md bg-gray-200 mt-4"></div>
-
-          <!-- Divider -->
-          <div class="w-full h-[1px] rounded-md bg-gray-200 mt-4"></div>
+          <div class="w-full h-[1px] bg-gray-200 mt-4"></div>
 
           <!-- Buttons -->
           <div class="tracking-wide flex justify-end gap-2 mt-4">
             <button
-              class="bg-red-600 p-2 px-3 rounded-lg text-white hover:bg-white border hover:border-red-800 hover:text-red-800 hover:shadow-md"
+              type="button"
+              class="bg-red-600 p-2 px-3 rounded-lg text-white hover:bg-white hover:border-red-800 hover:text-red-800 hover:shadow-md"
               @click="$emit('close')"
             >
               Cancel
             </button>
             <button
-              class="bg-[#34699A] p-2 px-3 rounded-lg text-white hover:bg-white border hover:border-green-800 hover:text-green-800 hover:shadow-md"
+              class="bg-[#34699A] p-2 px-3 rounded-lg text-white hover:bg-white hover:border-green-800 hover:text-green-800 hover:shadow-md"
               type="submit"
             >
-              Submit
+              {{ isEditMode ? "Update" : "Submit" }}
             </button>
           </div>
         </div>
@@ -180,10 +235,25 @@ import { toast } from "vue3-toastify";
 import axios from "axios";
 
 export default {
-  name: "AddUserModal",
+  name: "UserModal",
   components: { icon },
+  props: {
+    user: {
+      type: Object,
+      default: null,
+    },
+  },
   data() {
     return {
+      showPasswordInput: false, // controls password field visibility in edit mode
+      days: [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ],
       form: {
         first_name: "",
         middle_name: "",
@@ -194,30 +264,65 @@ export default {
         password: "",
         role: "",
         status: "",
+        schedule_start: "",
+        schedule_end: "",
+        available_days: [],
       },
     };
   },
+
+  computed: {
+    isEditMode() {
+      return !!this.user;
+    },
+  },
+  mounted() {
+    if (this.isEditMode) {
+      this.form = { ...this.user, password: "" };
+      this.showPasswordInput = false; // hide password input initially
+    }
+  },
+
   methods: {
     async submitData() {
-      const form = this.$refs.userForm;
-      if (!form.checkValidity()) {
-        form.reportValidity();
+      const formEl = this.$refs.userForm;
+      if (!formEl.checkValidity()) {
+        formEl.reportValidity();
         return;
       }
 
       try {
-        await axios.post(
-          process.env.VUE_APP_API_BASE_URL + "/user/add-user",
-          this.form
-        );
-        toast.success("User added successfully!");
+        // Prepare payload
+        let payload = { ...this.form };
+
+        // In edit mode, remove password if empty
+        if (this.isEditMode && !payload.password) {
+          delete payload.password;
+        }
+
+        if (this.isEditMode) {
+          await axios.patch(
+            `${process.env.VUE_APP_API_BASE_URL}/user/update/${this.user.user_id}`,
+            payload
+          );
+          toast.success("User updated successfully!");
+        } else {
+          await axios.post(
+            `${process.env.VUE_APP_API_BASE_URL}/user/add-user`,
+            payload
+          );
+          toast.success("User added successfully!");
+        }
+
+        // Play audio feedback
         const audio = new Audio(require("@/assets/add.mp3"));
         audio.play();
 
         this.$emit("refresh");
-        this.$emit("close");
-      } catch (error) {
-        toast.error("Failed to add user.");
+        this.$emit("close");      } catch (error) {
+        toast.error(
+          this.isEditMode ? "Failed to update user." : "Failed to add user."
+        );
       }
     },
   },

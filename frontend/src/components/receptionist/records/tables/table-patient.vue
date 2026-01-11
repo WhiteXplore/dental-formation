@@ -65,10 +65,12 @@
                   <th
                     class="w-10 px-4 py-2 text-left rounded-tl-lg font-normal"
                   >
-                    ID
+                    No.
                   </th>
                   <th class="px-4 py-3 text-left font-normal">Patient</th>
-
+                  <th class="px-4 py-3 text-center font-normal w-[50%]">
+                    Status
+                  </th>
                   <th class="px-4 py-3 text-left rounded-tr-lg font-normal">
                     Actions
                   </th>
@@ -85,6 +87,18 @@
                   <td class="px-4 py-2 text-left">
                     {{ patient_data.last_name }}, {{ patient_data.first_name }}
                     {{ patient_data.middle_name }}
+                  </td>
+                  <td class="px-4 py-3 flex justify-center">
+                    <div
+                      v-if="getPaymentStatus(patient_data) === 'Discharged'"
+                      class="text-green-600 font-medium flex gap-1"
+                    >
+                      <icon name="check" class="w-5 h-5 flex items-center" />
+                      <span>Discharged</span>
+                    </div>
+                    <div v-else class="text-yellow-600 font-medium">
+                      Ongoing
+                    </div>
                   </td>
 
                   <td class="px-4 py-2 text-left">
@@ -117,7 +131,12 @@
                         class="px-3 py-1 h-8 border border-red-300 hover:bg-red-200 text-red-800 rounded-lg flex items-center gap-1"
                         @click="toggleDelete(patient_data)"
                       >
-                        <icon name="delete" /> Delete
+                        <icon name="delete" /> Delete</button
+                      ><button
+                        class="px-3 py-1 h-8 border border-yellow-300 hover:bg-yellow-200 text-yellow-800 rounded-lg flex items-center gap-1"
+                        @click="toggleDischarge(patient_data)"
+                      >
+                        <icon name="delete" /> Discharge
                       </button>
                     </div>
                   </td>
@@ -236,6 +255,83 @@
       </button>
     </div>
   </div>
+  <!-- Discharge Modal -->
+  <div
+    v-if="showDischargeModal"
+    class="fixed inset-0 bg-gray-800 bg-opacity-40 flex justify-center items-center z-50"
+  >
+    <div
+      class="rounded-xl shadow-lg w-[300px] md:w-[400px] bg-white py-6 px-4 flex flex-col items-center"
+    >
+      <div
+        class="rounded-full w-16 h-16 md:w-20 md:h-20 flex justify-center items-center bg-yellow-300 animate-pulse"
+      >
+        <icon name="exclamation-circle" class="text-white" />
+      </div>
+      <h1 class="text-[14px] md:text-[16px] font-semibold mt-4">
+        Discharge Confirmation
+      </h1>
+      <p class="mt-2 text-[12px] md:text-[13px] text-center px-8">
+        Are you sure you want to discharge {{ patientToDischarge?.first_name }}
+        {{ patientToDischarge?.last_name }}?
+      </p>
+
+      <div class="w-full h-[1px] rounded-md bg-gray-200 mt-4"></div>
+
+      <div class="tracking-wide flex gap-2 mt-4">
+        <button
+          class="bg-gray-400 p-2 px-3 text-[11px] md:text-[13px] rounded-md text-white hover:bg-white border hover:border-gray-800 hover:text-gray-800 hover:shadow-md"
+          @click="showDischargeModal = false"
+        >
+          Cancel
+        </button>
+        <button
+          class="bg-yellow-400 p-2 px-3 text-[11px] md:text-[13px] rounded-md text-white hover:bg-white border hover:border-yellow-800 hover:text-yellow-800 hover:shadow-md"
+          @click="confirmDischarge"
+        >
+          Yes, Discharge
+        </button>
+      </div>
+    </div>
+  </div>
+  <div
+    v-if="showPaymentPendingModal"
+    class="fixed inset-0 bg-gray-800 bg-opacity-40 flex justify-center items-center z-50"
+  >
+    <div
+      class="rounded-xl shadow-lg w-[300px] md:w-[400px] bg-white py-6 px-4 flex flex-col items-center"
+    >
+      <div
+        class="rounded-full w-16 h-16 md:w-20 md:h-20 flex justify-center items-center bg-red-300 animate-pulse"
+      >
+        <icon name="exclamation-circle" class="w-full text-white" />
+      </div>
+      <h1 class="text-[14px] md:text-[16px] font-semibold mt-4">
+        Payment Pending
+      </h1>
+      <p class="mt-2 text-[12px] md:text-[13px] text-center px-8">
+        Cannot discharge {{ patientToDischarge?.first_name }}
+        {{ patientToDischarge?.last_name }}. Please settle the payment first.
+      </p>
+
+      <div class="w-full h-[1px] rounded-md bg-gray-200 mt-4"></div>
+
+      <div class="tracking-wide flex gap-2 mt-4">
+        <button
+          class="bg-gray-400 p-2 px-3 text-[11px] md:text-[13px] rounded-md text-white hover:bg-white border hover:border-gray-800 hover:text-gray-800 hover:shadow-md"
+          @click="showPaymentPendingModal = false"
+        >
+          Close
+        </button>
+        <router-link
+          to="/billing-payments"
+          class="bg-green-400 p-2 px-3 text-[11px] md:text-[13px] rounded-md text-white hover:bg-white border hover:border-gray-800 hover:text-gray-800 hover:shadow-md"
+        >
+          Proceed to Payment
+        </router-link>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -273,6 +369,10 @@ export default {
       isViewHistory: false,
       selectedPatientId: null,
       showEditPatient: false,
+      showDischargeModal: false,
+      patientToDischarge: null,
+      showPaymentPendingModal: false,
+      dischargedPatients: [],
     };
   },
   computed: {
@@ -314,6 +414,144 @@ export default {
     async loadPatient() {
       const store = useFetchDataStore();
       await store.fetchPatients();
+    },
+
+    async loadMedications() {
+      const store = useFetchDataStore();
+      await store.fetchMedications();
+    },
+    // getPaymentStatus(patient) {
+
+    //   const store = useFetchDataStore();
+
+    //   const prescription = store.medications
+    //     .filter((med) => med.dentalChart?.patient_id === patient.patient_id)
+    //     .sort((a, b) => new Date(b.issued_date) - new Date(a.issued_date))[0];
+
+    //   if (!prescription) return "Ongoing";
+
+    //   // If already discharged → Discharged
+    //   if (prescription.is_discharged) return "Discharged";
+
+    //   // If payment not yet done → Ongoing
+    //   if (prescription.payment_status !== "Paid") return "Ongoing";
+
+    //   // Payment done but not discharged yet → Ongoing
+    //   return "Ongoing";
+    // },
+
+    getPaymentStatus(patient) {
+      const store = useFetchDataStore();
+
+      const prescription = store.medications
+        .filter((med) => med.dentalChart?.patient_id === patient.patient_id)
+        .sort((a, b) => new Date(b.issued_date) - new Date(a.issued_date))[0];
+
+      if (!prescription) return "Ongoing";
+
+      // If payment_status is null, empty, or not "Paid" → Ongoing
+      if (
+        !prescription.payment_status ||
+        prescription.payment_status !== "Paid"
+      ) {
+        return "Ongoing";
+      }
+
+      // If payment done AND is_discharged → Discharged
+      if (
+        prescription.is_discharged &&
+        prescription.payment_status === "Paid"
+      ) {
+        return "Discharged";
+      }
+
+      // Otherwise → Ongoing
+      return "Ongoing";
+    },
+    async toggleDischarge(patient) {
+      if (!patient || !patient.patient_id) {
+        toast.error("Invalid patient selected.");
+        return;
+      }
+
+      try {
+        // Fetch latest medication/payment for the patient
+        const store = useFetchDataStore();
+        await store.fetchMedications(); // ensure medications are up-to-date
+
+        const medications = store.medications.filter(
+          (med) => med.dentalChart?.patient_id === patient.patient_id
+        );
+
+        if (!medications.length) {
+          toast.info("No medication record found for this patient.");
+          return;
+        }
+
+        // Get the latest medication by date or id
+        const latestMed = medications.sort(
+          (a, b) => new Date(b.date_created) - new Date(a.date_created)
+        )[0];
+
+        if (latestMed.payment_status === "Paid") {
+          // Show discharge confirmation modal
+          this.patientToDischarge = patient;
+          this.showDischargeModal = true;
+        } else {
+          // Show payment pending modal
+          this.patientToDischarge = patient;
+          this.showPaymentPendingModal = true;
+        }
+      } catch (error) {
+        console.error("Failed to check discharge:", error);
+        toast.error("Failed to check discharge status.");
+      }
+    },
+    confirmDischarge() {
+      if (!this.patientToDischarge) return;
+
+      const store = useFetchDataStore();
+      const prescription = store.medications.find(
+        (med) =>
+          med.dentalChart?.patient_id === this.patientToDischarge.patient_id
+      );
+
+      if (!prescription) {
+        toast.error("No prescription found for this patient.");
+        this.showDischargeModal = false;
+        return;
+      }
+
+      axios
+        .patch(
+          process.env.VUE_APP_API_BASE_URL +
+            `/prescription/discharge-prescription/${prescription.prescription_id}`,
+          { is_discharged: true }
+        )
+        .then(async () => {
+          // Update local discharged state
+          if (
+            !this.dischargedPatients.includes(
+              this.patientToDischarge.patient_id
+            )
+          ) {
+            this.dischargedPatients.push(this.patientToDischarge.patient_id);
+          }
+
+          toast.success(
+            `Patient ${this.patientToDischarge.first_name} discharged successfully`
+          );
+
+          this.patientToDischarge = null;
+          this.showDischargeModal = false;
+
+          // REFRESH MEDICATIONS to update payment/discharge status
+          await this.loadMedications();
+        })
+        .catch((error) => {
+          console.error("Discharge failed:", error);
+          toast.error("Failed to discharge patient.");
+        });
     },
     toggleUploadData() {
       this.isUploadData = true;
@@ -392,6 +630,7 @@ export default {
   },
   mounted() {
     this.loadPatient();
+    this.loadMedications();
   },
 };
 </script>

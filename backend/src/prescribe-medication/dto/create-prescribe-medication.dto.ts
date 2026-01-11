@@ -18,6 +18,18 @@ export class CreatePrescribeMedicationDto {
   @IsOptional()
   dosage?: string; // Medication dosage (optional)
 
+  @IsString()
+  @IsOptional()
+  duration?: string; // Medication dosage (optional)
+
+  @IsString()
+  @IsOptional()
+  frequencies?: string; // Medication dosage (optional)
+
+  @IsString()
+  @IsOptional()
+  preparation?: string; // Medication dosage (optional)
+
   @IsNumber()
   pcs: number; // Quantity
 

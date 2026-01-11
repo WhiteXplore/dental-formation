@@ -21,6 +21,9 @@ export class CreatePriceProcedureDto {
   @IsString()
   procedure_name: string;
 
+  @IsString()
+  procedure_type: string;
+
   @IsNumber({}, { message: 'price must be a number' })
   price: number;
 

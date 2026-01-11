@@ -2,7 +2,7 @@
   <div class="px-2 mt-2">
     <!-- Headers -->
     <div class="flex justify-between items-start">
-      <h1 class="font-semibold tracking-wide text-md">Inventory Tracker</h1>
+      <h1 class="font-semibold tracking-wide text-md">Patient History</h1>
     </div>
 
     <!-- Main Content  -->

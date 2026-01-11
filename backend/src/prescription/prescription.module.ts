@@ -6,6 +6,7 @@ import { PrescriptionService } from './prescription.service';
 import { PrescriptionController } from './prescription.controller';
 import { Inventory } from 'src/inventory/entities/inventory.entity';
 import { PrescribeMedication } from 'src/prescribe-medication/entities/prescribe-medication.entity';
+import { HmoGuarantor } from 'src/hmo-guarantors/entities/hmo-guarantor.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -13,6 +14,7 @@ import { PrescribeMedication } from 'src/prescribe-medication/entities/prescribe
       DentalChart,
       Inventory,
       PrescribeMedication,
+      HmoGuarantor,
     ]),
   ],
   controllers: [PrescriptionController],

@@ -38,10 +38,7 @@
 
         <!-- Table -->
         <div class="w-full mt-3 rounded-xl shadow overflow-hidden">
-          <div
-            class="overflow-y-auto transition-all duration-300"
-            :class="tableHeightClass"
-          >
+          <div class="overflow-y-auto max-h-[65vh] transition-all duration-300">
             <table
               class="min-w-full table-auto border-separate border-spacing-y-2 text-sm text-gray-700"
             >
@@ -49,8 +46,10 @@
                 class="bg-[#34699A] text-white sticky top-0 z-10 tracking-wide"
               >
                 <tr>
-                  <th class="px-4 py-2 text-left font-normal rounded-tl-lg">
-                    #
+                  <th
+                    class="w-10 px-4 py-2 text-left font-normal rounded-tl-lg"
+                  >
+                    No.
                   </th>
                   <th class="px-4 py-2 text-left font-normal">Patient</th>
                   <th class="px-4 py-2 text-left font-normal">Dentist</th>
@@ -372,15 +371,12 @@ export default {
       return Array.from({ length: this.totalPages }, (_, i) => i + 1);
     },
 
-    tableHeightClass() {
-      return this.paginatedData.length <= 10 ? "h-auto" : "h-[65vh]";
-    },
-
     groupedData() {
       if (!Array.isArray(this.paginatedData)) return [];
       return this.paginatedData.map((item) => {
         const patient = item.dentalChart?.patient;
         const dentist = item.dentalChart?.user_accounts;
+        const instruction = item.prescription?.instruction;
         return {
           key: item.prescription_id,
           patient,
@@ -389,6 +385,7 @@ export default {
             item.dentalChart?.procedure_date || item.dentalChart?.created_at
           ),
           payment_status: item.payment_status,
+          instruction,
           row: item,
           rows: [item],
         };
@@ -442,16 +439,23 @@ export default {
       const patient = row.dentalChart?.patient;
       const base64Logo = await this.toBase64(logoImage);
 
-      // Header
+      // ===========================
+      // PDF HEADER (FIXED)
+      // ===========================
       const header = [
         { image: base64Logo, width: 200, alignment: "center" },
-        { text: "TOOTH  FORMATION DENTAL CLINIC", style: "clinicHeader" },
+
         {
-          text: "PANABO POLYMEDIC HOSPITAL, INC. -GROUP FLOOR",
+          text: "TOOTH FORMATION DENTAL CLINIC",
+          style: "clinicHeader",
+        },
+
+        {
+          text: "PANABO POLYMEDIC HOSPITAL, INC. - GROUP FLOOR",
           style: "subTitle",
         },
+
         {
-          // Make email and telefax appear side-by-side
           columns: [
             {
               text: "Contact #: 0985-104-6429",
@@ -464,19 +468,45 @@ export default {
               alignment: "center",
             },
           ],
-          columnGap: 1, // adds spacing between the two columns
-          margin: [120, 10, 120, 10], // optional, adds vertical space
+          columnGap: 1,
+          margin: [120, 10, 120, 10],
         },
 
         {
-          margin: [0, 10, 0, 10],
+          margin: [0, 8, 0, 8],
           stack: [
-            // 🔹 Row 1 — Patient Name | Age + Sex
+            // ===========================
+            // DATE ISSUED (LEFT, TOP)
+            // ===========================
+            {
+              table: {
+                widths: ["auto", "*"],
+                body: [
+                  [
+                    {
+                      text: "Date Issued:",
+                      style: "label",
+                      border: [false, false, false, false],
+                    },
+                    {
+                      text: dayjs().format("MMMM DD, YYYY"),
+                      style: "value",
+                      border: [false, false, false, false],
+                    },
+                  ],
+                ],
+              },
+              layout: "noBorders",
+              margin: [0, 0, 0, 6],
+            },
+
+            // ===========================
+            // ROW 1: PATIENT NAME / AGE & SEX
+            // ===========================
             {
               columns: [
-                // Patient Name
                 {
-                  width: "*",
+                  width: "67%",
                   table: {
                     widths: ["auto", "*"],
                     body: [
@@ -492,6 +522,7 @@ export default {
                           }`,
                           style: "value",
                           border: [false, false, false, false],
+                          noWrap: false,
                         },
                       ],
                     ],
@@ -499,18 +530,17 @@ export default {
                   layout: "noBorders",
                 },
 
-                // Age + Sex
                 {
-                  width: "auto",
+                  width: "40%",
                   table: {
-                    widths: [30, 12, 20, 25],
+                    widths: [25, 25, 25, 25],
                     body: [
                       [
                         {
                           text: "Age:",
                           style: "label",
-                          border: [false, false, false, false],
                           alignment: "right",
+                          border: [false, false, false, false],
                         },
                         {
                           text: `${patient?.age || "N/A"}`,
@@ -520,8 +550,8 @@ export default {
                         {
                           text: "Sex:",
                           style: "label",
-                          border: [false, false, false, false],
                           alignment: "right",
+                          border: [false, false, false, false],
                         },
                         {
                           text: `${patient?.gender || "N/A"}`,
@@ -534,17 +564,18 @@ export default {
                   layout: "noBorders",
                 },
               ],
-              columnGap: 20,
+              columnGap: 10,
             },
 
-            // 🔹 Row 2 — Address | Date + Status
+            // ===========================
+            // ROW 2: ADDRESS / STATUS
+            // ===========================
             {
               columns: [
-                // Address
                 {
-                  width: "*",
+                  width: "68%",
                   table: {
-                    widths: [63, "*"],
+                    widths: [55, "*"],
                     body: [
                       [
                         {
@@ -556,38 +587,27 @@ export default {
                           text: `${patient?.address || "N/A"}`,
                           style: "value",
                           border: [false, false, false, false],
+                          noWrap: false,
                         },
                       ],
                     ],
                   },
                   layout: "noBorders",
                 },
-                // Date + Status
+
                 {
-                  width: "auto",
+                  width: "40%",
                   table: {
-                    widths: [35, 35, 25, 90], // adjust widths as needed
+                    widths: [40, "*"],
                     body: [
                       [
                         {
                           text: "Status:",
                           style: "label",
                           border: [false, false, false, false],
-                          alignment: "right",
                         },
                         {
                           text: patient?.marital_status || "N/A",
-                          style: "value",
-                          border: [false, false, false, false],
-                        },
-                        {
-                          text: "Date:",
-                          style: "label",
-                          border: [false, false, false, false],
-                          alignment: "right",
-                        },
-                        {
-                          text: dayjs().format("MMMM DD, YYYY"),
                           style: "value",
                           border: [false, false, false, false],
                         },
@@ -597,7 +617,7 @@ export default {
                   layout: "noBorders",
                 },
               ],
-              columnGap: 0,
+              columnGap: 10,
               margin: [0, 3, 0, 0],
             },
           ],
@@ -659,49 +679,90 @@ export default {
           style: "grandTotalText",
         });
       }
+
       // ===========================
       // MEDICATION PDF
       // ===========================
       else if (type === "medication") {
+        const instructionText = row.instruction || "N/A";
+
         const meds =
           row.prescribedMedications?.map((med) => {
-            const inv = med || {};
-            let dosage = inv.dosage ? `${inv.dosage} ${inv.unit || ""}` : "";
-
-            // 🧹 Remove the word "pcs" if it appears anywhere in dosage or name
+            let dosage = med.dosage ? `${med.dosage}` : "";
             dosage = dosage.replace(/\bpcs\b/gi, "").trim();
-            const cleanName = (inv.name || "Unnamed")
+            const cleanName = (med.name || "Unnamed")
               .replace(/\bpcs\b/gi, "")
               .trim();
-
             return {
               name: `${cleanName}${dosage ? " - " + dosage : ""}`,
-              qty: med.pcs,
+              qty: med.pcs || 0,
+              duration: med.duration || null,
+              frequencies: med.frequencies || null,
+              preparation: med.preparation || null,
             };
           }) || [];
 
         content.push({ text: "Prescribed Medications", style: "sectionTitle" });
+
         content.push({
           style: "tableStyle",
           table: {
             headerRows: 1,
-            widths: ["*", "auto"],
+            widths: ["*", "auto", "auto", "auto", "auto"],
             body: [
               [
                 { text: "Medicine", style: "tableHeader", alignment: "left" },
                 { text: "Qty", style: "tableHeader", alignment: "center" },
+                { text: "Duration", style: "tableHeader", alignment: "center" },
+                {
+                  text: "Frequencies",
+                  style: "tableHeader",
+                  alignment: "center",
+                },
+                {
+                  text: "Preparation",
+                  style: "tableHeader",
+                  alignment: "center",
+                },
               ],
               ...meds.map((m) => [
                 { text: m.name, alignment: "left" },
-                { text: m.qty.toString(), alignment: "center" },
+                { text: String(m.qty), alignment: "center" },
+                {
+                  text: m.duration ? `${m.duration} days` : "N/A",
+                  alignment: "center",
+                },
+                { text: m.frequencies || "N/A", alignment: "center" },
+                { text: m.preparation || "N/A", alignment: "center" },
               ]),
+            ],
+          },
+          layout: "lightHorizontalLines",
+        });
+
+        content.push({
+          style: "tableStyle",
+          table: {
+            headerRows: 1,
+            widths: ["*"],
+            body: [
+              [
+                {
+                  text: "Instruction",
+                  style: "tableHeader",
+                  alignment: "left",
+                },
+              ],
+              [{ text: instructionText, alignment: "left" }],
             ],
           },
           layout: "lightHorizontalLines",
         });
       }
 
-      // Footer
+      // ===========================
+      // SINGLE FOOTER AT END
+      // ===========================
       const footerName =
         type === "procedure"
           ? this.user?.first_name && this.user?.last_name
@@ -711,19 +772,13 @@ export default {
           ? `${row.dentalChart.user_accounts.first_name} ${row.dentalChart.user_accounts.middle_name} ${row.dentalChart.user_accounts.last_name}, ${row.dentalChart.user_accounts.prc_type}`
           : "N/A";
 
-      const footerRole =
-        type === "procedure"
-          ? this.user?.role || this.user?.position || "Receptionist"
-          : "Attending Dentist";
-
-      // ✅ Only show license for medication
       const footerLicense =
         type === "medication"
           ? row.dentalChart?.user_accounts?.license_no || "N/A"
-          : ""; // empty for procedure
+          : "";
 
       content.push({
-        margin: [0, 350, 0, 0],
+        margin: [0, 20, 0, 0],
         columns: [
           { width: "*", text: "" },
           {
@@ -736,21 +791,15 @@ export default {
                 alignment: "left",
                 margin: [0, 0, 0, 5],
               },
-              {
-                text: footerRole,
-                fontSize: 10,
-                color: "#555",
-                alignment: "left",
-                margin: [0, 0, 0, 10],
-              },
-              // Only include license line if medication
+
               ...(footerLicense
                 ? [
                     {
                       text: `License No: ${footerLicense}`,
-                      bold: true,
-                      decoration: "underline",
-                      alignment: "left",
+                      fontSize: 10,
+                      color: "#555",
+                      alignment: "center",
+                      margin: [0, 0, 0, 2],
                     },
                   ]
                 : []),
@@ -768,14 +817,10 @@ export default {
             fontSize: 20,
             alignment: "center",
             color: "#2E7D32",
-            font: "Roboto",
-            bold: false,
-            fontWeight: "extrabold",
+            bold: true,
           },
-
           subTitle: { fontSize: 12, alignment: "center", color: "#555" },
           receiptTitle: { fontSize: 7, alignment: "center", color: "#555" },
-
           label: { fontSize: 10, color: "#888" },
           value: { fontSize: 10, bold: true },
           sectionTitle: {
@@ -805,13 +850,11 @@ export default {
       this.pendingPdfType = type;
       this.pendingPdfPatient = patient;
 
-      // Only show preview
       pdfMake.createPdf(docDefinition).getDataUrl((dataUrl) => {
         this.pdfPreviewUrl = dataUrl;
         this.showPreview = true;
       });
     },
-
     // ===========================
     // USER FETCH
     // ===========================

@@ -14,7 +14,7 @@ import { Prescription } from 'src/prescription/entities/prescription.entity';
 import { ToothChart } from './tooth.entity';
 import { PriceProcedure } from 'src/price-procedure/entities/price-procedure.entity';
 import { User_Accounts } from 'src/user/entities/user.entity';
-
+import { AdditionalItems } from './additional_items.entity';
 @Entity('dental_charts')
 export class DentalChart {
   @PrimaryGeneratedColumn()
@@ -68,6 +68,12 @@ export class DentalChart {
     eager: true,
   })
   teeth: ToothChart[];
+
+  @OneToMany(() => AdditionalItems, (addItems) => addItems.dentalChart, {
+    cascade: true,
+    eager: true,
+  })
+  addItems: AdditionalItems[];
 
   @Column({ type: 'datetime', nullable: true })
   procedure_date: Date;
