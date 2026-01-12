@@ -1,5 +1,8 @@
 <template>
-  <div class="bg-white rounded-2xl shadow p-5 h-[680px]">
+  <div
+    class="max-h-[75vh] overflow-y-auto space-y-4 bg-white p-4 border rounded-2xl"
+  >
+    <!-- Header -->
     <h3
       class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2"
     >
@@ -17,197 +20,277 @@
       <span>Revenue Forecasting</span>
     </h3>
 
-    <div class="flex-grow flex justify-center items-center h-[600px] p-8">
-      <canvas ref="monthlyTrendChart"></canvas>
+    <!-- LINE CHART -->
+    <div class="bg-white p-4 rounded-xl border h-[350px]">
+      <canvas ref="revenueChart"></canvas>
+    </div>
+
+    <!-- FORECAST TABLE -->
+    <div class="bg-white p-4 rounded-xl shadow overflow-x-auto">
+      <h3 class="font-semibold mb-3">7-Day Revenue Forecast</h3>
+      <table class="w-full text-sm border">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="p-2 border">Date</th>
+            <th class="p-2 border">SARIMA</th>
+            <th class="p-2 border">Hybrid</th>
+            <th class="p-2 border">Difference</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in forecast?.forecast" :key="row.date">
+            <td class="p-2 border">{{ row.date }}</td>
+            <td class="p-2 border">₱{{ format(row.sarima_forecast) }}</td>
+            <td class="p-2 border font-semibold">
+              ₱{{ format(row.hybrid_forecast) }}
+            </td>
+            <td
+              class="p-2 border"
+              :class="row.difference < 0 ? 'text-red-600' : 'text-green-600'"
+            >
+              ₱{{ format(row.difference) }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </template>
 
 <script>
 import axios from "axios";
+import { useFetchDataStore } from "@/store/fetch-data-store";
+import { mapState } from "pinia";
+import { toast } from "vue3-toastify";
 import {
   Chart,
-  Title,
-  Tooltip,
-  Legend,
+  LineController,
   LineElement,
   PointElement,
-  LineController,
-  CategoryScale,
   LinearScale,
+  CategoryScale,
+  Tooltip,
+  Legend,
 } from "chart.js";
-import { nextTick } from "vue";
 
 Chart.register(
-  Title,
-  Tooltip,
-  Legend,
+  LineController,
   LineElement,
   PointElement,
-  LineController,
+  LinearScale,
   CategoryScale,
-  LinearScale
+  Tooltip,
+  Legend
 );
 
 export default {
-  name: "LinearRegression",
+  name: "RevenueForecastingPage",
+
+  computed: {
+    ...mapState(useFetchDataStore, ["medications"]),
+  },
+
   data() {
     return {
-      forcastingData: [],
-      chartInstance: null,
+      forecast: null,
+      chart: null,
+      loading: false,
     };
   },
-  methods: {
-    async fetchForecastingData() {
-      try {
-        const response = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/dental-chart/get-dental-chart"
-        );
-        this.forcastingData = response.data || [];
 
-        // Wait for DOM and data update before rendering chart
-        await nextTick();
+  async mounted() {
+    try {
+      const res = await axios.get(
+        "http://localhost:8000/analytics/revenue/forecast"
+      );
+
+      this.forecast = res.data.data;
+
+      // ✅ wait until canvas is mounted
+      this.$nextTick(() => {
         this.renderChart();
-      } catch (error) {
-        console.error("Error fetching forecast data:", error);
-      }
-    },
-
-    prepareForecastData() {
-      if (!this.forcastingData.length)
-        return { labels: [], actualY: [], forecastY: [] };
-
-      const dailyRevenue = {};
-      this.forcastingData.forEach((a) => {
-        const date = new Date(a.procedure_date).toISOString().split("T")[0];
-        if (!dailyRevenue[date]) dailyRevenue[date] = 0;
-        const revenue = a.teeth.reduce(
-          (sum, tooth) => sum + Number(tooth.priceProcedure?.price || 0),
-          0
-        );
-        dailyRevenue[date] += revenue;
       });
 
-      const sortedDates = Object.keys(dailyRevenue).sort();
-      const revenueValues = sortedDates.map((d) => dailyRevenue[d]);
+      useFetchDataStore().fetchMedications?.();
+    } catch (err) {
+      console.error(err);
+    }
+  },
 
-      const n = sortedDates.length;
-      const x = sortedDates.map((_, i) => i + 1);
-      const y = revenueValues;
-      const xMean = x.reduce((a, b) => a + b, 0) / n;
-      const yMean = y.reduce((a, b) => a + b, 0) / n;
+  beforeUnmount() {
+    // ✅ VERY IMPORTANT
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
+  },
 
-      let num = 0,
-        den = 0;
-      for (let i = 0; i < n; i++) {
-        num += (x[i] - xMean) * (y[i] - yMean);
-        den += (x[i] - xMean) ** 2;
-      }
+  methods: {
+    formatDate(date) {
+      if (!date) return "-";
+      return new Date(date).toISOString().slice(0, 10);
+    },
 
-      const slope = num / den;
-      const intercept = yMean - slope * xMean;
-
-      const forecastX = Array.from({ length: n + 7 }, (_, i) => i + 1);
-      const forecastY = forecastX.map((xi) => intercept + slope * xi);
-      const labels = [
-        ...sortedDates,
-        ...Array.from({ length: 7 }, (_, i) => `+${i + 1}d`),
-      ];
-
-      return { labels, forecastY, actualY: revenueValues };
+    format(value) {
+      if (value === undefined || value === null) return "-";
+      return Number(value).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
     },
 
     renderChart() {
-      const canvas = this.$refs.monthlyTrendChart;
+      const canvas = this.$refs.revenueChart;
 
-      if (!canvas) {
-        console.warn("Canvas not found, skipping chart render.");
-        return;
+      // ✅ guard against null canvas
+      if (!canvas || !this.forecast) return;
+
+      if (this.chart) {
+        this.chart.destroy();
+        this.chart = null;
       }
 
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        console.warn("Canvas context not available.");
-        return;
-      }
+      const historicalLabels = this.forecast.historical.map((d) =>
+        this.formatDate(d.date)
+      );
+      const historicalData = this.forecast.historical.map(
+        (d) => d["Clinic Share"]
+      );
 
-      // Clean up old chart before re-rendering
-      if (this.chartInstance) {
-        this.chartInstance.destroy();
-      }
+      const forecastLabels = this.forecast.forecast.map((d) =>
+        this.formatDate(d.date)
+      );
 
-      const { labels, forecastY, actualY } = this.prepareForecastData();
+      const sarima = this.forecast.forecast.map((d) => d.sarima_forecast);
+      const hybrid = this.forecast.forecast.map((d) => d.hybrid_forecast);
 
-      if (!labels.length) {
-        console.warn("No data available for chart rendering.");
-        return;
-      }
-
-      this.chartInstance = new Chart(ctx, {
+      this.chart = new Chart(canvas, {
         type: "line",
         data: {
-          labels,
+          labels: [...historicalLabels, ...forecastLabels],
           datasets: [
             {
-              label: "Actual Revenue",
-              data: [...actualY, ...Array(7).fill(null)],
-              borderColor: "#3B82F6",
-              fill: false,
-              tension: 0.2,
+              label: "Historical Revenue",
+              data: historicalData,
+              borderColor: "#6B7280",
+              borderWidth: 2,
+              tension: 0.3,
             },
             {
-              label: "Forecast Revenue",
-              data: forecastY,
-              borderColor: "#F59E0B",
-              borderDash: [5, 5],
-              fill: false,
-              tension: 0.2,
+              label: "SARIMA Forecast",
+              data: [...Array(historicalData.length).fill(null), ...sarima],
+              borderColor: "#FACC15",
+              borderDash: [6, 6],
+              borderWidth: 3,
+              tension: 0.3,
+            },
+            {
+              label: "Hybrid Forecast",
+              data: [...Array(historicalData.length).fill(null), ...hybrid],
+              borderColor: "#2563EB",
+              borderDash: [3, 3],
+              borderWidth: 3,
+              tension: 0.3,
             },
           ],
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
+          maintainAspectRatio: false, // ✅ critical
           plugins: {
-            legend: { display: true },
-            tooltip: { mode: "index", intersect: false },
-          },
-          interaction: { mode: "nearest", intersect: false },
-          scales: {
-            x: {
-              title: {
-                display: true,
-                text: "Date",
+            legend: {
+              position: "bottom",
+              labels: { usePointStyle: true },
+            },
+            tooltip: {
+              callbacks: {
+                label(ctx) {
+                  return `₱${Number(ctx.raw).toLocaleString()}`;
+                },
               },
             },
+          },
+          scales: {
             y: {
-              title: {
-                display: true,
-                text: "Revenue (₱)",
+              ticks: {
+                callback(value) {
+                  return `₱${Number(value).toLocaleString()}`;
+                },
               },
-              beginAtZero: true,
             },
           },
         },
       });
     },
-  },
 
-  async mounted() {
-    await this.fetchForecastingData();
-  },
+    async generateXlsx() {
+      if (!this.medications?.length) {
+        alert("⚠️ No data available.");
+        return;
+      }
 
-  beforeUnmount() {
-    if (this.chartInstance) {
-      this.chartInstance.destroy();
-    }
+      this.loading = true;
+
+      try {
+        const rows = this.medications
+          .map((item) => {
+            const chart = item.dentalChart;
+            if (!chart) return null;
+
+            const patient = chart.patient;
+            const dentist = chart.user_accounts;
+
+            const procedureMap = {};
+            chart.teeth.forEach((tooth) => {
+              const proc = tooth.priceProcedure;
+              if (!proc) return;
+              procedureMap[proc.procedure_name] ??= {
+                count: 0,
+                type: proc.procedure_type,
+              };
+              procedureMap[proc.procedure_name].count++;
+            });
+
+            const total = Number(item.patient_payment || 0);
+            const type =
+              Object.values(procedureMap)[0]?.type || "Basic Procedure";
+
+            const clinicShare =
+              type === "Basic Procedure" ? total * 0.6 : total * 0.5;
+            const dentistShare = total - clinicShare;
+
+            return Object.entries(procedureMap).map(([name, d]) => ({
+              "Procedure Date": chart.procedure_date,
+              "Patient Full Name": `${patient.first_name} ${patient.last_name}`,
+              Dentist: dentist
+                ? `${dentist.first_name} ${dentist.last_name}`
+                : "",
+              Procedure: `${name} - ${d.count}`,
+              "Procedure Type": d.type,
+              "Patient Payment": total.toFixed(2),
+              "Clinic Share": clinicShare.toFixed(2),
+              "Dentist Share": dentistShare.toFixed(2),
+            }));
+          })
+          .flat();
+
+        const res = await axios.post(
+          process.env.VUE_APP_API_BASE_URL + "/revenue/generate-xlsx",
+          rows
+        );
+
+        toast.success("✅ Revenue Forecast Generated");
+
+        this.forecast = res.data.forecast;
+
+        this.$nextTick(() => this.renderChart());
+      } catch (err) {
+        console.error(err);
+        alert("❌ Forecast generation failed.");
+      } finally {
+        this.loading = false;
+      }
+    },
   },
 };
 </script>
-
-<style scoped>
-canvas {
-  width: 100%;
-  height: 100%;
-}
-</style>

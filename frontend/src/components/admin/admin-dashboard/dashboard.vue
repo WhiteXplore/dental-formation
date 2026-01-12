@@ -34,10 +34,13 @@
 
     <!-- Charts -->
     <div class="flex gap-6">
-      <div class="w-[1200px]"><LinearRegression /></div>
+      <div class="" style="width: 1200px; min-height: 680px">
+        <LinearRegression />
+      </div>
 
       <div
-        class="bg-white rounded-2xl p-5 border flex justify-center items-center w-[700px] h-[680px]"
+        class="bg-white rounded-2xl p-5 border relative"
+        style="width: 700px; min-height: 680px"
       >
         <GraphProcedureType />
       </div>

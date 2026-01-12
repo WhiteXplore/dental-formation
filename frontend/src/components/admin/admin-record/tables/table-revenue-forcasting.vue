@@ -440,6 +440,10 @@ export default {
   },
 
   methods: {
+    formatDate(date) {
+      if (!date) return "-";
+      return new Date(date).toISOString().slice(0, 10);
+    },
     format(value) {
       if (value === undefined || value === null) return "-";
       return Number(value).toLocaleString(undefined, {
@@ -450,13 +454,16 @@ export default {
 
     renderChart() {
       const ctx = this.$refs.revenueChart;
-
-      const historicalLabels = this.forecast.historical.map((d) => d.date);
+      const historicalLabels = this.forecast.historical.map((d) =>
+        this.formatDate(d.date)
+      );
       const historicalData = this.forecast.historical.map(
         (d) => d["Clinic Share"]
       );
 
-      const forecastLabels = this.forecast.forecast.map((d) => d.date);
+      const forecastLabels = this.forecast.forecast.map((d) =>
+        this.formatDate(d.date)
+      );
       const sarima = this.forecast.forecast.map((d) => d.sarima_forecast);
       const hybrid = this.forecast.forecast.map((d) => d.hybrid_forecast);
 
