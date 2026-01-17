@@ -103,18 +103,32 @@ export default {
 
           const name = procedure.procedure_name;
           const price = Number(procedure.price || 0);
+          const pricingScope = procedure.pricing_scope || "per_tooth_payment"; // default fallback
 
           if (!map.has(name)) {
             map.set(name, {
               procedure: name,
               patients: new Set(),
               revenue: 0,
+              countedPatients: new Set(), // for one_time procedures
             });
           }
 
           const entry = map.get(name);
+
+          // Add patient to the patients count (always count unique patients)
           entry.patients.add(patientId);
-          entry.revenue += price;
+
+          // Add revenue depending on pricing_scope
+          if (pricingScope === "per_tooth_payment") {
+            entry.revenue += price;
+          } else if (pricingScope === "one_time") {
+            // Only add price once per patient
+            if (!entry.countedPatients.has(patientId)) {
+              entry.revenue += price;
+              entry.countedPatients.add(patientId);
+            }
+          }
         });
       });
 

@@ -18,7 +18,8 @@ export class HmoGuarantorsService {
   }
 
   findAll() {
-    return this.hmoGuarantorRepo.find({ order: { last_name: 'ASC' } });
+    // Sort by full_name now
+    return this.hmoGuarantorRepo.find({ order: { full_name: 'ASC' } });
   }
 
   async findOne(hmo_guarantor_id: number) {

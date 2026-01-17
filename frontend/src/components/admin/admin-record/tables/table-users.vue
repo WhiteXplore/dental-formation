@@ -65,9 +65,7 @@
                 </th>
                 <th class="px-4 py-2 text-left font-medium">Users</th>
                 <th class="px-4 py-2 text-left font-medium">Role</th>
-                <th class="px-4 py-2 text-center font-medium">
-                  Time Scheduled
-                </th>
+
                 <th class="w-[350px] px-4 py-2 text-center font-medium">
                   Day Scheduled
                 </th>
@@ -96,25 +94,16 @@
                   {{ users_data.role || "—" }}
                 </td>
 
-                <td class="px-4 py-2 text-center">
-                  {{ formatTime(users_data.schedule_start) }} —
-                  {{ formatTime(users_data.schedule_end) }}
-                </td>
                 <td
-                  class="w-[350px] px-4 py-3 flex flex-wrap gap-2 justify-center whitespace-nowrap"
+                  class="w-[350px] px-4 py-3 flex flex-wrap gap-2 justify-center"
                 >
-                  <template
-                    v-if="
-                      users_data.available_days &&
-                      users_data.available_days.length
-                    "
-                  >
+                  <template v-if="users_data.schedules?.length">
                     <span
-                      v-for="day in trimmedDays(users_data.available_days)"
-                      :key="day"
+                      v-for="s in sortSchedules(users_data.schedules)"
+                      :key="s.schedule_id + '-day'"
                       class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800"
                     >
-                      {{ day }}
+                      {{ s.day }}
                     </span>
                   </template>
                   <span v-else class="text-gray-400">—</span>
@@ -137,15 +126,15 @@
                   <span
                     :class="[
                       'px-3 py-1 text-xs font-semibold rounded-full',
-                      users_data.doctor_availability === 'available'
+                      checkAvailability(users_data) === 'available'
                         ? 'bg-green-100 text-green-700'
                         : 'bg-gray-100 text-gray-600',
                     ]"
                   >
                     {{
-                      users_data.doctor_availability === "available"
-                        ? "Online"
-                        : "Offline"
+                      checkAvailability(users_data) === "available"
+                        ? "Available"
+                        : "Not Available"
                     }}
                   </span>
                 </td>
@@ -379,15 +368,15 @@
               <span
                 :class="[
                   'inline-flex px-2 py-1 text-xs font-semibold rounded-full',
-                  selectedUser.doctor_availability === 'available'
-                    ? 'bg-blue-100 text-blue-700'
+                  checkAvailability(selectedUser) === 'available'
+                    ? 'bg-green-100 text-green-700'
                     : 'bg-gray-200 text-gray-600',
                 ]"
               >
                 {{
-                  selectedUser.doctor_availability === "available"
-                    ? "Online"
-                    : "Offline"
+                  checkAvailability(selectedUser) === "available"
+                    ? "Available"
+                    : "Not Available"
                 }}
               </span>
             </div>
@@ -395,19 +384,34 @@
         </div>
 
         <!-- Schedule -->
-        <div v-if="selectedUser.schedule_start && selectedUser.schedule_end">
+        <!-- Schedule -->
+        <div>
           <h3 class="text-xs font-semibold text-gray-400 uppercase mb-3">
             Schedule
           </h3>
 
-          <div
-            class="flex items-center justify-between bg-gray-50 rounded-lg p-3"
-          >
-            <span class="font-medium text-gray-700">
-              {{ formatTime(selectedUser.schedule_start) }} —
-              {{ formatTime(selectedUser.schedule_end) }}
-            </span>
+          <div v-if="sortedSchedules.length" class="space-y-2">
+            <div
+              v-for="sched in sortedSchedules"
+              :key="sched.schedule_id"
+              class="flex justify-between items-center bg-gray-50 rounded-lg p-3"
+            >
+              <!-- Day -->
+              <span class="font-medium text-gray-700">
+                {{ sched.day }}
+              </span>
+
+              <!-- Time -->
+              <span class="text-sm font-semibold text-gray-600">
+                {{ formatTime(sched.start_time) }} —
+                {{ formatTime(sched.end_time) }}
+              </span>
+            </div>
           </div>
+
+          <p v-else class="text-sm text-gray-400 text-center">
+            No schedule available
+          </p>
         </div>
 
         <!-- Available Days -->
@@ -473,7 +477,23 @@ export default {
 
   computed: {
     ...mapState(useFetchDataStore, ["useraccounts"]),
+    sortedSchedules() {
+      if (!this.selectedUser?.schedules) return [];
 
+      const weekOrder = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+      ];
+
+      return [...this.selectedUser.schedules].sort(
+        (a, b) => weekOrder.indexOf(a.day) - weekOrder.indexOf(b.day)
+      );
+    },
     filteredData() {
       const q = this.searchQuery.toLowerCase();
       return (this.useraccounts || []).filter((u) => {
@@ -514,8 +534,8 @@ export default {
   },
 
   methods: {
-    trimmedDays(daysArray) {
-      if (!Array.isArray(daysArray)) return [];
+    sortSchedules(schedules) {
+      if (!Array.isArray(schedules)) return [];
 
       const weekOrder = [
         "Monday",
@@ -527,9 +547,35 @@ export default {
         "Sunday",
       ];
 
-      return daysArray
-        .map((d) => d.trim())
-        .sort((a, b) => weekOrder.indexOf(a) - weekOrder.indexOf(b));
+      return [...schedules].sort(
+        (a, b) => weekOrder.indexOf(a.day) - weekOrder.indexOf(b.day)
+      );
+    },
+    checkAvailability(user) {
+      if (!Array.isArray(user.schedules) || !user.schedules.length) {
+        return "not available";
+      }
+
+      const now = dayjs();
+      const today = now.format("dddd"); // Monday, Tuesday, etc.
+
+      return user.schedules.some((sched) => {
+        if (sched.day !== today) return false;
+
+        const start = dayjs(
+          `${now.format("YYYY-MM-DD")} ${sched.start_time}`,
+          "YYYY-MM-DD HH:mm:ss"
+        );
+
+        const end = dayjs(
+          `${now.format("YYYY-MM-DD")} ${sched.end_time}`,
+          "YYYY-MM-DD HH:mm:ss"
+        );
+
+        return now.isAfter(start) && now.isBefore(end);
+      })
+        ? "available"
+        : "not available";
     },
     formatTime(time) {
       if (!time) return "";

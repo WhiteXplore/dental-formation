@@ -24,6 +24,8 @@ export class PriceProcedureService {
     const procedure = this.priceProcedureRepo.create({
       procedure_name: dto.procedure_name,
       procedure_type: dto.procedure_type,
+      procedure_scope: dto.procedure_scope,
+      pricing_scope: dto.pricing_scope,
       price: dto.price,
       is_active: dto.is_active ?? true,
       status_color: dto.status_color ?? 'bg-gray-400',
@@ -85,6 +87,8 @@ export class PriceProcedureService {
     Object.assign(record, {
       procedure_name: dto.procedure_name ?? record.procedure_name,
       procedure_type: dto.procedure_type ?? record.procedure_type,
+      procedure_scope: dto.procedure_scope ?? record.procedure_scope,
+      pricing_scope: dto.pricing_scope ?? record.pricing_scope,
       price: dto.price ?? record.price,
       is_active: dto.is_active ?? record.is_active,
       status_color: dto.status_color ?? record.status_color,

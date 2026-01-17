@@ -42,10 +42,8 @@ import icon from "@/assets/icon.vue";
 
 export default {
   name: "CardTotalRevenue",
-
   components: { icon },
 
-  /* ✅ NEW FILTER PROP */
   props: {
     filter: {
       type: Object,
@@ -59,7 +57,7 @@ export default {
   computed: {
     ...mapState(useFetchDataStore, ["medications"]),
 
-    /* ✅ FILTERED MEDICATIONS */
+    /* Filter medications by month/year */
     filteredMedications() {
       if (!Array.isArray(this.medications)) return [];
 
@@ -87,35 +85,28 @@ export default {
       });
     },
 
-    /* ✅ DOCTOR REVENUE (FILTERED) */
+    /* Revenue per dentist using patient_payment */
     doctorRevenue() {
       const doctorMap = new Map();
 
       this.filteredMedications.forEach((item) => {
         const chart = item.dentalChart;
         const doctor = chart?.user_accounts;
-        const patient = chart?.patient;
-        const teeth = chart?.teeth || [];
+        const patientPayment = Number(item.patient_payment || 0);
 
-        if (!doctor || !patient) return;
-
-        const revenueFromTeeth = teeth.reduce((sum, tooth) => {
-          return sum + Number(tooth?.priceProcedure?.price || 0);
-        }, 0);
+        if (!doctor || !patientPayment) return;
 
         if (!doctorMap.has(doctor.user_id)) {
-          doctorMap.set(doctor.user_id, {
-            revenue: 0,
-          });
+          doctorMap.set(doctor.user_id, { revenue: 0 });
         }
 
-        doctorMap.get(doctor.user_id).revenue += revenueFromTeeth;
+        doctorMap.get(doctor.user_id).revenue += patientPayment;
       });
 
       return Array.from(doctorMap.values());
     },
 
-    /* ✅ TOTAL REVENUE SUMMARY */
+    /* Total Revenue Summary */
     totalRevenueSummary() {
       const revenue = this.doctorRevenue.reduce((sum, d) => sum + d.revenue, 0);
 

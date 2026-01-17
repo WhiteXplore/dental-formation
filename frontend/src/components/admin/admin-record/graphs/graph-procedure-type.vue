@@ -19,7 +19,7 @@
 
     <!-- No data -->
     <div
-      v-if="!filteredProcedures.length"
+      v-if="!procedureSummary.length"
       class="flex-grow flex justify-center items-center text-gray-400 text-center p-8"
     >
       No Data Available
@@ -93,22 +93,42 @@ export default {
       const map = new Map();
 
       this.filteredProcedures.forEach((item) => {
+        const patientId = item.dentalChart?.patient?.patient_id;
+        const dateStr = item.dentalChart?.procedure_date;
+        if (!patientId || !dateStr) return;
+
+        // For each tooth, track unique procedure per patient per date
         item.dentalChart?.teeth?.forEach((tooth) => {
           const proc = tooth.priceProcedure;
           if (!proc) return;
 
-          if (!map.has(proc.procedure_name)) {
-            map.set(proc.procedure_name, {
-              procedure: proc.procedure_name,
+          const procName = proc.procedure_name;
+
+          // Unique key: patientId + procedureName + date
+          const key = `${patientId}_${procName}_${dateStr}`;
+
+          if (!map.has(procName)) {
+            map.set(procName, {
+              procedure: procName,
               total: 0,
+              countedKeys: new Set(),
             });
           }
 
-          map.get(proc.procedure_name).total++;
+          const entry = map.get(procName);
+
+          if (!entry.countedKeys.has(key)) {
+            entry.total += 1; // count once per patient per procedure per date
+            entry.countedKeys.add(key);
+          }
         });
       });
 
-      return Array.from(map.values());
+      // Return summary without helper set
+      return Array.from(map.values()).map((p) => ({
+        procedure: p.procedure,
+        total: p.total,
+      }));
     },
   },
 
@@ -134,63 +154,59 @@ export default {
     renderChart() {
       if (!this.procedureSummary.length) return;
 
-      this.$nextTick(() => {
-        const canvas = this.$refs.procedureChart;
-        if (!canvas || !canvas.isConnected) return;
+      const canvas = this.$refs.procedureChart;
+      if (!canvas || !canvas.isConnected) return;
 
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
 
-        if (this.chartInstance) {
-          this.chartInstance.destroy();
-          this.chartInstance = null;
-        }
+      if (this.chartInstance) {
+        this.chartInstance.destroy();
+        this.chartInstance = null;
+      }
 
-        this.chartInstance = new Chart(ctx, {
-          type: "doughnut",
-          data: {
-            labels: this.procedureSummary.map((p) => p.procedure),
-            datasets: [
-              {
-                data: this.procedureSummary.map((p) => p.total),
-                backgroundColor: [
-                  "#60A5FA",
-                  "#F87171",
-                  "#FBBF24",
-                  "#34D399",
-                  "#A78BFA",
-                ],
-                borderColor: "#ffffff",
-                borderWidth: 2,
-                hoverOffset: 12,
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            resizeDelay: 200,
-            cutout: "52%",
-            plugins: {
-              legend: {
-                position: "bottom",
-                labels: { usePointStyle: true, padding: 20 },
-              },
-              tooltip: {
-                callbacks: {
-                  label: (ctx) => `${ctx.label}: ${ctx.raw} procedures`,
-                },
+      this.chartInstance = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels: this.procedureSummary.map((p) => p.procedure),
+          datasets: [
+            {
+              data: this.procedureSummary.map((p) => p.total),
+              backgroundColor: [
+                "#60A5FA",
+                "#F87171",
+                "#FBBF24",
+                "#34D399",
+                "#A78BFA",
+              ],
+              borderColor: "#ffffff",
+              borderWidth: 2,
+              hoverOffset: 12,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          cutout: "52%",
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: { usePointStyle: true, padding: 20 },
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.label}: ${ctx.raw} procedures`,
               },
             },
           },
-        });
+        },
       });
     },
+
     handleResize() {
-      if (!this.chartInstance) return;
-      if (!this.$refs.procedureChart?.isConnected) return;
-      this.chartInstance.resize();
+      if (this.chartInstance) this.chartInstance.resize();
     },
   },
 

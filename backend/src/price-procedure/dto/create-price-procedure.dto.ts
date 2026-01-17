@@ -27,6 +27,12 @@ export class CreatePriceProcedureDto {
   @IsNumber({}, { message: 'price must be a number' })
   price: number;
 
+  @IsString()
+  procedure_scope: string;
+
+  @IsString()
+  pricing_scope: string;
+
   @IsOptional()
   @IsBoolean()
   is_active?: boolean;

@@ -27,46 +27,11 @@
 
         <!-- Body -->
         <div class="p-5 w-[30vw] space-y-3">
-          <!-- Names -->
-          <div class="flex gap-2">
-            <div class="w-full space-y-1.5">
-              <label class="font-bold">First Name:</label>
-              <input
-                v-model="form.first_name"
-                type="text"
-                required
-                class="input"
-                placeholder="Enter first name"
-              />
-            </div>
-
-            <div class="w-full space-y-1.5">
-              <label class="font-bold">Middle Name:</label>
-              <input
-                v-model="form.middle_name"
-                type="text"
-                class="input"
-                placeholder="Enter middle name"
-              />
-            </div>
-
-            <div class="w-full space-y-1.5">
-              <label class="font-bold">Last Name:</label>
-              <input
-                v-model="form.last_name"
-                type="text"
-                required
-                class="input"
-                placeholder="Enter last name"
-              />
-            </div>
-          </div>
-
           <!-- Company -->
           <div class="space-y-1.5">
-            <label class="font-bold">Company:</label>
+            <label class="font-bold">Entity Type:</label>
             <select v-model="form.company" required class="input">
-              <option disabled value="">Select company</option>
+              <option disabled value="">Select entity type</option>
               <option value="Maxicare">Maxicare</option>
               <option value="Intellicare">Intellicare</option>
               <option value="Avega">Avega</option>
@@ -83,6 +48,18 @@
               required
               class="input"
               placeholder="Enter company name"
+            />
+          </div>
+
+          <!-- Full Name -->
+          <div class="space-y-1.5">
+            <label class="font-bold">Full Name:</label>
+            <input
+              v-model="form.full_name"
+              type="text"
+              required
+              class="input"
+              placeholder="Enter full name"
             />
           </div>
 
@@ -121,9 +98,7 @@ export default {
   data() {
     return {
       form: {
-        first_name: "",
-        middle_name: "",
-        last_name: "",
+        full_name: "",
         company: "",
         company_other: "",
       },
@@ -138,14 +113,15 @@ export default {
 
   mounted() {
     if (this.isEditMode) {
-      // Check if company is one of the predefined options
       const predefinedCompanies = ["Maxicare", "Intellicare", "Avega"];
       const isPredefined = predefinedCompanies.includes(this.guarantor.company);
 
       this.form = {
-        first_name: this.guarantor.first_name,
-        middle_name: this.guarantor.middle_name,
-        last_name: this.guarantor.last_name,
+        full_name:
+          this.guarantor.full_name ||
+          `${this.guarantor.first_name} ${this.guarantor.middle_name || ""} ${
+            this.guarantor.last_name
+          }`.trim(),
         company: isPredefined ? this.guarantor.company : "Other",
         company_other: isPredefined ? "" : this.guarantor.company,
       };
@@ -161,11 +137,8 @@ export default {
       }
 
       try {
-        // Merge "Other" company if selected
         const payload = {
-          first_name: this.form.first_name,
-          middle_name: this.form.middle_name,
-          last_name: this.form.last_name,
+          full_name: this.form.full_name,
           company:
             this.form.company === "Other"
               ? this.form.company_other
@@ -173,14 +146,13 @@ export default {
         };
 
         if (this.isEditMode) {
-          // Use NestJS API PATCH /hmo-guarantors/:id
           await axios.patch(
-            `${process.env.VUE_APP_API_BASE_URL}/hmo-guarantors/${this.guarantor.id}`,
+            `${process.env.VUE_APP_API_BASE_URL}/hmo-guarantors/${this.guarantor.hmo_guarantor_id}`,
             payload
           );
+
           toast.success("HMO updated successfully!");
         } else {
-          // Use NestJS API POST /hmo-guarantors
           await axios.post(
             `${process.env.VUE_APP_API_BASE_URL}/hmo-guarantors`,
             payload
@@ -189,7 +161,7 @@ export default {
         }
 
         new Audio(require("@/assets/add.mp3")).play();
-        this.$emit("refresh"); // Tell parent to refresh list
+        this.$emit("refresh");
         this.$emit("close");
       } catch (error) {
         console.error(error);

@@ -533,7 +533,7 @@ export default {
                 {
                   width: "40%",
                   table: {
-                    widths: [25, 25, 25, 25],
+                    widths: [25, 25, 25, 35],
                     body: [
                       [
                         {
@@ -627,44 +627,72 @@ export default {
       let content = [...header];
 
       // ===========================
-      // PROCEDURE PDF
+      // PROCEDURE PDF WITH PRICING_SCOPE
       // ===========================
       if (type === "procedure") {
+        const countedOneTime = new Set();
         const procedures =
           row.dentalChart?.teeth?.map((tooth) => {
             const proc = tooth.priceProcedure;
+            if (!proc)
+              return {
+                toothNumber: tooth.tooth_number || "N/A",
+                status: "No Procedure",
+                date: this.formatScheduledDate(
+                  row.dentalChart?.procedure_date || row.dentalChart?.created_at
+                ),
+                price: "₱0.00",
+                pricingScope: "-",
+              };
+
+            // Determine fee based on pricing_scope
+            let fee = 0;
+            if (proc.pricing_scope === "one_time") {
+              if (!countedOneTime.has(proc.price_procedure_id)) {
+                fee = Number(proc.price || 0);
+                countedOneTime.add(proc.price_procedure_id);
+              }
+            } else if (proc.pricing_scope === "per_tooth_payment") {
+              fee = Number(proc.price || 0);
+            }
+
             return {
               toothNumber: tooth.tooth_number || "N/A",
-              status: proc?.procedure_name || "Unknown",
+              status: proc.procedure_name || "Unknown",
               date: this.formatScheduledDate(
                 row.dentalChart?.procedure_date || row.dentalChart?.created_at
               ),
-              price: proc ? `₱${parseFloat(proc.price).toFixed(2)}` : "₱0.00",
+              price: `₱${fee.toFixed(2)}`,
+              pricingScope: proc.pricing_scope.replace(/_/g, " ").toUpperCase(),
             };
           }) || [];
 
+        // Compute total based on the same logic
         const totalProcedurePrice = procedures.reduce(
           (sum, p) => sum + (parseFloat(p.price.replace(/[₱,]/g, "")) || 0),
           0
         );
 
+        // Add Pricing Scope column to table
         content.push({ text: "Procedure Details", style: "sectionTitle" });
         content.push({
           style: "tableStyle",
           table: {
             headerRows: 1,
-            widths: ["auto", "*", "*", "auto"],
+            widths: ["auto", "*", "*", "auto", "auto"],
             body: [
               [
                 { text: "Tooth", style: "tableHeader" },
                 { text: "Procedure", style: "tableHeader" },
                 { text: "Date", style: "tableHeader" },
+                { text: "Pricing Scope", style: "tableHeader" },
                 { text: "Price", style: "tableHeader" },
               ],
               ...procedures.map((p) => [
                 p.toothNumber,
                 { text: p.status, bold: true, alignment: "left" },
                 { text: p.date, alignment: "right" },
+                { text: p.pricingScope, alignment: "center" },
                 { text: p.price, alignment: "right" },
               ]),
             ],
@@ -777,6 +805,7 @@ export default {
           ? row.dentalChart?.user_accounts?.license_no || "N/A"
           : "";
 
+      const footerRole = type === "procedure" ? this.user?.role || "N/A" : "";
       content.push({
         margin: [0, 20, 0, 0],
         columns: [
@@ -791,7 +820,17 @@ export default {
                 alignment: "left",
                 margin: [0, 0, 0, 5],
               },
-
+              ...(footerRole
+                ? [
+                    {
+                      text: footerRole,
+                      fontSize: 10,
+                      color: "#555",
+                      alignment: "center",
+                      margin: [0, 0, 0, 2],
+                    },
+                  ]
+                : []),
               ...(footerLicense
                 ? [
                     {

@@ -168,8 +168,7 @@
                 {{ formatCurrency(calculateDentistIncome(item)) }}
               </td>
               <td v-else class="px-4 py-2">
-                {{ item.hmoGuarantor?.first_name }}
-                {{ item.hmoGuarantor?.last_name }}
+                {{ item.hmoGuarantor?.full_name ?? "-" }}
               </td>
             </tr>
 
@@ -258,6 +257,7 @@ export default {
   computed: {
     ...mapState(useFetchDataStore, ["medications"]),
 
+    // --- FILTERED DATA ---
     filteredData() {
       if (!Array.isArray(this.medications)) return [];
 
@@ -265,23 +265,23 @@ export default {
         const issued = dayjs(item.dentalChart?.procedure_date);
         if (!issued.isValid()) return false;
 
+        // --- DATE RANGE FILTER ---
         let inRange = true;
-
         if (this.filter.startMonth) {
           const start = dayjs(this.filter.startMonth).startOf("month");
-          inRange = issued.isAfter(start) || issued.isSame(start, "day");
+          inRange = issued.isSame(start, "month") || issued.isAfter(start);
         }
-
         if (this.filter.endMonth && inRange) {
           const end = dayjs(this.filter.endMonth).endOf("month");
-          inRange = issued.isBefore(end) || issued.isSame(end, "day");
+          inRange = issued.isSame(end, "month") || issued.isBefore(end);
         }
 
-        // Dentist filter
+        // --- DENTIST FILTER ---
         let dentistMatch = true;
         if (
-          (this.reportType === "monthlyCensusPerDentist" ||
-            this.reportType === "monthlyIncomePerDentist") &&
+          ["monthlyCensusPerDentist", "monthlyIncomePerDentist"].includes(
+            this.reportType
+          ) &&
           this.filter.dentistId
         ) {
           dentistMatch =
@@ -289,7 +289,7 @@ export default {
             Number(this.filter.dentistId);
         }
 
-        // Procedure filter
+        // --- PROCEDURE FILTER ---
         let procedureMatch = true;
         if (
           this.reportType === "monthlyIncomePerProcedure" &&
@@ -300,73 +300,100 @@ export default {
             this.filter.procedureType;
         }
 
-        return inRange && dentistMatch && procedureMatch;
+        // --- SEARCH QUERY ---
+        const search = this.searchQuery.toLowerCase();
+        let matchesSearch = true;
+        if (search) {
+          const patientName = `${item.dentalChart?.patient?.first_name ?? ""} ${
+            item.dentalChart?.patient?.last_name ?? ""
+          }`.toLowerCase();
+          matchesSearch = patientName.includes(search);
+        }
+
+        return inRange && dentistMatch && procedureMatch && matchesSearch;
       });
     },
+
+    // --- PAGINATION ---
     paginatedCensus() {
       const start = (this.currentPage - 1) * this.pageSize;
       return this.filteredData.slice(start, start + this.pageSize);
     },
-
     pageNumbers() {
-      const pages = Math.ceil(this.filteredData.length / this.pageSize);
-      return Array.from({ length: pages }, (_, i) => i + 1);
+      return Array.from(
+        { length: Math.ceil(this.filteredData.length / this.pageSize) },
+        (_, i) => i + 1
+      );
     },
-
     startIndex() {
       return this.filteredData.length === 0
         ? 0
         : (this.currentPage - 1) * this.pageSize + 1;
     },
-
     endIndex() {
       const end = this.currentPage * this.pageSize;
       return end > this.filteredData.length ? this.filteredData.length : end;
     },
-
     totalPages() {
       return Math.ceil(this.filteredData.length / this.pageSize);
     },
 
+    // --- UNIQUE FILTERS ---
     uniqueDentists() {
-      const dentistsMap = {};
-      if (Array.isArray(this.medications)) {
-        this.medications.forEach((item) => {
-          const dentist = item.dentalChart?.user_accounts;
-          if (dentist && !dentistsMap[dentist.user_id]) {
-            dentistsMap[dentist.user_id] = dentist;
-          }
-        });
-      }
-      return Object.values(dentistsMap);
+      const map = {};
+      this.medications.forEach((item) => {
+        const dentist = item.dentalChart?.user_accounts;
+        if (dentist && !map[dentist.user_id]) map[dentist.user_id] = dentist;
+      });
+      return Object.values(map);
     },
-
     uniqueProcedureTypes() {
-      const typesSet = new Set();
-      if (Array.isArray(this.medications)) {
-        this.medications.forEach((item) => {
-          const type = item.dentalChart?.priceProcedure?.procedure_type;
-          if (type) typesSet.add(type);
-        });
-      }
-      return Array.from(typesSet);
+      const set = new Set();
+      this.medications.forEach((item) => {
+        const type = item.dentalChart?.priceProcedure?.procedure_type;
+        if (type) set.add(type);
+      });
+      return Array.from(set);
     },
 
+    // --- TOTAL INCOME ---
     totalClinicIncome() {
       return this.filteredData.reduce(
         (sum, item) => sum + this.calculateClinicIncome(item),
         0
       );
     },
-
     totalDentistIncome() {
       return this.filteredData.reduce(
         (sum, item) => sum + this.calculateDentistIncome(item),
         0
       );
     },
+
+    // --- IS INCOME REPORT ---
+    isIncome() {
+      return [
+        "monthlyIncome",
+        "monthlyIncomePerDentist",
+        "monthlyIncomePerProcedure",
+      ].includes(this.reportType);
+    },
   },
   methods: {
+    calculateClinicIncome(item) {
+      const payment = Number(item.patient_payment || 0);
+      const type = item.dentalChart?.priceProcedure?.procedure_type;
+      if (type === "Basic Procedure") return payment * 0.6;
+      if (type === "Special Case") return payment * 0.5;
+      return payment;
+    },
+    calculateDentistIncome(item) {
+      const payment = Number(item.patient_payment || 0);
+      const type = item.dentalChart?.priceProcedure?.procedure_type;
+      if (type === "Basic Procedure") return payment * 0.4;
+      if (type === "Special Case") return payment * 0.5;
+      return 0;
+    },
     resetFilters() {
       this.filter.startMonth = "";
       this.filter.endMonth = "";
@@ -374,14 +401,11 @@ export default {
       this.filter.procedureType = "";
       this.currentPage = 1;
     },
-
     changePage(page) {
       if (page < 1 || page > this.totalPages) return;
       this.currentPage = page;
     },
-
     getAdmitType(patientId, issuedDate) {
-      if (!Array.isArray(this.medications)) return "New Patient";
       const issued = dayjs(issuedDate);
       const previousRecords = this.medications.filter(
         (m) =>
@@ -390,42 +414,21 @@ export default {
       );
       return previousRecords.length > 0 ? "Old Patient" : "New Patient";
     },
-
-    calculateClinicIncome(item) {
-      const payment = parseFloat(item.patient_payment || 0);
-      const type = item.dentalChart?.priceProcedure?.procedure_type;
-      if (type === "Basic Procedure") return payment * 0.6;
-      if (type === "Special Case") return payment * 0.5;
-      return payment;
-    },
-
-    calculateDentistIncome(item) {
-      const payment = parseFloat(item.patient_payment || 0);
-      const type = item.dentalChart?.priceProcedure?.procedure_type;
-      if (type === "Basic Procedure") return payment * 0.4;
-      if (type === "Special Case") return payment * 0.5;
-      return 0;
-    },
-
     formatCurrency(value) {
-      if (!value) return "$0.00";
-      return parseFloat(value).toLocaleString(undefined, {
+      return parseFloat(value || 0).toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
     },
-
     formatDate(date) {
       return dayjs(date).format("MMM DD, YYYY hh:mm A");
     },
-
     loadMedications() {
       const store = useFetchDataStore();
       if (!store.medications || store.medications.length === 0)
         store.fetchMedications();
     },
   },
-
   mounted() {
     this.loadMedications();
   },
@@ -436,7 +439,6 @@ export default {
 tbody tr {
   transition: background-color 0.2s ease;
 }
-
 thead th {
   background: #34699a;
   color: white;

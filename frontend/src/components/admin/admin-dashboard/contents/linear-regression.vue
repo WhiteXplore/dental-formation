@@ -39,7 +39,7 @@
         </thead>
         <tbody>
           <tr v-for="row in forecast?.forecast" :key="row.date">
-            <td class="p-2 border">{{ row.date }}</td>
+            <td class="p-2 border">{{ formatDate(row.date) }}</td>
             <td class="p-2 border">₱{{ format(row.sarima_forecast) }}</td>
             <td class="p-2 border font-semibold">
               ₱{{ format(row.hybrid_forecast) }}

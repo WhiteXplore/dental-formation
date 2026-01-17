@@ -27,23 +27,6 @@
 
         <!-- Form -->
         <div class="p-5 w-[27vw] space-y-4">
-          <!-- Procedure Type -->
-          <div class="space-y-1.5 text-left flex flex-col">
-            <label for="procedure_type" class="font-bold"
-              >Procedure Type:</label
-            >
-            <select
-              v-model="form.procedure_type"
-              id="procedure_type"
-              required
-              class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-            >
-              <option disabled value="">Select procedure type</option>
-              <option value="Basic Procedure">Basic Procedure</option>
-              <option value="Special Case">Special Case</option>
-            </select>
-          </div>
-
           <!-- Procedure Name -->
           <div class="space-y-1.5 text-left flex flex-col">
             <label for="procedure_name" class="font-bold"
@@ -58,20 +41,73 @@
               placeholder="Enter procedure name"
             />
           </div>
+          <div class="flex gap-2 w-full">
+            <!-- Procedure Type -->
+            <div class="space-y-1.5 text-left flex-1 flex-col">
+              <label for="procedure_type" class="font-bold"
+                >Procedure Type:</label
+              >
+              <select
+                v-model="form.procedure_type"
+                id="procedure_type"
+                required
+                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+              >
+                <option disabled value="">Select procedure type</option>
+                <option value="Basic Procedure">Basic Procedure</option>
+                <option value="Special Case">Special Case</option>
+              </select>
+            </div>
 
-          <!-- Price -->
-          <div class="space-y-1.5 text-left flex flex-col">
-            <label for="price" class="font-bold">Price (₱):</label>
-            <input
-              v-model="form.price"
-              type="number"
-              id="price"
-              required
-              step="0.01"
-              min="0"
-              class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-              placeholder="Enter price"
-            />
+            <!-- Procedure Scope -->
+            <div class="space-y-1.5 text-left flex-1 flex-col">
+              <label for="procedure_scope" class="font-bold"
+                >Procedure Scope:</label
+              >
+              <select
+                v-model="form.procedure_scope"
+                id="procedure_scope"
+                required
+                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+              >
+                <option disabled value="">Select procedure scope</option>
+                <option value="ALL_TEETH">All Teeth (Whole Mouth)</option>
+                <option value="PER_TOOTH">Per Tooth (Selective)</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <!-- Price -->
+            <div class="space-y-1.5 text-left flex-1 flex-col">
+              <label for="price" class="font-bold">Price (₱):</label>
+              <input
+                v-model="form.price"
+                type="number"
+                id="price"
+                required
+                step="0.01"
+                min="0"
+                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+                placeholder="Enter price"
+              />
+            </div>
+
+            <!-- Pricing Scope  -->
+            <div class="space-y-1.5 text-left flex-1 flex-col">
+              <label for="procedure_scope" class="font-bold"
+                >Pricing Scope:</label
+              >
+              <select
+                v-model="form.pricing_scope"
+                id="procedure_scope"
+                required
+                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+              >
+                <option disabled value="">Select pricing scope</option>
+                <option value="one_time">One Time Payment</option>
+                <option value="per_tooth_payment">Per Tooth Payment</option>
+              </select>
+            </div>
           </div>
 
           <!-- Inventory Selection -->
@@ -80,7 +116,8 @@
             <input
               type="text"
               v-model="searchInventoryQuery"
-              @focus="showInventoryDropdown = true"
+              @focus="onInventoryFocus"
+              @input="onInventoryInput"
               @blur="hideDropdown('inventory')"
               class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
               placeholder="Search inventory..."
@@ -117,7 +154,7 @@
             <!-- Selected Inventories -->
             <div
               v-if="form.selected_inventories.length > 0"
-              class="mt-2 space-y-2"
+              class="mt-2 space-y-2 max-h-[18vh] overflow-y-auto"
             >
               <div
                 v-for="(item, index) in form.selected_inventories"
@@ -238,6 +275,8 @@ export default {
         is_active: "",
         status_color: "",
         procedure_type: "",
+        procedure_scope: "",
+        pricing_scope: "",
       },
       inventories: [],
       searchInventoryQuery: "",
@@ -274,28 +313,52 @@ export default {
       this.form.is_active = this.procedure.is_active;
       this.form.status_color = this.procedure.status_color;
       this.form.procedure_type = this.procedure.procedure_type || "";
-      // Map procedureInventories to the form
+      this.form.procedure_scope = this.procedure.procedure_scope || "";
+      this.form.pricing_scope = this.procedure.pricing_scope || ""; // ✅ FIX
+
       this.form.selected_inventories =
         this.procedure.procedureInventories
-          ?.filter((pi) => pi.inventory) // skip null inventories
+          ?.filter((pi) => pi.inventory)
           .map((pi) => ({
             ...pi.inventory,
             selected_quantity: pi.quantity,
           })) || [];
     },
-    hideDropdown(type) {
-      setTimeout(() => {
-        if (type === "inventory") this.showInventoryDropdown = false;
-      }, 150);
+
+    onInventoryFocus() {
+      // Only open if there's something to show
+      if (this.filteredInventories.length > 0) {
+        this.showInventoryDropdown = true;
+      }
     },
+
+    onInventoryInput() {
+      this.showInventoryDropdown = this.filteredInventories.length > 0;
+    },
+
     toggleInventory(item) {
       const exists = this.form.selected_inventories.find(
         (i) => i.inventory_id === item.inventory_id
       );
-      if (!exists)
-        this.form.selected_inventories.push({ ...item, selected_quantity: 1 });
+
+      if (!exists) {
+        this.form.selected_inventories.push({
+          ...item,
+          selected_quantity: 1,
+        });
+      }
+
+      // 🔒 Close dropdown & clear search
       this.searchInventoryQuery = "";
       this.showInventoryDropdown = false;
+    },
+
+    hideDropdown(type) {
+      setTimeout(() => {
+        if (type === "inventory") {
+          this.showInventoryDropdown = false;
+        }
+      }, 150);
     },
     removeInventory(index) {
       this.form.selected_inventories.splice(index, 1);
@@ -314,6 +377,8 @@ export default {
       const payload = {
         procedure_name: this.form.procedure_name,
         price: parseFloat(this.form.price),
+        procedure_scope: this.form.procedure_scope,
+        pricing_scope: this.form.pricing_scope,
         inventory_ids: this.form.selected_inventories.map((i) => ({
           inventory_id: i.inventory_id,
           quantity: i.selected_quantity,
@@ -321,7 +386,7 @@ export default {
         is_active:
           this.form.is_active === true || this.form.is_active === "true",
         status_color: this.form.status_color,
-        procedure_type: this.form.procedure_type, // <-- added
+        procedure_type: this.form.procedure_type,
       };
 
       try {

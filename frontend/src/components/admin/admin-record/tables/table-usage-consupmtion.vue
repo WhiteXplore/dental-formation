@@ -211,7 +211,7 @@ export default {
     };
   },
   computed: {
-    ...mapState(useFetchDataStore, ["medications"]),
+    ...mapState(useFetchDataStore, ["medications", "inventories"]),
 
     paginatedData() {
       const start = (this.currentPage - 1) * this.itemsPerPage;
@@ -259,16 +259,28 @@ export default {
     // 🔴 PROCEDURE INVENTORY (FROM TEETH)
     getProcedureInventoryTotals(med) {
       const map = {};
+      const countedAllTeeth = new Set(); // track ALL_TEETH inventories
+
       med?.dentalChart?.teeth?.forEach((tooth) => {
-        const procedureName =
-          tooth?.priceProcedure?.procedure_name || "Procedure";
+        const proc = tooth?.priceProcedure;
+        if (!proc) return;
+
+        const procedureName = proc.procedure_name || "Procedure";
+        const scope = proc.procedure_scope || "PER_TOOTH";
 
         tooth?.priceProcedure?.procedureInventories?.forEach((pi) => {
           const inv = pi.inventory;
           if (!inv) return;
 
-          if (!map[inv.inventory_id]) {
-            map[inv.inventory_id] = {
+          // If ALL_TEETH, count only once per procedure
+          const key =
+            scope === "ALL_TEETH"
+              ? `${inv.inventory_id}`
+              : `${inv.inventory_id}-${tooth.tooth_id}`;
+          if (map[key] && scope === "ALL_TEETH") return;
+
+          if (!map[key]) {
+            map[key] = {
               inventory_id: inv.inventory_id,
               name: inv.name,
               unit: inv.unit || "pcs",
@@ -276,32 +288,47 @@ export default {
               procedure_name: procedureName,
             };
           }
-          map[inv.inventory_id].total += Number(pi.quantity || 0);
+
+          map[key].total += Number(pi.quantity || 0);
+
+          if (scope === "ALL_TEETH") countedAllTeeth.add(inv.inventory_id);
         });
       });
+
       return Object.values(map);
     },
 
-    // 🔵 ADDITIONAL INVENTORY
+    // 🔵 ADDITIONAL INVENTORY (LOOKUP NAME FROM INVENTORIES STORE)
     getAdditionalInventoryTotals(med) {
       const map = {};
+      const inventoryLookup = new Map();
+      (this.inventories || []).forEach((inv) => {
+        inventoryLookup.set(inv.inventory_id, inv.name);
+      });
+
       med?.dentalChart?.addItems?.forEach((item) => {
+        const name = inventoryLookup.get(item.inventory_id) || "Inventory";
+
         if (!map[item.inventory_id]) {
           map[item.inventory_id] = {
             inventory_id: item.inventory_id,
-            name: item.inventory?.name || "Inventory",
+            name,
             unit: "pcs",
             total: 0,
           };
         }
+
         map[item.inventory_id].total += Number(item.pcs || 0);
       });
+
       return Object.values(map);
     },
   },
 
   mounted() {
-    useFetchDataStore().fetchMedications?.();
+    const store = useFetchDataStore();
+    store.fetchMedications?.();
+    store.fetchInventories?.(); // ensure inventory names are loaded
   },
 };
 </script>

@@ -1,4 +1,3 @@
-// user.controller.ts
 import {
   Controller,
   Get,
@@ -27,39 +26,30 @@ export class UserController {
     return this.userService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
-  }
-
   @Get('get-user/:id')
-  findById(@Param('id') id: string) {
+  findOne(@Param('id') id: string) {
     const userId = Number(id);
     if (isNaN(userId)) {
       throw new BadRequestException('Invalid user ID');
     }
-    return this.userService.findById(userId);
+    return this.userService.findOne(userId);
   }
 
   @Patch('update/:id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
-  }
-
-  @Patch(':id/availability')
-  updateAvailability(
-    @Param('id') id: string,
-    @Body('availability') availability: 'available' | 'not-available',
-  ) {
     const userId = Number(id);
     if (isNaN(userId)) {
       throw new BadRequestException('Invalid user ID');
     }
-    return this.userService.updateAvailability(userId, availability);
+    return this.userService.update(userId, updateUserDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+    const userId = Number(id);
+    if (isNaN(userId)) {
+      throw new BadRequestException('Invalid user ID');
+    }
+    return this.userService.remove(userId);
   }
 }

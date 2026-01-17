@@ -367,7 +367,7 @@
           </thead>
           <tbody>
             <tr v-for="row in forecast?.forecast" :key="row.date">
-              <td class="p-2 border">{{ row.date }}</td>
+              <td class="p-2 border">{{ formatDate(row.date) }}</td>
               <td class="p-2 border">₱{{ format(row.sarima_forecast) }}</td>
               <td class="p-2 border font-semibold">
                 ₱{{ format(row.hybrid_forecast) }}
@@ -440,6 +440,14 @@ export default {
   },
 
   methods: {
+    formatProcedureDate(date) {
+      if (!date) return "-";
+
+      const d = new Date(date);
+      d.setDate(d.getDate() + 1); // 🔥 ADD 1 DAY
+
+      return d.toISOString().slice(0, 10);
+    },
     formatDate(date) {
       if (!date) return "-";
       return new Date(date).toISOString().slice(0, 10);
@@ -579,7 +587,7 @@ export default {
                 : totalPayment * 0.5;
 
             return Object.entries(procedureMap).map(([name, data]) => ({
-              "Procedure Date": item.dentalChart.procedure_date,
+              "Procedure Date": this.formatProcedureDate(chart.procedure_date),
               "Patient Full Name": patientName,
               Dentist: dentistName,
               Procedure: `${name} - ${data.count}`,

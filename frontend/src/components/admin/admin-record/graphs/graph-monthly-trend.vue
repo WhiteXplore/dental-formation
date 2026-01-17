@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-2xl h-[350px]">
+  <div class="bg-white rounded-2xl h-[350px] p-4">
     <h3 class="text-lg font-semibold text-gray-700 mb-3">
       Monthly Income Trend
     </h3>
@@ -22,7 +22,7 @@ import {
   LineController,
 } from "chart.js";
 import { mapState } from "pinia";
-import { useFetchDataStore } from "@/store/fetch-data-store"; // adjust path
+import { useFetchDataStore } from "@/store/fetch-data-store";
 import dayjs from "dayjs";
 
 Chart.register(
@@ -42,28 +42,22 @@ export default {
   props: {
     filter: {
       type: Object,
-      default: () => ({ year: null, month: null }),
+      default: () => ({ year: null }),
     },
   },
 
   computed: {
     ...mapState(useFetchDataStore, ["medications"]),
 
-    filteredMedications() {
+    filteredPayments() {
       if (!Array.isArray(this.medications)) return [];
 
       return this.medications.filter((item) => {
-        const dateStr = item.issued_date || item.dentalChart?.procedure_date;
+        const dateStr = item?.dentalChart?.procedure_date;
         if (!dateStr) return false;
 
         const date = new Date(dateStr);
-
         if (this.filter.year && date.getFullYear() !== Number(this.filter.year))
-          return false;
-        if (
-          this.filter.month &&
-          date.getMonth() + 1 !== Number(this.filter.month)
-        )
           return false;
 
         return true;
@@ -72,7 +66,7 @@ export default {
   },
 
   watch: {
-    filteredMedications: {
+    filteredPayments: {
       handler() {
         this.renderIncomeChart();
       },
@@ -82,38 +76,19 @@ export default {
 
   methods: {
     renderIncomeChart() {
-      const incomePerMonth = {};
+      // Initialize 12 months with 0 revenue
+      const incomePerMonth = Array(12).fill(0);
 
-      this.filteredMedications.forEach((item) => {
-        const date = item.issued_date || item.dentalChart?.procedure_date;
-        if (!date) return;
+      this.filteredPayments.forEach((item) => {
+        const dateStr = item?.dentalChart?.procedure_date;
+        if (!dateStr) return;
 
-        const month = dayjs(date).format("MMM");
-
-        let toothRevenue = 0;
-        let medRevenue = 0;
-
-        const teeth = item.dentalChart?.teeth || [];
-        teeth.forEach((tooth) => {
-          const price = parseFloat(tooth.priceProcedure?.price || "0");
-          toothRevenue += price;
-        });
-
-        const meds = item.prescribedMedications || [];
-        meds.forEach((med) => {
-          const unitPrice = parseFloat(med.inventory?.price_per_unit || "0");
-          const pcs = med.pcs || 0;
-          medRevenue += unitPrice * pcs;
-        });
-
-        const totalRevenue = toothRevenue + medRevenue;
-
-        if (!incomePerMonth[month]) incomePerMonth[month] = 0;
-        incomePerMonth[month] += totalRevenue;
+        const monthIndex = dayjs(dateStr).month(); // 0 = Jan
+        const payment = Number(item.patient_payment || 0);
+        incomePerMonth[monthIndex] += payment; // sum per patient_payment
       });
 
-      // Sort months in calendar order
-      const monthOrder = [
+      const monthLabels = [
         "Jan",
         "Feb",
         "Mar",
@@ -127,8 +102,6 @@ export default {
         "Nov",
         "Dec",
       ];
-      const sortedMonths = monthOrder.filter((m) => incomePerMonth[m]);
-      const sortedData = sortedMonths.map((m) => incomePerMonth[m]);
 
       const ctx = this.$refs.incomeChart;
       if (!ctx) return;
@@ -138,11 +111,11 @@ export default {
       this._chartInstance = new Chart(ctx, {
         type: "line",
         data: {
-          labels: sortedMonths,
+          labels: monthLabels,
           datasets: [
             {
               label: "Monthly Income",
-              data: sortedData,
+              data: incomePerMonth,
               backgroundColor: "#34D399",
               borderColor: "#10B981",
               fill: false,
@@ -152,19 +125,39 @@ export default {
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false, // ← important
+          maintainAspectRatio: false,
           plugins: {
             legend: { position: "top" },
+            tooltip: {
+              callbacks: {
+                label: (ctx) =>
+                  `₱${ctx.raw.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`,
+              },
+            },
           },
           scales: {
             y: {
               beginAtZero: true,
-              ticks: { callback: (val) => `₱${val.toLocaleString()}` },
+              ticks: {
+                callback: (val) =>
+                  `₱${val.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`,
+              },
             },
           },
         },
       });
     },
+  },
+
+  mounted() {
+    const store = useFetchDataStore();
+    store.fetchMedications();
   },
 };
 </script>

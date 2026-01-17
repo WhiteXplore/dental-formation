@@ -75,9 +75,13 @@
                     Procedure Type
                   </th>
                   <th class="px-4 py-3 text-left font-normal">
-                    Procedure Color
+                    Procedure Scope
                   </th>
                   <th class="px-4 py-3 text-left font-normal">Price (₱)</th>
+                  <th class="px-4 py-3 text-left font-normal">Pricing Scope</th>
+                  <th class="px-4 py-3 text-left font-normal">
+                    Procedure Color
+                  </th>
                   <th class="px-4 py-3 text-left font-normal">Status</th>
                   <th class="px-4 py-3 text-left rounded-tr-lg font-normal">
                     Actions
@@ -93,16 +97,18 @@
                   <td class="px-4 py-2">{{ startIndex + index }}</td>
                   <td class="px-4 py-2">{{ procedure.procedure_name }}</td>
                   <td class="px-4 py-2">{{ procedure.procedure_type }}</td>
+
+                  <td class="px-4 py-2">{{ procedure.procedure_scope }}</td>
+                  <td class="px-4 py-2">
+                    ₱{{ parseFloat(procedure.price).toFixed(2) }}
+                  </td>
+                  <td class="px-4 py-2">{{ procedure.pricing_scope }}</td>
                   <td class="px-[50px] py-2">
                     <span
                       class="inline-block w-5 h-5 rounded-full border border-gray-300"
                       :class="procedure.status_color"
                       title="Status Color"
                     ></span>
-                  </td>
-
-                  <td class="px-4 py-2">
-                    ₱{{ parseFloat(procedure.price).toFixed(2) }}
                   </td>
                   <td class="px-4 py-2">
                     <span

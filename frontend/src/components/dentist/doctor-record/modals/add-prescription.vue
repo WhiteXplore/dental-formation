@@ -402,7 +402,7 @@ export default {
     },
 
     formatDate(date) {
-      return dayjs(date).format("MMMM D, YYYY - h:mm A");
+      return dayjs(date).format("MMMM D, YYYY ");
     },
     getPatientName(id) {
       const chart = this.dentalCharts.find((c) => c.dental_id === id);

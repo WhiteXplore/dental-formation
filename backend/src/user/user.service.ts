@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User_Accounts } from './entities/user.entity';
+import { DentistSchedule } from './entities/dentist.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
@@ -11,18 +12,18 @@ export class UserService {
   constructor(
     @InjectRepository(User_Accounts)
     private readonly userRepository: Repository<User_Accounts>,
+    @InjectRepository(DentistSchedule)
+    private readonly scheduleRepository: Repository<DentistSchedule>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User_Accounts> {
     const saltRounds = 10;
 
-    // Hash the password before saving
     const hashedPassword = await bcrypt.hash(
       createUserDto.password,
       saltRounds,
     );
 
-    // Replace plain password with hashed version
     const user = this.userRepository.create({
       ...createUserDto,
       password: hashedPassword,
@@ -32,22 +33,24 @@ export class UserService {
   }
 
   async findAll(): Promise<User_Accounts[]> {
-    return this.userRepository.find();
+    return this.userRepository.find({
+      relations: ['schedules'],
+      order: {
+        user_id: 'ASC',
+      },
+    });
   }
 
   async findOne(user_id: number): Promise<User_Accounts> {
-    const user = await this.userRepository.findOneBy({ user_id });
-    if (!user) {
-      throw new NotFoundException(`User with ID ${user_id} not found`);
-    }
-    return user;
-  }
+    const user = await this.userRepository.findOne({
+      where: { user_id },
+      relations: ['schedules'],
+    });
 
-  async findById(user_id: number): Promise<User_Accounts> {
-    const user = await this.userRepository.findOneBy({ user_id });
     if (!user) {
       throw new NotFoundException(`User with ID ${user_id} not found`);
     }
+
     return user;
   }
 
@@ -55,26 +58,28 @@ export class UserService {
     user_id: number,
     updateUserDto: UpdateUserDto,
   ): Promise<User_Accounts> {
-    // Optionally hash password if it's part of the update
-    if (updateUserDto.password) {
-      const saltRounds = 10;
-      updateUserDto.password = await bcrypt.hash(
-        updateUserDto.password,
-        saltRounds,
-      );
+    const { schedules, password, ...userData } = updateUserDto;
+
+    if (password) {
+      userData['password'] = await bcrypt.hash(password, 10);
     }
 
-    await this.userRepository.update(user_id, updateUserDto);
-    return this.findOne(user_id);
-  }
+    await this.userRepository.update(user_id, userData);
 
-  async updateAvailability(
-    user_id: number,
-    availability: 'available' | 'not-available',
-  ): Promise<User_Accounts> {
-    const user = await this.findOne(user_id);
-    user.doctor_availability = availability;
-    return this.userRepository.save(user);
+    if (Array.isArray(schedules)) {
+      await this.scheduleRepository.delete({ user_id });
+
+      const newSchedules = schedules.map((s) =>
+        this.scheduleRepository.create({
+          ...s,
+          user_id,
+        }),
+      );
+
+      await this.scheduleRepository.save(newSchedules);
+    }
+
+    return this.findOne(user_id);
   }
 
   async remove(user_id: number): Promise<void> {

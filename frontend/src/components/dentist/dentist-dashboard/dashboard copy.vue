@@ -1,12 +1,51 @@
 <template>
   <div class="h-[95vh] bg-gray-100 p-4 rounded-md overflow-auto">
     <!-- Header -->
-    <div class="flex justify-between items-center">
+    <div class="flex justify-between items-center mb-6">
       <div class="mb-4 text-left">
         <h1 class="text-2xl font-semibold text-gray-800">
           Welcome, {{ user.first_name }} 👋
         </h1>
         <p class="text-sm text-gray-500">Here's what's happening today</p>
+      </div>
+
+      <!-- Doctor Availability Selector -->
+      <div class="flex flex-col items-end gap-1">
+        <label class="text-sm font-medium text-gray-700">
+          Doctor Availability
+        </label>
+        <div class="flex items-center gap-3">
+          <span
+            :class="
+              doctorAvailability === 'available'
+                ? 'text-green-600 font-semibold'
+                : 'text-gray-500'
+            "
+          >
+            {{
+              doctorAvailability === "available" ? "Available" : "Not Available"
+            }}
+          </span>
+
+          <button
+            @click="toggleAvailability"
+            class="relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-300"
+            :class="
+              doctorAvailability === 'available'
+                ? 'bg-green-500'
+                : 'bg-gray-300'
+            "
+          >
+            <span
+              class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-300"
+              :class="
+                doctorAvailability === 'available'
+                  ? 'translate-x-6'
+                  : 'translate-x-1'
+              "
+            />
+          </button>
+        </div>
       </div>
     </div>
 
@@ -63,12 +102,11 @@
           </div>
 
           <!-- Calendar Days -->
-          <!-- Calendar Days -->
           <div class="grid grid-cols-7 gap-2 pt-2">
             <div
               v-for="(date, index) in calendarDays"
               :key="index"
-              class="rounded-xl h-[10vh] cursor-pointer relative p-2 text-right flex flex-col"
+              class="aspect-square rounded-xl h-[10vh] cursor-pointer relative p-2 text-right"
               :class="{
                 'bg-[#34699A] text-white font-bold': isToday(date),
                 'text-gray-400': date.month() !== currentMonth.month(),
@@ -76,77 +114,23 @@
               }"
               @click="selectDate(date)"
             >
-              <!-- Day number -->
-              <div class="text-sm mb-1">
-                {{ date.date() }}
-              </div>
+              {{ date.date() }}
 
               <!-- Appointments -->
-              <div class="flex flex-col gap-1 overflow-hidden">
-                <template
-                  v-for="group in getAppointmentsByDate(date).slice(0, 1)"
-                  :key="group.patient.patient_id"
-                >
-                  <div
-                    class="bg-[#34699A] text-white text-xs px-2 py-0.5 rounded truncate cursor-pointer"
-                    @click.stop="openEventDetails(group)"
-                  >
-                    {{ group.patient.first_name }} {{ group.patient.last_name }}
-                    <span class="text-[10px] opacity-80">
-                      ({{ group.appointments.length }})
-                    </span>
-                  </div>
-                </template>
-
-                <!-- +N more indicator -->
+              <div
+                v-for="(appointment, idx) in getAppointmentsByDate(date)"
+                :key="'appt-' + idx"
+                class="absolute inset-x-1 bottom-1 flex flex-col items-start gap-1"
+                @click.stop="openEventDetails(appointment)"
+              >
                 <div
-                  v-if="getAppointmentsByDate(date).length > 1"
-                  class="mt-1 w-6 h-6 rounded-full bg-gray-300 text-gray-800 text-[10px] flex items-center justify-center cursor-pointer hover:bg-gray-400"
-                  @click.stop="openAllAppointments(date)"
+                  class="bg-[#34699A] text-white text-xs px-2 py-0.5 rounded cursor-pointer truncate w-full"
                 >
-                  +{{ getAppointmentsByDate(date).length - 1 }}
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- All Appointments Modal -->
-          <div
-            v-if="showAllAppointmentsModal"
-            class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-          >
-            <div class="bg-white w-[400px] rounded-2xl shadow-lg p-5">
-              <!-- Header -->
-              <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold text-gray-700">
-                  Appointments – {{ selectedDate.format("MMMM D, YYYY") }}
-                </h3>
-                <button
-                  class="text-gray-400 hover:text-gray-600"
-                  @click="showAllAppointmentsModal = false"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <!-- Appointment List -->
-              <div class="space-y-2 max-h-[300px] overflow-auto">
-                <div
-                  v-for="group in selectedAppointments"
-                  :key="group.patient.patient_id"
-                  class="p-3 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200"
-                  @click="openEventFromList(group)"
-                >
-                  <div class="font-medium text-gray-800">
-                    {{ group.patient.first_name }} {{ group.patient.last_name }}
-                  </div>
-
-                  <div
-                    v-for="appt in group.appointments"
-                    :key="appt.appointment_id"
-                    class="text-xs text-gray-500"
+                  {{ appointment.patient.first_name }}
+                  {{ appointment.patient.last_name }}
+                  <span class="text-[10px] ml-1"
+                    >({{ appointment.appointment_time }})</span
                   >
-                    {{ appt.appointment_time }} · {{ appt.appointment_status }}
-                  </div>
                 </div>
               </div>
             </div>
@@ -162,107 +146,102 @@
           <h2 class="text-xl font-semibold text-gray-700">Announcements</h2>
           <icon :name="'3dots'" />
         </div>
-        <div class="max-h-[85vh] overflow-y-auto">
-          <!-- Event Lists -->
-          <div v-if="todaysEvents.length">
-            <h3 class="text-sm font-bold text-gray-600 mb-2">Today</h3>
-            <div
-              v-for="(event, idx) in todaysEvents"
-              :key="'today-' + idx"
-              class="bg-green-50 border border-green-200 rounded-xl p-4 mb-3 shadow-sm cursor-pointer hover:bg-green-100"
-              @click="openEventDetails(event.raw || event)"
-            >
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="text-xs text-gray-500 mb-1">
-                    {{ formatDate(event) }}
-                  </div>
-                  <div class="text-sm font-medium text-gray-800">
-                    {{ event.title }}
-                  </div>
-                </div>
-                <div
-                  :class="{
-                    'w-9 h-9 bg-green-400 rounded-full flex items-center justify-center':
-                      event.type !== 'appointment',
-                    'w-9 h-9 bg-blue-400 rounded-full flex items-center justify-center':
-                      event.type === 'appointment',
-                  }"
-                >
-                  <icon
-                    :name="
-                      event.type === 'appointment' ? 'calendar' : 'calendar'
-                    "
-                    class="text-white w-5 h-5"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <div v-if="upcomingEvents.length">
-            <h3 class="text-sm font-bold text-gray-600 mt-4 mb-2">Upcoming</h3>
-            <div
-              v-for="(event, idx) in upcomingEvents"
-              :key="'upcoming-' + idx"
-              class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-3 shadow-sm cursor-pointer hover:bg-blue-100"
-              @click="openEventDetails(event)"
-            >
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="text-xs text-gray-500 mb-1">
-                    {{ formatDate(event) }}
-                  </div>
-                  <div class="text-sm font-medium text-gray-800">
-                    {{ event.title }}
-                  </div>
-                </div>
-                <div
-                  class="w-9 h-9 bg-[#34699A] rounded-full flex items-center justify-center"
-                >
-                  <icon :name="'noticeBell'" class="text-white w-5 h-5" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="pastEvents.length">
-            <h3 class="text-sm font-bold text-gray-600 mt-4 mb-2">Completed</h3>
-            <div
-              v-for="(event, idx) in pastEvents"
-              :key="'past-' + idx"
-              class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-3 shadow-sm cursor-pointer hover:bg-gray-100"
-              @click="openEventDetails(event)"
-            >
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="text-xs text-gray-500 mb-1">
-                    {{ formatDate(event) }}
-                  </div>
-                  <div class="text-sm font-medium text-gray-800">
-                    {{ event.title }}
-                  </div>
-                </div>
-                <div
-                  class="w-9 h-9 bg-gray-400 rounded-full flex items-center justify-center"
-                >
-                  <icon :name="'check1'" class="text-white w-5 h-5" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <p
-            v-if="
-              !todaysEvents.length &&
-              !upcomingEvents.length &&
-              !pastEvents.length
-            "
-            class="text-sm text-gray-500"
+        <!-- Event Lists -->
+        <div v-if="todaysEvents.length">
+          <h3 class="text-sm font-bold text-gray-600 mb-2">Today</h3>
+          <div
+            v-for="(event, idx) in todaysEvents"
+            :key="'today-' + idx"
+            class="bg-green-50 border border-green-200 rounded-xl p-4 mb-3 shadow-sm cursor-pointer hover:bg-green-100"
+            @click="openEventDetails(event.raw || event)"
           >
-            No announcements to show.
-          </p>
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs text-gray-500 mb-1">
+                  {{ formatDate(event) }}
+                </div>
+                <div class="text-sm font-medium text-gray-800">
+                  {{ event.title }}
+                </div>
+              </div>
+              <div
+                :class="{
+                  'w-9 h-9 bg-green-400 rounded-full flex items-center justify-center':
+                    event.type !== 'appointment',
+                  'w-9 h-9 bg-blue-400 rounded-full flex items-center justify-center':
+                    event.type === 'appointment',
+                }"
+              >
+                <icon
+                  :name="event.type === 'appointment' ? 'calendar' : 'calendar'"
+                  class="text-white w-5 h-5"
+                />
+              </div>
+            </div>
+          </div>
         </div>
+
+        <div v-if="upcomingEvents.length">
+          <h3 class="text-sm font-bold text-gray-600 mt-4 mb-2">Upcoming</h3>
+          <div
+            v-for="(event, idx) in upcomingEvents"
+            :key="'upcoming-' + idx"
+            class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-3 shadow-sm cursor-pointer hover:bg-blue-100"
+            @click="openEventDetails(event)"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs text-gray-500 mb-1">
+                  {{ formatDate(event) }}
+                </div>
+                <div class="text-sm font-medium text-gray-800">
+                  {{ event.title }}
+                </div>
+              </div>
+              <div
+                class="w-9 h-9 bg-[#34699A] rounded-full flex items-center justify-center"
+              >
+                <icon :name="'noticeBell'" class="text-white w-5 h-5" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="pastEvents.length">
+          <h3 class="text-sm font-bold text-gray-600 mt-4 mb-2">Completed</h3>
+          <div
+            v-for="(event, idx) in pastEvents"
+            :key="'past-' + idx"
+            class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-3 shadow-sm cursor-pointer hover:bg-gray-100"
+            @click="openEventDetails(event)"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs text-gray-500 mb-1">
+                  {{ formatDate(event) }}
+                </div>
+                <div class="text-sm font-medium text-gray-800">
+                  {{ event.title }}
+                </div>
+              </div>
+              <div
+                class="w-9 h-9 bg-gray-400 rounded-full flex items-center justify-center"
+              >
+                <icon :name="'check1'" class="text-white w-5 h-5" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p
+          v-if="
+            !todaysEvents.length && !upcomingEvents.length && !pastEvents.length
+          "
+          class="text-sm text-gray-500"
+        >
+          No announcements to show.
+        </p>
       </div>
     </div>
 
@@ -452,17 +431,14 @@ export default {
       currentMonth: dayjs().startOf("month"),
       weekDays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
       events: [],
-
       selectedDate: null,
+      showEventModal: false,
+      newEventTitle: "",
       selectedEvent: null,
-
-      selectedAppointments: [],
-      showAllAppointmentsModal: false, // ✅ ADD THIS
-
+      selectedEventIndex: null,
       loadingAvailability: false,
     };
   },
-
   computed: {
     ...mapState(useFetchDataStore, ["appointments"]),
     formattedEventDate() {
@@ -501,41 +477,19 @@ export default {
       return days;
     },
     filteredAppointments() {
-      // Admin & Receptionist see all
-      if (["Admin", "Receptionist"].includes(this.user.role)) {
-        return this.appointments;
+      if (this.user.role === "Dentist" && this.user.email) {
+        return this.appointments.filter(
+          (a) => a.user_accounts?.email === this.user.email
+        );
       }
-
-      // Dentist sees only own appointments
-      if (this.user.role === "Dentist") {
-        return this.appointments.filter((a) => a.user_id === this.user.user_id);
-      }
-
-      return [];
+      return this.appointments;
     },
+
     getAppointmentsByDate() {
-      return (date) => {
-        const sameDayAppointments = this.filteredAppointments.filter((a) =>
+      return (date) =>
+        this.filteredAppointments.filter((a) =>
           dayjs(a.scheduled_date).tz("Asia/Manila").isSame(date, "day")
         );
-
-        const grouped = {};
-
-        sameDayAppointments.forEach((appt) => {
-          const patientId = appt.patient.patient_id;
-
-          if (!grouped[patientId]) {
-            grouped[patientId] = {
-              patient: appt.patient,
-              appointments: [],
-            };
-          }
-
-          grouped[patientId].appointments.push(appt);
-        });
-
-        return Object.values(grouped);
-      };
     },
 
     todaysEvents() {
@@ -586,40 +540,6 @@ export default {
     },
   },
   methods: {
-    openEventFromList(group) {
-      const sorted = [...group.appointments].sort((a, b) =>
-        a.appointment_time.localeCompare(b.appointment_time)
-      );
-
-      this.selectedEvent = sorted[0]; // show earliest
-      this.selectedAppointments = sorted;
-
-      this.showAllAppointmentsModal = false; // ✅ close list modal
-    },
-
-    openAllAppointments(date) {
-      this.selectedDate = date;
-      this.selectedAppointments = this.getAppointmentsByDate(date);
-      this.showAllAppointmentsModal = true;
-    },
-
-    openEventDetails(payload) {
-      // CASE 1: clicked from calendar (GROUP)
-      if (payload?.appointments) {
-        const sorted = [...payload.appointments].sort((a, b) =>
-          a.appointment_time.localeCompare(b.appointment_time)
-        );
-
-        this.selectedEvent = sorted[0]; // earliest appointment
-        this.selectedAppointments = sorted; // keep all (optional)
-        return;
-      }
-
-      // CASE 2: clicked from events list
-      this.selectedEvent = payload.raw || payload;
-      this.selectedAppointments = [];
-    },
-
     formatDate(event) {
       // Use scheduled_date for appointments, otherwise use event.date
       const dateStr = event.scheduled_date || event.date;
@@ -636,18 +556,15 @@ export default {
       return date.isSame(dayjs(), "day");
     },
     selectDate(date) {
-      const groups = this.getAppointmentsByDate(date);
-      if (groups.length > 0) {
-        this.openEventDetails(groups[0]);
-      }
+      // just open details of appointments on that day
+      const appointments = this.getAppointmentsByDate(date);
+      if (appointments.length > 0) this.openEventDetails(appointments[0]);
     },
-
-    // openEventDetails(event) {
-    //   this.selectedEvent = event.raw || event;
-    // },
+    openEventDetails(event) {
+      this.selectedEvent = event.raw || event;
+    },
     closeEventModal() {
       this.selectedEvent = null;
-      this.selectedAppointments = [];
     },
 
     async fetchUser() {
@@ -662,9 +579,8 @@ export default {
         if (response.data) {
           this.user = {
             ...response.data,
-            user_id: response.data.user_id ?? response.data.sub,
+            user_id: response.data.user_id || response.data.sub,
           };
-
           // Always read availability from backend
           this.doctorAvailability =
             response.data.doctor_availability || "not-available";
@@ -728,7 +644,19 @@ export default {
     },
   },
   async mounted() {
-    await this.fetchUser();
+    await this.fetchUser(); // wait for user to be loaded
+
+    // Set the availability after user is fetched
+    this.doctorAvailability = this.user.doctor_availability || "not-available";
+
+    // If you want to fetch another user's data:
+    if (this.user.user_id !== this.user.sub) {
+      await this.fetchAnotherUsers();
+    } // Always fetch latest doctor data
+    await this.fetchAnotherUsers();
+
+    // Initialize doctor availability safely
+    this.doctorAvailability = this.user.doctor_availability || "not-available";
 
     try {
       const appointmentRes = await axios.get(
@@ -748,18 +676,17 @@ export default {
 
       let allAnnouncements = announcementRes.data;
 
-      // Dentist sees only own data
+      // Filter for dentist role
       if (this.user.role === "Dentist" && this.user.email) {
         allAppointments = allAppointments.filter(
           (a) => a.user_accounts?.email === this.user.email
         );
-
         allAnnouncements = allAnnouncements.filter(
           (ann) => ann.user_accounts?.email === this.user.email
         );
       }
 
-      // Store in Pinia
+      // If using Pinia:
       const store = useFetchDataStore();
       store.appointments = allAppointments;
       store.announcements = allAnnouncements;

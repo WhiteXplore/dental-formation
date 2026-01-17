@@ -81,7 +81,7 @@
           </div>
 
           <!-- Dentist-only fields -->
-          <div v-if="form.role === 'Dentist'" class="space-y-3">
+          <div v-if="form.role === 'Dentist'" class="space-y-4">
             <div class="flex gap-2">
               <div class="w-full space-y-1.5 flex flex-col">
                 <label class="font-bold">License No:</label>
@@ -89,57 +89,69 @@
                   v-model="form.license_no"
                   type="text"
                   class="w-full border px-3 py-3 border-gray-600 rounded-md"
-                  placeholder="Enter license no"
                   required
                 />
               </div>
+
               <div class="w-full space-y-1.5 flex flex-col">
                 <label class="font-bold">PRC Type:</label>
                 <input
                   v-model="form.prc_type"
                   type="text"
                   class="w-full border px-3 py-3 border-gray-600 rounded-md"
-                  placeholder="Enter PRC type"
                   required
                 />
               </div>
             </div>
 
-            <div class="flex gap-2">
-              <div class="w-full space-y-1.5 flex flex-col">
-                <label class="font-bold">Schedule Start Time:</label>
-                <input
-                  v-model="form.schedule_start"
-                  type="time"
-                  class="w-full border px-3 py-3 border-gray-600 rounded-md"
-                />
-              </div>
-              <div class="w-full space-y-1.5 flex flex-col">
-                <label class="font-bold">Schedule End Time:</label>
-                <input
-                  v-model="form.schedule_end"
-                  type="time"
-                  class="w-full border px-3 py-3 border-gray-600 rounded-md"
-                />
-              </div>
-            </div>
+            <!-- 🟦 Dentist Schedules -->
+            <div class="space-y-2">
+              <label class="font-bold">Dentist Schedule</label>
 
-            <div class="space-y-1.5 text-left flex flex-col">
-              <label class="font-bold">Days Available:</label>
-              <div class="grid grid-cols-3 gap-2">
-                <label
-                  v-for="day in days"
-                  :key="day"
-                  class="flex items-center gap-1"
+              <div
+                v-for="(s, index) in schedules"
+                :key="index"
+                class="flex gap-2 items-center"
+              >
+                <select
+                  v-model="s.day"
+                  class="border px-2 py-2 rounded-md w-[120px]"
+                  required
                 >
-                  <input
-                    type="checkbox"
-                    :value="day"
-                    v-model="form.available_days"
-                  />
-                  <span>{{ day }}</span>
-                </label>
+                  <option disabled value="">Day</option>
+                  <option v-for="d in days" :key="d">{{ d }}</option>
+                </select>
+
+                <input
+                  type="time"
+                  v-model="s.start_time"
+                  class="border px-2 py-2 rounded-md"
+                  required
+                />
+
+                <input
+                  type="time"
+                  v-model="s.end_time"
+                  class="border px-2 py-2 rounded-md"
+                  required
+                />
+
+                <button
+                  type="button"
+                  class="text-red-600 font-bold"
+                  @click="removeSchedule(index)"
+                >
+                  ✕
+                </button>
               </div>
+
+              <button
+                type="button"
+                class="bg-green-600 text-white px-3 py-1 rounded-md"
+                @click="addSchedule"
+              >
+                + Add Schedule
+              </button>
             </div>
           </div>
 
@@ -245,7 +257,7 @@ export default {
   },
   data() {
     return {
-      showPasswordInput: false, // controls password field visibility in edit mode
+      showPasswordInput: false,
       days: [
         "Monday",
         "Tuesday",
@@ -264,10 +276,8 @@ export default {
         password: "",
         role: "",
         status: "",
-        schedule_start: "",
-        schedule_end: "",
-        available_days: [],
       },
+      schedules: [],
     };
   },
 
@@ -276,14 +286,20 @@ export default {
       return !!this.user;
     },
   },
-  mounted() {
-    if (this.isEditMode) {
-      this.form = { ...this.user, password: "" };
-      this.showPasswordInput = false; // hide password input initially
-    }
-  },
 
   methods: {
+    addSchedule() {
+      this.schedules.push({
+        day: "",
+        start_time: "",
+        end_time: "",
+      });
+    },
+
+    removeSchedule(index) {
+      this.schedules.splice(index, 1);
+    },
+
     async submitData() {
       const formEl = this.$refs.userForm;
       if (!formEl.checkValidity()) {
@@ -292,10 +308,11 @@ export default {
       }
 
       try {
-        // Prepare payload
-        let payload = { ...this.form };
+        let payload = {
+          ...this.form,
+          schedules: this.form.role === "Dentist" ? this.schedules : [],
+        };
 
-        // In edit mode, remove password if empty
         if (this.isEditMode && !payload.password) {
           delete payload.password;
         }
@@ -314,17 +331,27 @@ export default {
           toast.success("User added successfully!");
         }
 
-        // Play audio feedback
         const audio = new Audio(require("@/assets/add.mp3"));
         audio.play();
 
         this.$emit("refresh");
-        this.$emit("close");      } catch (error) {
+        this.$emit("close");
+      } catch (error) {
         toast.error(
           this.isEditMode ? "Failed to update user." : "Failed to add user."
         );
       }
     },
+  },
+  mounted() {
+    if (this.isEditMode) {
+      this.form = {
+        ...this.user,
+        password: "",
+      };
+
+      this.schedules = this.user.schedules ? [...this.user.schedules] : [];
+    }
   },
 };
 </script>

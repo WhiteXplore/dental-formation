@@ -45,7 +45,6 @@ export class AuthService {
       last_name: user.last_name,
       license_no: user.license_no,
       prc_type: user.prc_type,
-      doctor_availability: user.doctor_availability,
     };
 
     const token = this.jwtService.sign(payload, { expiresIn: '1h' });
@@ -63,7 +62,6 @@ export class AuthService {
       message: 'Login successful',
       role: user.role,
       status: user.status,
-      doctor_availability: user.doctor_availability,
     });
   }
 
@@ -87,7 +85,6 @@ export class AuthService {
       const { password, ...safeUser } = user;
       return {
         ...safeUser,
-        doctor_availability: user.doctor_availability,
       };
     } catch (error) {
       throw new UnauthorizedException('Invalid or expired token');

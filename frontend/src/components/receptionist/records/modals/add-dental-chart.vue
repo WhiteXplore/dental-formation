@@ -425,6 +425,7 @@ export default {
         selected_teeth: [],
         bracesPosition: "",
         selected_inventories: [],
+        patientAge: null,
       },
       searchInventoryQuery: "",
       showInventoryDropdown: false,
@@ -456,22 +457,44 @@ export default {
   },
   watch: {
     "form.price_procedure_id"(newVal) {
-      if (!newVal || !this.form.patient_id) return;
+      if (!newVal || this.editMode) return;
 
-      if (this.editMode) return; // ✅ skip auto-selection in edit mode
+      const procedure = this.selectedProcedure;
+      if (!procedure) return;
 
-      const appt = this.appointments.find(
-        (a) => a.patient.patient_id === this.form.patient_id
-      );
-      if (!appt || !appt.patient) return;
+      // 🛑 Patient must be selected first
+      if (!this.patientAge) {
+        toast.warning("Please select a patient first.");
+        this.form.price_procedure_id = "";
+        return;
+      }
 
-      const age = Number(appt.patient.age);
-      const teeth = age <= 12 ? this.toothAgeMap.child : this.toothAgeMap.adult;
+      /* ===============================
+       * 🔹 ALL_TEETH → AUTO SELECT
+       * =============================== */
+      if (procedure.procedure_scope === "ALL_TEETH") {
+        const teeth =
+          this.patientAge <= 12
+            ? this.toothAgeMap.child
+            : this.toothAgeMap.adult;
 
-      this.selectedTeeth = [...teeth];
-      teeth.forEach((t) => {
-        this.toothStatusMap[t] = newVal;
-      });
+        this.selectedTeeth = [...teeth];
+        this.toothStatusMap = {};
+        this.form.bracesPosition = "";
+
+        teeth.forEach((tooth) => {
+          this.toothStatusMap[tooth] = newVal;
+        });
+      }
+
+      /* ===============================
+       * 🔹 PER_TOOTH → MANUAL SELECT
+       * =============================== */
+      if (procedure.procedure_scope === "PER_TOOTH") {
+        this.selectedTeeth = [];
+        this.toothStatusMap = {};
+        this.form.bracesPosition = ""; // 🔥 important reset
+      }
     },
     existingData: {
       immediate: true,
@@ -637,8 +660,19 @@ export default {
         (p) => p.price_procedure_id === this.form.price_procedure_id
       );
     },
+
+    isAllTeethScope() {
+      return this.selectedProcedure?.procedure_scope === "ALL_TEETH";
+    },
+
+    isPerToothScope() {
+      return this.selectedProcedure?.procedure_scope === "PER_TOOTH";
+    },
     isBracesProcedure() {
       if (!this.selectedProcedure) return false;
+
+      // 🔥 braces only allowed when ALL_TEETH
+      if (this.selectedProcedure.procedure_scope !== "ALL_TEETH") return false;
 
       const name = this.selectedProcedure.procedure_name.toLowerCase();
       return ["braces", "brace"].some((word) => name.includes(word));
@@ -712,24 +746,41 @@ export default {
       this.form.patient_id = appointment.patient.patient_id;
       this.form.user_id = appointment.user_id;
       this.form.scheduled_date = appointment.scheduled_date;
-
-      // ✅ Copy scheduled_date as procedure_date
       this.form.procedure_date = appointment.scheduled_date;
+
+      this.patientAge = Number(appointment.patient.age);
 
       this.searchPatientQuery = `${appointment.patient.last_name}, ${
         appointment.patient.first_name
       } ${appointment.patient.middle_name || ""}`;
+
       this.showPatientDropdown = false;
     },
     toggleTooth(tooth) {
+      // // 🚫 Disable clicking when ALL_TEETH
+      // if (this.isAllTeethScope) return;
+
+      // // 🚫 Block if no procedure selected
+      // if (!this.form.price_procedure_id) {
+      //   toast.warning("Please select a procedure first.");
+      //   return;
+      // }
+
       const index = this.selectedTeeth.indexOf(tooth);
+
       if (index !== -1) {
+        // ❌ Remove tooth
         this.selectedTeeth.splice(index, 1);
         delete this.toothStatusMap[tooth];
       } else {
+        // ✅ Add tooth
         this.selectedTeeth.push(tooth);
+
+        // Auto-assign selected procedure
+        this.toothStatusMap[tooth] = this.form.price_procedure_id;
       }
     },
+
     handleImageUpload(e) {
       const file = e.target.files[0];
       if (file && file.type.startsWith("image/")) {

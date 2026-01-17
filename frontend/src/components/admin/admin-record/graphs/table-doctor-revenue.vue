@@ -110,34 +110,58 @@ export default {
         const doctorId = doctor.user_id;
         const patientId = patient.patient_id;
 
-        // Revenue from teeth
-        const teethRevenue = teeth.reduce((sum, tooth) => {
-          return sum + parseFloat(tooth.priceProcedure?.price || 0);
-        }, 0);
-
-        // Revenue from medications
-        const medsRevenue = medications.reduce((sum, med) => {
-          const unitPrice = parseFloat(med.inventory?.price_per_unit || 0);
-          const pcs = med.pcs || 0;
-          return sum + unitPrice * pcs;
-        }, 0);
-
-        const totalRevenue = teethRevenue + medsRevenue;
-
         if (!map.has(doctorId)) {
           map.set(doctorId, {
             name: `${doctor.first_name} ${doctor.last_name}`,
             patients: new Set(),
             revenue: 0,
+            countedProcedures: new Map(), // for one_time procedures
           });
         }
 
         const entry = map.get(doctorId);
         entry.patients.add(patientId);
-        entry.revenue += totalRevenue;
+
+        // --- TEETH REVENUE BASED ON PATIENT PAYMENT AND PROCEDURE TYPE ---
+        teeth.forEach((tooth) => {
+          const procedure = tooth?.priceProcedure;
+          if (!procedure) return;
+
+          const patientPayment = parseFloat(
+            tooth?.patient_payment || procedure.price || 0
+          );
+          const pricingScope = procedure.pricing_scope || "per_tooth_payment";
+          const procName = procedure.procedure_name;
+          const procedureType = procedure.procedure_type || "Basic Procedure";
+
+          // Determine doctor share percentage
+          let doctorShare = 0.4; // default 40%
+          if (procedureType === "Special Case") doctorShare = 0.5;
+
+          const revenueToAdd = patientPayment * doctorShare;
+
+          if (pricingScope === "per_tooth_payment") {
+            entry.revenue += revenueToAdd;
+          } else if (pricingScope === "one_time") {
+            if (!entry.countedProcedures.has(procName)) {
+              entry.countedProcedures.set(procName, new Set());
+            }
+            const patientsSet = entry.countedProcedures.get(procName);
+            if (!patientsSet.has(patientId)) {
+              entry.revenue += revenueToAdd;
+              patientsSet.add(patientId);
+            }
+          }
+        });
+
+        // --- MEDICATION REVENUE (unchanged, full price) ---
+        medications.forEach((med) => {
+          const unitPrice = parseFloat(med.inventory?.price_per_unit || 0);
+          const pcs = med.pcs || 0;
+          entry.revenue += unitPrice * pcs;
+        });
       });
 
-      // Convert sets to counts
       return Array.from(map.values()).map((d) => ({
         name: d.name,
         patients: d.patients.size,

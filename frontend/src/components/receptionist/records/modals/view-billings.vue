@@ -106,8 +106,7 @@
                   @mousedown.prevent="selectGuarantor(item)"
                   class="px-3 py-2 cursor-pointer hover:bg-blue-100"
                 >
-                  {{ item.first_name }} {{ item.middle_name }}
-                  {{ item.last_name }} - {{ item.company }}
+                  {{ item.full_name }} - {{ item.company }}
                 </li>
               </ul>
             </div>
@@ -130,6 +129,9 @@
                     <th class="px-4 py-2 text-left text-gray-600 font-medium">
                       Procedure
                     </th>
+                    <th class="px-4 py-2 text-left text-gray-600 font-medium">
+                      Pricing Scope
+                    </th>
                     <th class="px-4 py-2 text-right text-gray-600 font-medium">
                       Fee (₱)
                     </th>
@@ -148,22 +150,27 @@
                       <span v-if="tooth.priceProcedure">
                         {{ tooth.priceProcedure.procedure_name }}
                       </span>
-                      <span v-else class="italic text-gray-400">
-                        No procedure assigned
-                      </span>
+                      <span v-else class="italic text-gray-400"
+                        >No procedure assigned</span
+                      >
+                    </td>
+                    <td class="px-4 py-3 text-gray-500 font-medium">
+                      {{
+                        tooth.priceProcedure?.pricing_scope ===
+                        "PER_TOOTH_PAYMENT"
+                          ? "Per Tooth"
+                          : "One Time"
+                      }}
                     </td>
                     <td
                       class="px-4 py-3 text-right text-green-700 font-semibold"
                     >
                       ₱{{
                         tooth.priceProcedure
-                          ? Number(tooth.priceProcedure.price).toLocaleString(
-                              "en-PH",
-                              {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              }
-                            )
+                          ? Number(getToothFee(tooth)).toLocaleString("en-PH", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })
                           : "0.00"
                       }}
                     </td>
@@ -243,14 +250,30 @@ export default {
       if (!patient) return "No patient info";
       return `${patient.last_name}, ${patient.first_name} ${patient.middle_name}`.trim();
     },
+    // Total sum respecting pricing_scope
     procedureTotal() {
-      return this.form.teeth.reduce((sum, tooth) => {
-        return (
-          sum +
-          (tooth.priceProcedure ? Number(tooth.priceProcedure.price || 0) : 0)
-        );
-      }, 0);
+      const countedOneTime = new Set();
+      let total = 0;
+
+      this.form.teeth.forEach((tooth) => {
+        const proc = tooth.priceProcedure;
+        if (!proc) return;
+
+        if (proc.pricing_scope === "one_time") {
+          // Add only once per procedure ID
+          if (!countedOneTime.has(proc.price_procedure_id)) {
+            total += Number(proc.price || 0);
+            countedOneTime.add(proc.price_procedure_id);
+          }
+        } else if (proc.pricing_scope === "per_tooth_payment") {
+          // Add per tooth
+          total += Number(proc.price || 0);
+        }
+      });
+
+      return total;
     },
+
     totalPayment() {
       return this.procedureTotal;
     },
@@ -259,9 +282,7 @@ export default {
       if (!query) return this.fetchDataStore.hmoGuarantors || [];
       return this.fetchDataStore.hmoGuarantors.filter(
         (item) =>
-          item.first_name.toLowerCase().includes(query) ||
-          item.middle_name.toLowerCase().includes(query) ||
-          item.last_name.toLowerCase().includes(query) ||
+          item.full_name.toLowerCase().includes(query) ||
           item.company.toLowerCase().includes(query)
       );
     },
@@ -280,7 +301,7 @@ export default {
 
         if (newRecord?.hmoGuarantor) {
           this.selectedGuarantor = newRecord.hmoGuarantor;
-          this.searchQuery = `${this.selectedGuarantor.first_name} ${this.selectedGuarantor.middle_name} ${this.selectedGuarantor.last_name} - ${this.selectedGuarantor.company}`;
+          this.searchQuery = `${this.selectedGuarantor.full_name}  - ${this.selectedGuarantor.company}`;
         }
       },
       immediate: true,
@@ -288,9 +309,25 @@ export default {
   },
 
   methods: {
+    getToothFee(tooth) {
+      const proc = tooth.priceProcedure;
+      if (!proc) return 0;
+
+      if (proc.pricing_scope === "one_time") {
+        // Only count the first occurrence of this procedure
+        const firstOccurrence = this.form.teeth.find(
+          (t) =>
+            t.priceProcedure?.price_procedure_id === proc.price_procedure_id
+        );
+        return firstOccurrence === tooth ? Number(proc.price || 0) : 0;
+      }
+
+      // Per tooth payment
+      return Number(proc.price || 0);
+    },
     selectGuarantor(item) {
       this.selectedGuarantor = item;
-      this.searchQuery = `${item.first_name} ${item.middle_name} ${item.last_name} - ${item.company}`;
+      this.searchQuery = `${item.full_name} - ${item.company}`;
       this.showDropdown = false;
       this.updatePaymentAndGuarantor();
     },

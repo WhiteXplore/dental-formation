@@ -112,23 +112,35 @@
                   <div class="flex flex-col">
                     <span>
                       Dr. {{ dentist.last_name }}, {{ dentist.first_name }}
-                      {{ dentist.middle_name }}
+                      {{ dentist.middle_name || "" }}
                     </span>
-                    <div class="flex flex-wrap gap-1 mt-1">
-                      <span
-                        v-for="day in Array.isArray(dentist.available_days)
-                          ? dentist.available_days
-                          : [dentist.available_days]"
-                        :key="day"
-                        class="px-2 py-0.5 rounded-full text-xs font-medium text-white bg-blue-500"
+                    <div class="flex flex-wrap flex-col gap-2 mt-1 max-w-full">
+                      <div
+                        v-for="sched in dentist.schedules"
+                        :key="sched.schedule_id"
+                        class="flex items-center gap-1 max-w-full"
                       >
-                        {{ day }}
-                      </span>
-                    </div>
+                        <!-- Day badge -->
+                        <span
+                          class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium text-white bg-blue-500 whitespace-nowrap"
+                        >
+                          {{ sched.day }}
+                        </span>
 
-                    <span class="text-gray-600 text-sm">
-                      {{ dentist.schedule_start }} - {{ dentist.schedule_end }}
-                    </span>
+                        <!-- Time -->
+                        <span class="text-gray-600 text-sm whitespace-nowrap">
+                          {{ formatTime12(sched.start_time) }} -
+                          {{ formatTime12(sched.end_time) }}
+                        </span>
+                      </div>
+
+                      <div
+                        v-if="dentist.schedules.length === 0"
+                        class="text-gray-400 text-xs italic"
+                      >
+                        No schedule set
+                      </div>
+                    </div>
                   </div>
 
                   <span
@@ -279,14 +291,10 @@ export default {
 
     filteredDentists() {
       const query = this.searchDentistQuery.toLowerCase();
+
       return this.dentists
         .filter((d) => d.role === "Dentist")
-        .filter(
-          (d) =>
-            d.status !== "Inactive" &&
-            d.status !== "InActive" &&
-            d.status !== "Not Active"
-        ) // <-- exclude inactive dentists
+        .filter((d) => d.status.toLowerCase() === "active")
         .filter((d) =>
           `${d.last_name}, ${d.first_name} ${d.middle_name || ""}`
             .toLowerCase()
@@ -295,33 +303,37 @@ export default {
         .map((d) => {
           let isAvailable = false;
 
+          // Only check availability if date + time is selected
           if (
-            d.doctor_availability === "available" &&
-            d.available_days?.length &&
-            d.schedule_start &&
-            d.schedule_end &&
             this.form.scheduled_date &&
-            this.form.appointment_time
+            this.form.appointment_time &&
+            Array.isArray(d.schedules) &&
+            d.schedules.length
           ) {
             const selectedDay = dayjs(this.form.scheduled_date).format("dddd");
-            const apptTime = dayjs(
+
+            // Appointment time from input
+            const appointmentTime = dayjs(
               `${this.form.scheduled_date} ${this.form.appointment_time}`,
               "YYYY-MM-DD HH:mm"
             );
-            const startTime = dayjs(
-              `${this.form.scheduled_date} ${d.schedule_start}`,
-              "YYYY-MM-DD HH:mm"
-            );
-            const endTime = dayjs(
-              `${this.form.scheduled_date} ${d.schedule_end}`,
-              "YYYY-MM-DD HH:mm"
-            );
 
-            if (
-              d.available_days.includes(selectedDay) &&
-              apptTime.isBetween(startTime, endTime, null, "[]")
-            ) {
-              isAvailable = true;
+            for (const sched of d.schedules) {
+              if (sched.day !== selectedDay) continue;
+
+              const start = dayjs(
+                `${this.form.scheduled_date} ${sched.start_time}`,
+                "YYYY-MM-DD HH:mm:ss"
+              );
+              const end = dayjs(
+                `${this.form.scheduled_date} ${sched.end_time}`,
+                "YYYY-MM-DD HH:mm:ss"
+              );
+
+              if (appointmentTime.isBetween(start, end, null, "[]")) {
+                isAvailable = true;
+                break;
+              }
             }
           }
 
@@ -337,7 +349,14 @@ export default {
       "fetchAppointments",
       "fetchMedications",
     ]),
+    formatTime12(time) {
+      if (!time) return "-";
 
+      // Add a dummy date to ensure valid parsing
+      return dayjs(`2000-01-01 ${time}`, "YYYY-MM-DD HH:mm:ss").format(
+        "hh:mm A"
+      );
+    },
     selectPatient(patient) {
       this.form.patient_id = patient.patient_id;
       this.searchPatientQuery = `${patient.last_name}, ${patient.first_name} ${

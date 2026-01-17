@@ -52,7 +52,7 @@
 import dayjs from "dayjs";
 import { useFetchDataStore } from "@/store/fetch-data-store";
 import { mapState } from "pinia";
-
+import axios from "axios";
 export default {
   name: "CardPatientByDoctor",
 
@@ -62,26 +62,56 @@ export default {
       default: () => ({ year: null, month: null }),
     },
   },
+  data() {
+    return {
+      user: null,
+    };
+  },
 
   computed: {
     ...mapState(useFetchDataStore, ["medications"]),
 
     filteredPayments() {
+      if (!this.user) return [];
+
       return this.medications.filter((item) => {
+        // must have procedure date
         if (!item.dentalChart?.procedure_date) return false;
+
+        // ✅ FIX: match logged-in dentist
+        const doctorMatch =
+          item.dentalChart?.user_accounts?.user_id === this.user.sub;
+
+        if (!doctorMatch) return false;
+
         const procedureDate = dayjs(item.dentalChart.procedure_date);
+
         const yearMatch = this.filter.year
           ? procedureDate.year() === +this.filter.year
           : true;
+
         const monthMatch = this.filter.month
           ? procedureDate.month() + 1 === +this.filter.month
           : true;
+
         return yearMatch && monthMatch;
       });
     },
   },
 
   methods: {
+    async fetchUser() {
+      try {
+        const res = await axios.get(
+          process.env.VUE_APP_API_BASE_URL + "/auth/me",
+          { withCredentials: true }
+        );
+        this.user = res.data;
+      } catch (err) {
+        console.error("User fetch failed:", err);
+        this.$router.push("/");
+      }
+    },
     formatDate(date) {
       return date ? dayjs(date).format("MMM D, YYYY") : "-";
     },
@@ -134,6 +164,9 @@ export default {
     clinicShare(item) {
       return this.totalAmount(item) - this.doctorShare(item);
     },
+  },
+  async mounted() {
+    await this.fetchUser();
   },
 };
 </script>

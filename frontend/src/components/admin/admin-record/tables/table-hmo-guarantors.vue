@@ -68,9 +68,7 @@
                   >
                     No.
                   </th>
-                  <th class="px-4 py-3 text-left font-normal">First Name</th>
-                  <th class="px-4 py-3 text-left font-normal">Middle Name</th>
-                  <th class="px-4 py-3 text-left font-normal">Last Name</th>
+                  <th class="px-4 py-3 text-left font-normal">Full Name</th>
                   <th class="px-4 py-3 text-left font-normal">Company</th>
                   <th class="px-4 py-3 text-left rounded-tr-lg font-normal">
                     Actions
@@ -80,13 +78,11 @@
               <tbody>
                 <tr
                   v-for="(guarantor, index) in paginatedData"
-                  :key="guarantor.id"
+                  :key="guarantor.hmo_guarantor_id"
                   class="bg-white hover:bg-green-50 transition-all border border-gray-200 rounded-md shadow-sm"
                 >
                   <td class="px-4 py-2">{{ startIndex + index }}</td>
-                  <td class="px-4 py-2">{{ guarantor.first_name }}</td>
-                  <td class="px-4 py-2">{{ guarantor.middle_name }}</td>
-                  <td class="px-4 py-2">{{ guarantor.last_name }}</td>
+                  <td class="px-4 py-2">{{ guarantor.full_name }}</td>
                   <td class="px-4 py-2">{{ guarantor.company }}</td>
 
                   <td class="px-4 py-2">
@@ -107,7 +103,7 @@
                   </td>
                 </tr>
                 <tr v-if="paginatedData.length === 0">
-                  <td colspan="6" class="text-center py-8 text-gray-400">
+                  <td colspan="4" class="text-center py-8 text-gray-400">
                     No records found
                   </td>
                 </tr>
@@ -119,10 +115,10 @@
         <!-- Pagination -->
         <div class="flex justify-between items-center mt-4">
           <div class="text-gray-700">
-            <span
-              >Showing {{ startIndex }} to {{ endIndex }} of
-              {{ filteredData.length }} entries</span
-            >
+            <span>
+              Showing {{ startIndex }} to {{ endIndex }} of
+              {{ filteredData.length }} entries
+            </span>
           </div>
           <div class="flex items-center">
             <button
@@ -240,9 +236,7 @@ export default {
       const query = this.searchQuery.toLowerCase();
       return this.hmoGuarantors.filter(
         (item) =>
-          item.first_name.toLowerCase().includes(query) ||
-          item.middle_name.toLowerCase().includes(query) ||
-          item.last_name.toLowerCase().includes(query) ||
+          item.full_name.toLowerCase().includes(query) ||
           item.company.toLowerCase().includes(query)
       );
     },
@@ -294,16 +288,18 @@ export default {
       this.showDeleteModal = true;
     },
     async confirmDelete() {
-      if (!this.recordToDelete || isNaN(this.recordToDelete.id)) {
+      if (!this.recordToDelete || isNaN(this.recordToDelete.hmo_guarantor_id)) {
         toast.error("Invalid guarantor ID.");
         return;
       }
 
-      const id = this.recordToDelete.id;
+      const id = this.recordToDelete.hmo_guarantor_id;
+
       try {
         await axios.delete(
-          process.env.VUE_APP_API_BASE_URL + `/hmo-guarantors/delete/${id}`
+          `${process.env.VUE_APP_API_BASE_URL}/hmo-guarantors/${id}`
         );
+
         this.recordToDelete = null;
         this.showDeleteModal = false;
         toast.success("Guarantor deleted successfully");

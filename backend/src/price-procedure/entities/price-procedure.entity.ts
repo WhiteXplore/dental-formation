@@ -28,6 +28,12 @@ export class PriceProcedure {
   @Column('decimal', { precision: 10, scale: 2 })
   price: number;
 
+  @Column()
+  procedure_scope: string;
+
+  @Column()
+  pricing_scope: string;
+
   @Column({ default: true })
   is_active: boolean;
 

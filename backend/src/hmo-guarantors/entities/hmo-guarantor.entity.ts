@@ -6,14 +6,8 @@ export class HmoGuarantor {
   @PrimaryGeneratedColumn()
   hmo_guarantor_id: number;
 
-  @Column({ length: 100 })
-  first_name: string;
-
-  @Column({ length: 100, nullable: true })
-  middle_name: string;
-
-  @Column({ length: 100 })
-  last_name: string;
+  @Column({ length: 250 })
+  full_name: string;
 
   @Column({ length: 150 })
   company: string;
