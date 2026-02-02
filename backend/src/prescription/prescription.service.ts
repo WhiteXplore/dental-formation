@@ -193,6 +193,8 @@ export class PrescriptionService {
         updateDto.instruction ?? prescription.instruction;
       prescription.patient_payment =
         updateDto.patient_payment ?? prescription.patient_payment;
+      prescription.excess_payment =
+        updateDto.excess_payment ?? prescription.excess_payment;
       prescription.is_discharged =
         updateDto.is_discharged ?? prescription.is_discharged;
 

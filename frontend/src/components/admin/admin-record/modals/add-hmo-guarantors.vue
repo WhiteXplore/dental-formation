@@ -32,9 +32,8 @@
             <label class="font-bold">Entity Type:</label>
             <select v-model="form.company" required class="input">
               <option disabled value="">Select entity type</option>
-              <option value="Maxicare">Maxicare</option>
-              <option value="Intellicare">Intellicare</option>
-              <option value="Avega">Avega</option>
+              <option value="Company">Company</option>
+              <option value="Corporate">Corporate</option>
               <option value="Other">Other</option>
             </select>
           </div>
@@ -148,14 +147,14 @@ export default {
         if (this.isEditMode) {
           await axios.patch(
             `${process.env.VUE_APP_API_BASE_URL}/hmo-guarantors/${this.guarantor.hmo_guarantor_id}`,
-            payload
+            payload,
           );
 
           toast.success("HMO updated successfully!");
         } else {
           await axios.post(
             `${process.env.VUE_APP_API_BASE_URL}/hmo-guarantors`,
-            payload
+            payload,
           );
           toast.success("HMO added successfully!");
         }
@@ -166,7 +165,7 @@ export default {
       } catch (error) {
         console.error(error);
         toast.error(
-          this.isEditMode ? "Failed to update HMO." : "Failed to add HMO."
+          this.isEditMode ? "Failed to update HMO." : "Failed to add HMO.",
         );
       }
     },

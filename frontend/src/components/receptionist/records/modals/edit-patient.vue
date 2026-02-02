@@ -137,14 +137,16 @@
           <div class="flex gap-2 items-center w-full">
             <div class="w-full space-y-1.5 text-left flex flex-col">
               <label for="marital_status" class="font-bold">Status:</label>
-              <input
+              <select
                 v-model="form.marital_status"
-                type="string"
-                id="marital_status"
                 required
-                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-                placeholder="Enter marital status"
-              />
+                class="w-full border px-2 py-3.5 border-gray-600 rounded-md text-md text-gray-800"
+              >
+                <option disabled value="">Select Marital Status</option>
+                <option value="Single">Single</option>
+                <option value="Married">Married</option>
+                <option value="Widowed">Widowed</option>
+              </select>
             </div>
             <div class="w-full space-y-1.5 text-left flex flex-col">
               <label for="occupation" class="font-bold">Occupation:</label>
@@ -208,8 +210,9 @@
                 v-model="form.parent_fullname"
                 type="text"
                 id="parent_fullname"
-                required
-                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+                :disabled="form.age >= 18"
+                :required="form.age < 18"
+                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="Enter the parent name if the client is minor"
               />
             </div>
@@ -481,13 +484,21 @@
             <div class="space-y-4">
               <div class="space-y-2">
                 <label class="font-semibold">Blood Type:</label>
-                <input
+                <select
                   v-model="form.blood_type"
-                  type="text"
-                  class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-                  placeholder="Enter blood type"
+                  class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800 bg-white"
                   required
-                />
+                >
+                  <option value="" disabled>Select blood type</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                </select>
               </div>
 
               <div class="space-y-2">
@@ -495,6 +506,9 @@
                 <input
                   v-model="form.blood_pressure"
                   type="text"
+                  pattern="^\d{2,3}\/\d{2,3}$"
+                  title="Blood pressure must be in the format 120/80"
+                  @input="sanitizeBloodPressure"
                   class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
                   placeholder="Enter blood pressure (e.g. 120/80)"
                   required
@@ -716,6 +730,20 @@ export default {
      METHODS
   =============================== */
   methods: {
+    sanitizeBloodPressure() {
+      // Allow only digits and one slash
+      let val = this.form.blood_pressure
+        .replace(/[^0-9/]/g, "") // remove letters/symbols
+        .replace(/\/{2,}/g, "/"); // prevent multiple slashes
+
+      // Keep only the FIRST slash
+      const parts = val.split("/");
+      if (parts.length > 2) {
+        val = parts[0] + "/" + parts[1];
+      }
+
+      this.form.blood_pressure = val;
+    },
     goNext() {
       const form = this.$refs.patientForm;
       if (!form.checkValidity()) {
@@ -745,7 +773,7 @@ export default {
         await axios.patch(
           process.env.VUE_APP_API_BASE_URL +
             `/patient/update-patient/${this.patient.patient_id}`,
-          payload
+          payload,
         );
 
         toast.success("Patient updated successfully!");

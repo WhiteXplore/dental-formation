@@ -33,7 +33,7 @@
           <span class="font-medium text-sm">Inventory Logs</span>
         </div>
 
-        <div
+        <!-- <div
           @click="exportToPDF"
           class="flex items-center gap-2 px-4 py-2 border text-blue-600 border-blue-600 rounded-xl hover:bg-blue-100 hover:shadow-lg cursor-pointer transition duration-200"
         >
@@ -43,7 +43,7 @@
             <icon :name="'circle-arrow-down'" class="w-4 h-4" />
           </div>
           <span class="font-medium text-sm">Download PDF</span>
-        </div>
+        </div> -->
 
         <div
           @click="openAddModal"
@@ -687,7 +687,7 @@ export default {
 
     async fetchInventories() {
       const res = await axios.get(
-        `${process.env.VUE_APP_API_BASE_URL}/inventory/get-inventory`
+        `${process.env.VUE_APP_API_BASE_URL}/inventory/get-inventory`,
       );
       this.inventories = res.data.map((item) => ({
         ...item,
@@ -723,7 +723,7 @@ export default {
     async confirmDelete() {
       try {
         await axios.delete(
-          `${process.env.VUE_APP_API_BASE_URL}/inventory/delete/${this.deleteTarget}`
+          `${process.env.VUE_APP_API_BASE_URL}/inventory/delete/${this.deleteTarget}`,
         );
         toast.success("Record deleted successfully");
       } catch {
@@ -769,14 +769,14 @@ export default {
         if (this.editIndex === null) {
           await axios.post(
             `${process.env.VUE_APP_API_BASE_URL}/inventory/add-inventory`,
-            formData
+            formData,
           );
           toast.success("Record saved successfully");
         } else {
           const id = this.inventories[this.editIndex].id;
           await axios.patch(
             `${process.env.VUE_APP_API_BASE_URL}/inventory/update/${id}`,
-            formData
+            formData,
           );
           toast.success("Record updated successfully");
         }
@@ -819,7 +819,7 @@ export default {
 
       // Only process charts that haven't been deducted
       const chartsToDeduct = this.dentalCharts.filter(
-        (chart) => !chart.inventoryDeducted
+        (chart) => !chart.inventoryDeducted,
       );
 
       if (chartsToDeduct.length === 0) {
@@ -866,7 +866,7 @@ export default {
         ([inventoryId, quantity]) => ({
           inventoryId: parseInt(inventoryId),
           quantity,
-        })
+        }),
       );
 
       console.log("Deduct payloads:", payloads);
@@ -876,15 +876,15 @@ export default {
         try {
           await axios.patch(
             `${process.env.VUE_APP_API_BASE_URL}/inventory/deduct`,
-            payload
+            payload,
           );
           console.log(
-            `Deducted inventory ${payload.inventoryId}: ${payload.quantity}`
+            `Deducted inventory ${payload.inventoryId}: ${payload.quantity}`,
           );
         } catch (err) {
           console.error(
             `Failed to deduct inventory ${payload.inventoryId}:`,
-            err.response?.data || err.message
+            err.response?.data || err.message,
           );
         }
       }
@@ -893,13 +893,13 @@ export default {
       for (const chart of chartsToDeduct) {
         try {
           await axios.patch(
-            `${process.env.VUE_APP_API_BASE_URL}/dental-chart/deduct-inventory/${chart.dental_id}`
+            `${process.env.VUE_APP_API_BASE_URL}/dental-chart/deduct-inventory/${chart.dental_id}`,
           );
           chart.inventoryDeducted = true; // update local state
         } catch (err) {
           console.error(
             `Failed to mark dental chart ${chart.dental_id} as deducted:`,
-            err.response?.data || err.message
+            err.response?.data || err.message,
           );
         }
       }

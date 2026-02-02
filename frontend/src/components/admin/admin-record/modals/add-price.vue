@@ -295,8 +295,8 @@ export default {
             .toLowerCase()
             .includes(this.searchInventoryQuery.toLowerCase()) &&
           !this.form.selected_inventories.find(
-            (i) => i.inventory_id === inv.inventory_id
-          )
+            (i) => i.inventory_id === inv.inventory_id,
+          ),
       );
     },
   },
@@ -338,7 +338,7 @@ export default {
 
     toggleInventory(item) {
       const exists = this.form.selected_inventories.find(
-        (i) => i.inventory_id === item.inventory_id
+        (i) => i.inventory_id === item.inventory_id,
       );
 
       if (!exists) {
@@ -366,7 +366,7 @@ export default {
     async fetchInventories() {
       try {
         const response = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/inventory/get-inventory"
+          process.env.VUE_APP_API_BASE_URL + "/inventory/get-inventory",
         );
         this.inventories = response.data;
       } catch (err) {
@@ -394,14 +394,14 @@ export default {
           await axios.patch(
             process.env.VUE_APP_API_BASE_URL +
               `/price-procedure/update/${this.procedure.price_procedure_id}`,
-            payload
+            payload,
           );
           toast.success("Procedure updated successfully!");
         } else {
           await axios.post(
             process.env.VUE_APP_API_BASE_URL +
               "/price-procedure/add-price-procedure",
-            payload
+            payload,
           );
           toast.success("Procedure added successfully!");
         }

@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { ProcedureInventory } from 'src/price-procedure/entities/price-procedure-inventory.entity';
 import { AdditionalItems } from 'src/dental-chart/entities/additional_items.entity';
+
 @Entity('inventory')
 export class Inventory {
   @PrimaryGeneratedColumn()
@@ -28,6 +29,17 @@ export class Inventory {
   @Column({ type: 'longblob', nullable: true })
   image: Buffer;
 
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  notif_status: string | null; // ✅ FIX
+
+  @Column({ type: 'timestamp', nullable: true })
+  notif_viewed_at: Date | null; // ✅ FIX
+
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  cleared_status: string | null; // ✅ FIX
+
+  /* ========================= */
+
   @UpdateDateColumn({ type: 'timestamp' })
   last_updated: Date;
 
@@ -40,9 +52,7 @@ export class Inventory {
   @OneToMany(
     () => AdditionalItems,
     (addItems) => addItems.additionalInventory,
-    {
-      cascade: true,
-    },
+    { cascade: true },
   )
   addItems: AdditionalItems[];
 }

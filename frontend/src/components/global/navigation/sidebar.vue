@@ -270,6 +270,11 @@ export default {
                     route: "/dentist-appointments",
                   },
                   {
+                    name: "Patient History",
+                    route: "/tracker",
+                    icon: "general",
+                  },
+                  {
                     name: "Dental Charts",
                     route: "/dentist-dental-chart",
                   },
@@ -391,7 +396,7 @@ export default {
       for (const item of allDropdownItems) {
         if (item.children) {
           const match = item.children.find((child) =>
-            path.startsWith(child.route)
+            path.startsWith(child.route),
           );
           if (match) {
             this.isDropdownOpen = item.name;
@@ -406,7 +411,7 @@ export default {
           process.env.VUE_APP_API_BASE_URL + "/auth/me",
           {
             withCredentials: true,
-          }
+          },
         );
         if (response.data) {
           this.user = response.data;

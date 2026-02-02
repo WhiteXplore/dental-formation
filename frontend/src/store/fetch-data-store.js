@@ -1,6 +1,6 @@
-// src/stores/fetch-data-store.js
 import { defineStore } from "pinia";
 import axios from "axios";
+import { io } from "socket.io-client"; // add socket.io client
 
 export const useFetchDataStore = defineStore("fetchData", {
   state: () => ({
@@ -17,6 +17,7 @@ export const useFetchDataStore = defineStore("fetchData", {
     prices: [],
     loading: false,
     error: null,
+    socket: null,
   }),
 
   actions: {
@@ -26,7 +27,7 @@ export const useFetchDataStore = defineStore("fetchData", {
       try {
         const response = await axios.get(
           process.env.VUE_APP_API_BASE_URL +
-            "/hmo-guarantors/get-hmo-guarantors"
+            "/hmo-guarantors/get-hmo-guarantors",
         );
         this.hmoGuarantors = response.data;
       } catch (err) {
@@ -40,7 +41,7 @@ export const useFetchDataStore = defineStore("fetchData", {
       this.error = null;
       try {
         const response = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/patient/get-patient"
+          process.env.VUE_APP_API_BASE_URL + "/patient/get-patient",
         );
         this.patients = response.data;
       } catch (err) {
@@ -55,7 +56,7 @@ export const useFetchDataStore = defineStore("fetchData", {
       this.error = null;
       try {
         const response = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/appointment/get-appointment"
+          process.env.VUE_APP_API_BASE_URL + "/appointment/get-appointment",
         );
         this.appointments = response.data;
       } catch (err) {
@@ -70,7 +71,7 @@ export const useFetchDataStore = defineStore("fetchData", {
       this.error = null;
       try {
         const response = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/user/get-user"
+          process.env.VUE_APP_API_BASE_URL + "/user/get-user",
         );
         this.dentists = response.data;
       } catch (err) {
@@ -85,7 +86,7 @@ export const useFetchDataStore = defineStore("fetchData", {
       this.error = null;
       try {
         const response = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/payment/get-billing-payment"
+          process.env.VUE_APP_API_BASE_URL + "/payment/get-billing-payment",
         );
         this.payments = response.data;
       } catch (err) {
@@ -100,7 +101,7 @@ export const useFetchDataStore = defineStore("fetchData", {
       this.error = null;
       try {
         const response = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/dental-chart/get-dental-chart"
+          process.env.VUE_APP_API_BASE_URL + "/dental-chart/get-dental-chart",
         );
         this.dentalCharts = response.data;
       } catch (err) {
@@ -115,7 +116,7 @@ export const useFetchDataStore = defineStore("fetchData", {
       this.error = null;
       try {
         const response = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/prescription/get-prescription"
+          process.env.VUE_APP_API_BASE_URL + "/prescription/get-prescription",
         );
         this.medications = response.data;
       } catch (err) {
@@ -130,7 +131,7 @@ export const useFetchDataStore = defineStore("fetchData", {
       this.error = null;
       try {
         const response = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/prescribe-medication"
+          process.env.VUE_APP_API_BASE_URL + "/prescribe-medication",
         );
         this.prescribemedication = response.data;
       } catch (err) {
@@ -145,7 +146,7 @@ export const useFetchDataStore = defineStore("fetchData", {
       this.error = null;
       try {
         const response = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/inventory/get-inventory"
+          process.env.VUE_APP_API_BASE_URL + "/inventory/get-inventory",
         );
         this.inventories = response.data;
       } catch (err) {
@@ -155,12 +156,37 @@ export const useFetchDataStore = defineStore("fetchData", {
       }
     },
 
+    // ---------------------- WebSocket setup ----------------------
+    initInventorySocket() {
+      if (!this.socket) {
+        this.socket = io(process.env.VUE_APP_API_BASE_URL);
+        this.socket.on("inventory-updated", (updatedInventory) => {
+          this.updateInventory(updatedInventory);
+        });
+      }
+    },
+
+    updateInventory(updated) {
+      const index = this.inventories.findIndex(
+        (i) => i.inventory_id === updated.inventory_id,
+      );
+      if (updated.deleted) {
+        // remove deleted item
+        if (index !== -1) this.inventories.splice(index, 1);
+      } else if (index !== -1) {
+        // update existing item
+        this.inventories[index] = updated;
+      } else {
+        // add new item
+        this.inventories.push(updated);
+      }
+    },
     async fetchUsers() {
       this.loading = true;
       this.error = null;
       try {
         const response = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/user/get-user"
+          process.env.VUE_APP_API_BASE_URL + "/user/get-user",
         );
         this.useraccounts = response.data;
       } catch (err) {
@@ -176,7 +202,7 @@ export const useFetchDataStore = defineStore("fetchData", {
       try {
         const response = await axios.get(
           process.env.VUE_APP_API_BASE_URL +
-            "/price-procedure/get-price-procedure"
+            "/price-procedure/get-price-procedure",
         );
         this.prices = response.data;
       } catch (err) {
@@ -202,5 +228,26 @@ export const useFetchDataStore = defineStore("fetchData", {
           appointment_id: appt.appointment_id,
         }));
     },
+  },
+  lowStockItems: (state) =>
+    state.inventories.filter((i) => i.quantity > 0 && i.quantity <= 10),
+
+  outOfStockItems: (state) => state.inventories.filter((i) => i.quantity === 0),
+
+  inventoryNotifications(state) {
+    return [
+      ...state.outOfStockItems.map((i) => ({
+        inventory_id: i.inventory_id,
+        name: i.name,
+        quantity: i.quantity,
+        type: "out",
+      })),
+      ...state.lowStockItems.map((i) => ({
+        inventory_id: i.inventory_id,
+        name: i.name,
+        quantity: i.quantity,
+        type: "low",
+      })),
+    ];
   },
 });

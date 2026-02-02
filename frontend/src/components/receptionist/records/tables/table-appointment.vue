@@ -74,6 +74,7 @@
                   <th class="px-4 py-3 text-left font-normal">Date</th>
                   <th class="px-4 py-3 text-left font-normal">Time</th>
                   <th class="px-4 py-3 text-left font-normal">Status</th>
+                  <th class="px-4 py-3 text-left font-normal">Procedure</th>
                   <th class="px-4 py-3 text-left rounded-tr-lg font-normal">
                     Actions
                   </th>
@@ -104,11 +105,16 @@
                   </td>
 
                   <td class="px-4 py-2 text-left">
-                    {{ appointment_data.appointment_time }}
+                    {{ formatTime12(appointment_data.appointment_time) }}
                   </td>
 
                   <td class="px-4 py-2 text-left">
                     {{ appointment_data.appointment_status }}
+                  </td>
+                  <td class="px-4 py-2 text-left">
+                    {{
+                      appointment_data.priceProcedure?.procedure_name || "N/A"
+                    }}
                   </td>
 
                   <td class="px-4 py-2 text-left">
@@ -269,7 +275,7 @@ export default {
 
       if (this.loggedUser.role === "Dentist") {
         return this.appointments.filter(
-          (appt) => appt.user_accounts?.user_id === this.loggedUser.sub
+          (appt) => appt.user_accounts?.user_id === this.loggedUser.sub,
         );
       }
 
@@ -286,7 +292,7 @@ export default {
           item.patient?.middle_name || ""
         } ${item.patient?.last_name}`
           .toLowerCase()
-          .includes(query)
+          .includes(query),
       );
     },
 
@@ -315,6 +321,14 @@ export default {
     },
   },
   methods: {
+    formatTime12(time) {
+      if (!time) return "-";
+
+      // Add a dummy date to ensure valid parsing
+      return dayjs(`2000-01-01 ${time}`, "YYYY-MM-DD HH:mm:ss").format(
+        "hh:mm A",
+      );
+    },
     formatScheduledDate(date) {
       return dayjs(date).format("MMMM DD, YYYY");
     },
@@ -346,7 +360,7 @@ export default {
       const id = this.recordToDelete.appointment_id;
       axios
         .delete(
-          `${process.env.VUE_APP_API_BASE_URL}/appointment/delete-id/${id}`
+          `${process.env.VUE_APP_API_BASE_URL}/appointment/delete-id/${id}`,
         )
         .then(() => {
           this.showDeleteModal = false;
@@ -367,7 +381,7 @@ export default {
       try {
         const response = await axios.get(
           process.env.VUE_APP_API_BASE_URL + "/auth/me",
-          { withCredentials: true }
+          { withCredentials: true },
         );
 
         if (response.data) {

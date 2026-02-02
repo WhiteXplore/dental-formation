@@ -1,0 +1,545 @@
+{
+  "model": "Hybrid SARIMA + RandomForest",
+  "seasonality": "Weekly",
+  "forecast_days": 7,
+  "generated_at": "2026-02-02T09:04:00.950573",
+  "historical": [
+    {
+      "date": "2026-01-01",
+      "Clinic Share": 2700.0
+    },
+    {
+      "date": "2026-01-02",
+      "Clinic Share": 8960.0
+    },
+    {
+      "date": "2026-01-03",
+      "Clinic Share": 30420.0
+    },
+    {
+      "date": "2026-01-04",
+      "Clinic Share": 3280.0
+    },
+    {
+      "date": "2026-01-05",
+      "Clinic Share": 900.0
+    },
+    {
+      "date": "2026-01-06",
+      "Clinic Share": 40940.0
+    },
+    {
+      "date": "2026-01-07",
+      "Clinic Share": 14200.0
+    },
+    {
+      "date": "2026-01-08",
+      "Clinic Share": 9180.0
+    },
+    {
+      "date": "2026-01-09",
+      "Clinic Share": 34480.0
+    },
+    {
+      "date": "2026-01-10",
+      "Clinic Share": 27880.0
+    },
+    {
+      "date": "2026-01-11",
+      "Clinic Share": 36880.0
+    },
+    {
+      "date": "2026-01-12",
+      "Clinic Share": 32080.0
+    },
+    {
+      "date": "2026-01-13",
+      "Clinic Share": 14540.0
+    },
+    {
+      "date": "2026-01-14",
+      "Clinic Share": 12260.0
+    },
+    {
+      "date": "2026-01-15",
+      "Clinic Share": 10980.0
+    },
+    {
+      "date": "2026-01-16",
+      "Clinic Share": 14780.0
+    },
+    {
+      "date": "2026-01-17",
+      "Clinic Share": 20300.0
+    },
+    {
+      "date": "2026-01-18",
+      "Clinic Share": 36100.0
+    },
+    {
+      "date": "2026-01-19",
+      "Clinic Share": 15940.0
+    },
+    {
+      "date": "2026-01-20",
+      "Clinic Share": 16780.0
+    },
+    {
+      "date": "2026-01-21",
+      "Clinic Share": 36920.0
+    },
+    {
+      "date": "2026-01-22",
+      "Clinic Share": 9420.0
+    },
+    {
+      "date": "2026-01-23",
+      "Clinic Share": 30460.0
+    },
+    {
+      "date": "2026-01-24",
+      "Clinic Share": 18740.0
+    },
+    {
+      "date": "2026-01-25",
+      "Clinic Share": 12080.0
+    },
+    {
+      "date": "2026-01-26",
+      "Clinic Share": 2400.0
+    },
+    {
+      "date": "2026-01-27",
+      "Clinic Share": 39160.0
+    },
+    {
+      "date": "2026-01-28",
+      "Clinic Share": 21660.0
+    },
+    {
+      "date": "2026-01-29",
+      "Clinic Share": 16580.0
+    },
+    {
+      "date": "2026-01-30",
+      "Clinic Share": 11520.0
+    },
+    {
+      "date": "2026-01-31",
+      "Clinic Share": 29320.0
+    },
+    {
+      "date": "2026-02-01",
+      "Clinic Share": 23360.0
+    },
+    {
+      "date": "2026-02-02",
+      "Clinic Share": 19900.0
+    },
+    {
+      "date": "2026-02-03",
+      "Clinic Share": 24420.0
+    },
+    {
+      "date": "2026-02-04",
+      "Clinic Share": 37200.0
+    },
+    {
+      "date": "2026-02-05",
+      "Clinic Share": 18460.0
+    },
+    {
+      "date": "2026-02-06",
+      "Clinic Share": 15680.0
+    },
+    {
+      "date": "2026-02-07",
+      "Clinic Share": 17960.0
+    },
+    {
+      "date": "2026-02-08",
+      "Clinic Share": 24720.0
+    },
+    {
+      "date": "2026-02-09",
+      "Clinic Share": 10720.0
+    },
+    {
+      "date": "2026-02-10",
+      "Clinic Share": 23820.0
+    },
+    {
+      "date": "2026-02-11",
+      "Clinic Share": 15440.0
+    },
+    {
+      "date": "2026-02-12",
+      "Clinic Share": 9300.0
+    },
+    {
+      "date": "2026-02-13",
+      "Clinic Share": 33160.0
+    },
+    {
+      "date": "2026-02-14",
+      "Clinic Share": 6640.0
+    },
+    {
+      "date": "2026-02-15",
+      "Clinic Share": 17960.0
+    },
+    {
+      "date": "2026-02-16",
+      "Clinic Share": 1920.0
+    },
+    {
+      "date": "2026-02-17",
+      "Clinic Share": 4800.0
+    },
+    {
+      "date": "2026-02-18",
+      "Clinic Share": 23440.0
+    },
+    {
+      "date": "2026-02-19",
+      "Clinic Share": 12480.0
+    },
+    {
+      "date": "2026-02-20",
+      "Clinic Share": 7600.0
+    },
+    {
+      "date": "2026-02-21",
+      "Clinic Share": 22220.0
+    },
+    {
+      "date": "2026-02-22",
+      "Clinic Share": 33200.0
+    },
+    {
+      "date": "2026-02-23",
+      "Clinic Share": 12460.0
+    },
+    {
+      "date": "2026-02-24",
+      "Clinic Share": 41960.0
+    },
+    {
+      "date": "2026-02-25",
+      "Clinic Share": 2880.0
+    },
+    {
+      "date": "2026-02-26",
+      "Clinic Share": 14400.0
+    },
+    {
+      "date": "2026-02-27",
+      "Clinic Share": 31380.0
+    },
+    {
+      "date": "2026-02-28",
+      "Clinic Share": 20420.0
+    },
+    {
+      "date": "2026-03-01",
+      "Clinic Share": 31420.0
+    },
+    {
+      "date": "2026-03-02",
+      "Clinic Share": 28400.0
+    },
+    {
+      "date": "2026-03-03",
+      "Clinic Share": 8120.0
+    },
+    {
+      "date": "2026-03-04",
+      "Clinic Share": 21600.0
+    },
+    {
+      "date": "2026-03-05",
+      "Clinic Share": 12400.0
+    },
+    {
+      "date": "2026-03-06",
+      "Clinic Share": 18240.0
+    },
+    {
+      "date": "2026-03-07",
+      "Clinic Share": 11680.0
+    },
+    {
+      "date": "2026-03-08",
+      "Clinic Share": 36980.0
+    },
+    {
+      "date": "2026-03-09",
+      "Clinic Share": 31440.0
+    },
+    {
+      "date": "2026-03-10",
+      "Clinic Share": 11600.0
+    },
+    {
+      "date": "2026-03-11",
+      "Clinic Share": 6580.0
+    },
+    {
+      "date": "2026-03-12",
+      "Clinic Share": 25080.0
+    },
+    {
+      "date": "2026-03-13",
+      "Clinic Share": 7680.0
+    },
+    {
+      "date": "2026-03-14",
+      "Clinic Share": 21440.0
+    },
+    {
+      "date": "2026-03-15",
+      "Clinic Share": 5400.0
+    },
+    {
+      "date": "2026-03-16",
+      "Clinic Share": 4780.0
+    },
+    {
+      "date": "2026-03-17",
+      "Clinic Share": 12940.0
+    },
+    {
+      "date": "2026-03-18",
+      "Clinic Share": 20680.0
+    },
+    {
+      "date": "2026-03-19",
+      "Clinic Share": 12540.0
+    },
+    {
+      "date": "2026-03-20",
+      "Clinic Share": 22220.0
+    },
+    {
+      "date": "2026-03-21",
+      "Clinic Share": 19220.0
+    },
+    {
+      "date": "2026-03-22",
+      "Clinic Share": 5380.0
+    },
+    {
+      "date": "2026-03-23",
+      "Clinic Share": 18100.0
+    },
+    {
+      "date": "2026-03-24",
+      "Clinic Share": 37740.0
+    },
+    {
+      "date": "2026-03-25",
+      "Clinic Share": 33280.0
+    },
+    {
+      "date": "2026-03-26",
+      "Clinic Share": 17560.0
+    },
+    {
+      "date": "2026-03-27",
+      "Clinic Share": 21460.0
+    },
+    {
+      "date": "2026-03-28",
+      "Clinic Share": 4260.0
+    },
+    {
+      "date": "2026-03-29",
+      "Clinic Share": 8600.0
+    },
+    {
+      "date": "2026-03-30",
+      "Clinic Share": 20560.0
+    },
+    {
+      "date": "2026-03-31",
+      "Clinic Share": 8780.0
+    },
+    {
+      "date": "2026-04-01",
+      "Clinic Share": 15600.0
+    },
+    {
+      "date": "2026-04-02",
+      "Clinic Share": 10340.0
+    },
+    {
+      "date": "2026-04-03",
+      "Clinic Share": 30480.0
+    },
+    {
+      "date": "2026-04-04",
+      "Clinic Share": 42460.0
+    },
+    {
+      "date": "2026-04-05",
+      "Clinic Share": 11480.0
+    },
+    {
+      "date": "2026-04-06",
+      "Clinic Share": 9420.0
+    },
+    {
+      "date": "2026-04-07",
+      "Clinic Share": 12640.0
+    },
+    {
+      "date": "2026-04-08",
+      "Clinic Share": 25160.0
+    },
+    {
+      "date": "2026-04-09",
+      "Clinic Share": 50000.0
+    },
+    {
+      "date": "2026-04-10",
+      "Clinic Share": 12080.0
+    },
+    {
+      "date": "2026-04-11",
+      "Clinic Share": 37780.0
+    },
+    {
+      "date": "2026-04-12",
+      "Clinic Share": 20380.0
+    },
+    {
+      "date": "2026-04-13",
+      "Clinic Share": 10160.0
+    },
+    {
+      "date": "2026-04-14",
+      "Clinic Share": 11960.0
+    },
+    {
+      "date": "2026-04-15",
+      "Clinic Share": 22800.0
+    },
+    {
+      "date": "2026-04-16",
+      "Clinic Share": 43880.0
+    },
+    {
+      "date": "2026-04-17",
+      "Clinic Share": 15660.0
+    },
+    {
+      "date": "2026-04-18",
+      "Clinic Share": 19920.0
+    },
+    {
+      "date": "2026-04-19",
+      "Clinic Share": 14040.0
+    },
+    {
+      "date": "2026-04-20",
+      "Clinic Share": 17880.0
+    },
+    {
+      "date": "2026-04-21",
+      "Clinic Share": 41040.0
+    },
+    {
+      "date": "2026-04-22",
+      "Clinic Share": 16880.0
+    },
+    {
+      "date": "2026-04-23",
+      "Clinic Share": 16820.0
+    },
+    {
+      "date": "2026-04-24",
+      "Clinic Share": 22660.0
+    },
+    {
+      "date": "2026-04-25",
+      "Clinic Share": 6340.0
+    },
+    {
+      "date": "2026-04-26",
+      "Clinic Share": 14080.0
+    },
+    {
+      "date": "2026-04-27",
+      "Clinic Share": 7740.0
+    },
+    {
+      "date": "2026-04-28",
+      "Clinic Share": 7180.0
+    },
+    {
+      "date": "2026-04-29",
+      "Clinic Share": 32480.0
+    },
+    {
+      "date": "2026-04-30",
+      "Clinic Share": 20140.0
+    }
+  ],
+  "forecast": [
+    {
+      "date": "2026-05-01",
+      "sarima_forecast": 19739.23245847436,
+      "hybrid_forecast": 19585.598486608596,
+      "difference": -153.63397186576185,
+      "absolute_difference": 153.63397186576185
+    },
+    {
+      "date": "2026-05-02",
+      "sarima_forecast": 19906.040662798383,
+      "hybrid_forecast": 19752.40669093262,
+      "difference": -153.63397186576185,
+      "absolute_difference": 153.63397186576185
+    },
+    {
+      "date": "2026-05-03",
+      "sarima_forecast": 19535.485462038363,
+      "hybrid_forecast": 19381.8514901726,
+      "difference": -153.63397186576185,
+      "absolute_difference": 153.63397186576185
+    },
+    {
+      "date": "2026-05-04",
+      "sarima_forecast": 18548.25042117424,
+      "hybrid_forecast": 18394.61644930848,
+      "difference": -153.63397186576185,
+      "absolute_difference": 153.63397186576185
+    },
+    {
+      "date": "2026-05-05",
+      "sarima_forecast": 19536.259639394102,
+      "hybrid_forecast": 19382.62566752834,
+      "difference": -153.63397186576185,
+      "absolute_difference": 153.63397186576185
+    },
+    {
+      "date": "2026-05-06",
+      "sarima_forecast": 19474.0145203112,
+      "hybrid_forecast": 19320.38054844544,
+      "difference": -153.63397186576185,
+      "absolute_difference": 153.63397186576185
+    },
+    {
+      "date": "2026-05-07",
+      "sarima_forecast": 20309.663679387384,
+      "hybrid_forecast": 20156.029707521622,
+      "difference": -153.63397186576185,
+      "absolute_difference": 153.63397186576185
+    }
+  ],
+  "summary": {
+    "avg_sarima": 19578.420977654005,
+    "avg_hybrid": 19424.78700578824,
+    "avg_difference": -153.63397186576185,
+    "max_expected_revenue": 20156.029707521622
+  }
+}

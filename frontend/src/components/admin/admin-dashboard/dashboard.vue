@@ -33,17 +33,24 @@
     </div>
 
     <!-- Charts -->
-    <div class="flex gap-6">
-      <div class="" style="width: 1200px; min-height: 680px">
+    <div class="flex flex-wrap gap-6">
+      <!-- Linear Regression Chart -->
+      <div
+        class="bg-white rounded-2xl p-5 border"
+        style="flex: 1 1 1200px; min-height: 680px"
+      >
         <LinearRegression />
       </div>
 
-      <div
-        class="bg-white rounded-2xl p-5 border relative"
-        style="width: 700px; min-height: 680px"
-      >
-        <GraphProcedureType />
-      </div>
+      <!-- Procedure Type Chart (Optional) -->
+      <!--
+  <div
+    class="bg-white rounded-2xl p-5 border"
+    style="flex: 1 1 700px; min-height: 680px"
+  >
+    <GraphProcedureType />
+  </div>
+  -->
     </div>
   </div>
 </template>
@@ -55,7 +62,7 @@ import CardPatientVisit from "@/components/admin/admin-record/graphs/card-walk-i
 import CardNoShowPatient from "@/components/admin/admin-record/graphs/card-no-show-patient.vue";
 import CardMonthCensus from "@/components/admin/admin-record/graphs/card-appointments.vue";
 import CardTotalRevenue from "@/components/admin/admin-record/graphs/card-total-revenue.vue";
-import GraphProcedureType from "@/components/admin/admin-record/graphs/graph-procedure-type.vue";
+// import GraphProcedureType from "@/components/admin/admin-record/graphs/graph-procedure-type.vue";
 
 export default {
   name: "AdminDashboardPage",
@@ -65,7 +72,7 @@ export default {
     CardPatientVisit,
     CardMonthCensus,
     CardTotalRevenue,
-    GraphProcedureType,
+    // GraphProcedureType,
   },
   data() {
     return {
@@ -82,7 +89,7 @@ export default {
           process.env.VUE_APP_API_BASE_URL + "/auth/me",
           {
             withCredentials: true,
-          }
+          },
         );
         if (response.data) this.user = response.data;
       } catch (error) {

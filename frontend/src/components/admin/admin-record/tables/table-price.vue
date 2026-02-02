@@ -98,11 +98,28 @@
                   <td class="px-4 py-2">{{ procedure.procedure_name }}</td>
                   <td class="px-4 py-2">{{ procedure.procedure_type }}</td>
 
-                  <td class="px-4 py-2">{{ procedure.procedure_scope }}</td>
+                  <td class="px-4 py-2">
+                    {{
+                      procedure.procedure_scope === "PER_TOOTH"
+                        ? "Per Tooth"
+                        : procedure.procedure_scope === "ALL_TEETH"
+                        ? "All Teeth"
+                        : procedure.procedure_scope
+                    }}
+                  </td>
                   <td class="px-4 py-2">
                     ₱{{ parseFloat(procedure.price).toFixed(2) }}
                   </td>
-                  <td class="px-4 py-2">{{ procedure.pricing_scope }}</td>
+
+                  <td class="px-4 py-2">
+                    {{
+                      procedure.pricing_scope === "per_tooth_payment"
+                        ? "Per Tooth Payment"
+                        : procedure.pricing_scope === "one_time"
+                        ? "One Time Payment"
+                        : procedure.pricing_scope
+                    }}
+                  </td>
                   <td class="px-[50px] py-2">
                     <span
                       class="inline-block w-5 h-5 rounded-full border border-gray-300"
@@ -276,7 +293,7 @@ export default {
     filteredData() {
       const query = this.searchQuery.toLowerCase();
       return this.prices.filter((item) =>
-        item.procedure_name.toLowerCase().includes(query)
+        item.procedure_name.toLowerCase().includes(query),
       );
     },
     totalPages() {
@@ -341,7 +358,7 @@ export default {
       const id = this.recordToDelete.price_procedure_id;
       axios
         .delete(
-          process.env.VUE_APP_API_BASE_URL + `/price-procedure/delete/${id}`
+          process.env.VUE_APP_API_BASE_URL + `/price-procedure/delete/${id}`,
         )
         .then(() => {
           this.recordToDelete = null;

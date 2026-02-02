@@ -21,7 +21,7 @@ export class AppointmentService {
 
   async findAll(): Promise<Appointment[]> {
     return await this.appointmentRepository.find({
-      relations: ['patient', 'user_accounts'],
+      relations: ['patient', 'user_accounts', 'priceProcedure'],
       order: { scheduled_date: 'ASC' },
     });
   }

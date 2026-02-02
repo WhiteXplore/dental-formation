@@ -6,52 +6,109 @@ import { execSync } from 'child_process';
 
 @Injectable()
 export class RevenueService {
+  private readonly pythonDataDir = path.join(
+    process.cwd(),
+    '..',
+    'python',
+    'data',
+  );
+  private readonly defaultXlsxPath = path.join(
+    this.pythonDataDir,
+    'Revenue_Report.xlsx',
+  );
+  private readonly pythonScriptForDaily = path.join(
+    process.cwd(),
+    '..',
+    'python',
+    'forecast_daily.py',
+  );
+
+  private readonly pythonScriptForMonthly = path.join(
+    process.cwd(),
+    '..',
+    'python',
+    'forecast_monthly.py',
+  );
+
+  // -----------------------------
+  // Generate XLSX and run forecast
+  // -----------------------------
   generateRevenueXlsxAndForecast(rows: any[]) {
-    // -----------------------------
-    // 1️⃣ Save XLSX
-    // -----------------------------
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Revenue Report');
-
-    // Path to Python data folder
-    const pythonDataDir = path.join(process.cwd(), '..', 'python', 'data');
-    if (!fs.existsSync(pythonDataDir))
-      fs.mkdirSync(pythonDataDir, { recursive: true });
-
-    const xlsxPath = path.join(pythonDataDir, 'Revenue_Report.xlsx');
-    XLSX.writeFile(workbook, xlsxPath);
-
-    // -----------------------------
-    // 2️⃣ Run Python forecast.py and pass XLSX path
-    // -----------------------------
-    const pythonScript = path.join(
-      process.cwd(),
-      '..',
-      'python',
-      'forecast.py',
-    );
-
-    try {
-      // 🔹 Pass xlsxPath as argument
-      execSync(`python "${pythonScript}" "${xlsxPath}"`, { stdio: 'inherit' });
-    } catch (err) {
-      throw new Error('Python forecast script failed: ' + err.message);
-    }
-
-    // -----------------------------
-    // 3️⃣ Read generated JSON
-    // -----------------------------
-    const jsonPath = path.join(pythonDataDir, 'revenue_forecast.json');
-    if (!fs.existsSync(jsonPath)) throw new Error('Forecast JSON not found');
-
-    const raw = fs.readFileSync(jsonPath, 'utf8');
-    const forecast = JSON.parse(raw);
+    const xlsxPath = this.createRevenueXlsx(rows);
+    const forecast = this.runDailyForecast(xlsxPath);
 
     return {
       message: 'Revenue XLSX generated and forecast updated',
       forecast,
       filePath: xlsxPath,
     };
+  }
+
+  // -----------------------------
+  // Create XLSX only
+  // -----------------------------
+  createRevenueXlsx(rows: any[]): string {
+    if (!fs.existsSync(this.pythonDataDir))
+      fs.mkdirSync(this.pythonDataDir, { recursive: true });
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Revenue Report');
+
+    XLSX.writeFile(workbook, this.defaultXlsxPath);
+    return this.defaultXlsxPath;
+  }
+
+  // -----------------------------
+  // Run Python forecast
+  // -----------------------------
+  runDailyForecast(xlsxPath?: string): any {
+    const filePath = xlsxPath || this.defaultXlsxPath;
+
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`XLSX file not found at path: ${filePath}`);
+    }
+
+    try {
+      execSync(`python "${this.pythonScriptForDaily}" "${filePath}"`, {
+        stdio: 'inherit',
+      });
+    } catch (err) {
+      throw new Error('Python forecast script failed: ' + err.message);
+    }
+
+    const jsonPath = path.join(
+      this.pythonDataDir,
+      'revenue_forecast_daily.json',
+    );
+    if (!fs.existsSync(jsonPath)) throw new Error('Forecast JSON not found');
+
+    const raw = fs.readFileSync(jsonPath, 'utf8');
+    return JSON.parse(raw);
+  }
+
+  runMonthlyForecast(xlsxPath?: string): any {
+    const filePath = xlsxPath || this.defaultXlsxPath;
+
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`XLSX file not found at path: ${filePath}`);
+    }
+
+    try {
+      execSync(`python "${this.pythonScriptForMonthly}" "${filePath}"`, {
+        stdio: 'inherit',
+      });
+    } catch (err) {
+      throw new Error('Python forecast script failed: ' + err.message);
+    }
+
+    const jsonPath = path.join(
+      this.pythonDataDir,
+      'revenue_forecast_next3months.json',
+    );
+    if (!fs.existsSync(jsonPath)) throw new Error('Forecast JSON not found');
+
+    const raw = fs.readFileSync(jsonPath, 'utf8');
+    return JSON.parse(raw);
   }
 }

@@ -63,6 +63,12 @@ export class CreatePrescriptionDto {
   patient_payment?: number;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  excess_payment?: number;
+
+  @IsOptional()
   @IsString()
   payment_type?: string;
 

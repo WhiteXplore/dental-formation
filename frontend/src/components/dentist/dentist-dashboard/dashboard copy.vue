@@ -466,9 +466,9 @@ export default {
           dayjs(
             `${this.currentMonth.format("YYYY-MM")}-${String(i).padStart(
               2,
-              "0"
-            )}`
-          )
+              "0",
+            )}`,
+          ),
         );
       }
       while (days.length < 42) {
@@ -479,7 +479,7 @@ export default {
     filteredAppointments() {
       if (this.user.role === "Dentist" && this.user.email) {
         return this.appointments.filter(
-          (a) => a.user_accounts?.email === this.user.email
+          (a) => a.user_accounts?.email === this.user.email,
         );
       }
       return this.appointments;
@@ -488,13 +488,13 @@ export default {
     getAppointmentsByDate() {
       return (date) =>
         this.filteredAppointments.filter((a) =>
-          dayjs(a.scheduled_date).tz("Asia/Manila").isSame(date, "day")
+          dayjs(a.scheduled_date).tz("Asia/Manila").isSame(date, "day"),
         );
     },
 
     todaysEvents() {
       const eventsToday = this.events.filter((e) =>
-        dayjs(e.date).isSame(dayjs(), "day")
+        dayjs(e.date).isSame(dayjs(), "day"),
       );
       const appointmentsToday = this.filteredAppointments
         .filter((a) => dayjs(a.scheduled_date).isSame(dayjs(), "day"))
@@ -573,7 +573,7 @@ export default {
           process.env.VUE_APP_API_BASE_URL + "/auth/me",
           {
             withCredentials: true,
-          }
+          },
         );
 
         if (response.data) {
@@ -599,7 +599,7 @@ export default {
         const response = await axios.get(
           process.env.VUE_APP_API_BASE_URL +
             `/user/get-user/${this.user?.user_id}`,
-          { withCredentials: true }
+          { withCredentials: true },
         );
 
         if (response.data) {
@@ -661,12 +661,12 @@ export default {
     try {
       const appointmentRes = await axios.get(
         process.env.VUE_APP_API_BASE_URL + "/appointment/get-appointment",
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       const announcementRes = await axios.get(
         process.env.VUE_APP_API_BASE_URL + "/announcement/get-announcements",
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       let allAppointments = appointmentRes.data.map((a) => ({
@@ -679,10 +679,10 @@ export default {
       // Filter for dentist role
       if (this.user.role === "Dentist" && this.user.email) {
         allAppointments = allAppointments.filter(
-          (a) => a.user_accounts?.email === this.user.email
+          (a) => a.user_accounts?.email === this.user.email,
         );
         allAnnouncements = allAnnouncements.filter(
-          (ann) => ann.user_accounts?.email === this.user.email
+          (ann) => ann.user_accounts?.email === this.user.email,
         );
       }
 

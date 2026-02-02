@@ -22,6 +22,8 @@ import { Response } from 'express';
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
+  /* ================= CREATE ================= */
+
   @Post('add-inventory')
   @UseInterceptors(
     FileInterceptor('image', {
@@ -32,9 +34,10 @@ export class InventoryController {
     @Body() createInventoryDto: CreateInventoryDto,
     @UploadedFile() image?: Express.Multer.File,
   ) {
-    const imageBuffer = image?.buffer;
-    return this.inventoryService.create(createInventoryDto, imageBuffer);
+    return this.inventoryService.create(createInventoryDto, image?.buffer);
   }
+
+  /* ================= READ ================= */
 
   @Get('get-inventory')
   findAll() {
@@ -44,26 +47,6 @@ export class InventoryController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.inventoryService.findOne(id);
-  }
-
-  @Patch('update/:id')
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: memoryStorage(),
-    }),
-  )
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateInventoryDto: UpdateInventoryDto,
-    @UploadedFile() image?: Express.Multer.File,
-  ) {
-    const imageBuffer = image?.buffer;
-    return this.inventoryService.update(id, updateInventoryDto, imageBuffer);
-  }
-
-  @Delete('delete/:id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.inventoryService.remove(id);
   }
 
   @Get('inventory-image/:id')
@@ -78,18 +61,55 @@ export class InventoryController {
     }
 
     res.set({
-      'Content-Type': 'image/jpeg', // You can dynamically detect MIME type
+      'Content-Type': 'image/jpeg',
       'Content-Length': item.image.length,
     });
 
     return res.send(item.image);
   }
 
-  @Patch('deduct')
-  async deductInventory(
-    @Body() body: { inventoryId: number; quantity: number },
+  /* ================= UPDATE ================= */
+
+  @Patch('update/:id')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: memoryStorage(),
+    }),
+  )
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateInventoryDto: UpdateInventoryDto,
+    @UploadedFile() image?: Express.Multer.File,
   ) {
-    const { inventoryId, quantity } = body;
-    return this.inventoryService.deductInventory(inventoryId, quantity);
+    return this.inventoryService.update(id, updateInventoryDto, image?.buffer);
+  }
+
+  /* 🔔 MARK SINGLE INVENTORY NOTIFICATION AS VIEWED */
+  @Patch(':id/notification')
+  markNotificationViewed(@Param('id', ParseIntPipe) id: number) {
+    return this.inventoryService.markAsViewed(id);
+  }
+
+  /* 🔔 MARK ALL INVENTORY NOTIFICATIONS AS VIEWED */
+  @Patch('notifications/mark-all-read')
+  markAllNotificationsViewed() {
+    return this.inventoryService.markAllAsViewed();
+  }
+
+  /* ================= DELETE ================= */
+
+  @Delete('delete/:id')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.inventoryService.remove(id);
+  }
+
+  /* ================= STOCK ================= */
+
+  @Patch('deduct')
+  deductInventory(@Body() body: { inventoryId: number; quantity: number }) {
+    return this.inventoryService.deductInventory(
+      body.inventoryId,
+      body.quantity,
+    );
   }
 }

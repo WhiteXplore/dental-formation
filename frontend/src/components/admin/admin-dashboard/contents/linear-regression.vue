@@ -1,34 +1,44 @@
 <template>
-  <div
-    class="max-h-[75vh] overflow-y-auto space-y-4 bg-white p-4 border rounded-2xl"
-  >
+  <div class="space-y-4 bg-white p-4 border rounded-2xl">
     <!-- Header -->
     <h3
       class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        height="24px"
+        height="24"
         viewBox="0 -960 960 960"
-        width="24px"
+        width="24"
         fill="#147452"
       >
         <path
           d="M320-414v-306h120v306l-60-56-60 56Zm200 60v-526h120v406L520-354ZM120-216v-344h120v224L120-216Zm0 98 258-258 142 122 224-224h-64v-80h200v200h-80v-64L524-146 382-268 232-118H120Z"
         />
       </svg>
-      <span>Revenue Forecasting</span>
+      Revenue Forecasting
     </h3>
 
-    <!-- LINE CHART -->
-    <div class="bg-white p-4 rounded-xl border h-[350px]">
+    <!-- Loading -->
+    <div
+      v-show="loadingForecast"
+      class="h-[550px] flex items-center justify-center text-gray-400 text-sm"
+    >
+      Running daily forecast…
+    </div>
+
+    <!-- Chart (DO NOT USE v-if) -->
+    <div
+      v-show="!loadingForecast"
+      class="bg-white p-4 rounded-xl border h-[550px]"
+    >
       <canvas ref="revenueChart"></canvas>
     </div>
 
-    <!-- FORECAST TABLE -->
+    <!-- Table -->
     <div class="bg-white p-4 rounded-xl shadow overflow-x-auto">
       <h3 class="font-semibold mb-3">7-Day Revenue Forecast</h3>
-      <table class="w-full text-sm border">
+
+      <table v-if="forecast?.forecast?.length" class="w-full text-sm border">
         <thead class="bg-gray-100">
           <tr>
             <th class="p-2 border">Date</th>
@@ -38,7 +48,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="row in forecast?.forecast" :key="row.date">
+          <tr v-for="row in forecast.forecast" :key="row.date">
             <td class="p-2 border">{{ formatDate(row.date) }}</td>
             <td class="p-2 border">₱{{ format(row.sarima_forecast) }}</td>
             <td class="p-2 border font-semibold">
@@ -53,14 +63,16 @@
           </tr>
         </tbody>
       </table>
+
+      <p v-else class="text-gray-400 text-sm text-center py-4">
+        No forecast data available
+      </p>
     </div>
   </div>
 </template>
 
 <script>
 import axios from "axios";
-import { useFetchDataStore } from "@/store/fetch-data-store";
-import { mapState } from "pinia";
 import { toast } from "vue3-toastify";
 import {
   Chart,
@@ -80,99 +92,90 @@ Chart.register(
   LinearScale,
   CategoryScale,
   Tooltip,
-  Legend
+  Legend,
 );
 
 export default {
-  name: "RevenueForecastingPage",
-
-  computed: {
-    ...mapState(useFetchDataStore, ["medications"]),
-  },
+  name: "RevenueForecastDashboard",
 
   data() {
     return {
       forecast: null,
       chart: null,
-      loading: false,
+      loadingForecast: false,
     };
   },
 
-  async mounted() {
-    try {
-      const res = await axios.get(
-        "http://localhost:8000/analytics/revenue/forecast"
-      );
-
-      this.forecast = res.data.data;
-
-      // ✅ wait until canvas is mounted
-      this.$nextTick(() => {
-        this.renderChart();
-      });
-
-      useFetchDataStore().fetchMedications?.();
-    } catch (err) {
-      console.error(err);
-    }
+  mounted() {
+    this.runDailyForecast();
   },
 
   beforeUnmount() {
-    // ✅ VERY IMPORTANT
-    if (this.chart) {
-      this.chart.destroy();
-      this.chart = null;
-    }
+    this.chart?.destroy();
   },
 
   methods: {
-    formatDate(date) {
-      if (!date) return "-";
-      return new Date(date).toISOString().slice(0, 10);
-    },
+    async runDailyForecast() {
+      this.loadingForecast = true;
+      this.forecast = null;
 
-    format(value) {
-      if (value === undefined || value === null) return "-";
-      return Number(value).toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
+      try {
+        const res = await axios.post(
+          "http://localhost:8000/revenue/run-daily-forecast",
+        );
+
+        if (!res.data?.forecast?.length) {
+          toast.warning("⚠️ No forecast data returned");
+          return;
+        }
+
+        this.forecast = res.data;
+
+        // ✅ wait for canvas to exist
+        await this.$nextTick();
+        this.renderChart();
+      } catch (err) {
+        console.error(err);
+        toast.error("❌ Failed to load revenue forecast");
+      } finally {
+        this.loadingForecast = false;
+      }
     },
 
     renderChart() {
-      const canvas = this.$refs.revenueChart;
+      const ctx = this.$refs.revenueChart;
+      if (!ctx || !this.forecast) return;
 
-      // ✅ guard against null canvas
-      if (!canvas || !this.forecast) return;
+      // 🔥 ONLY LAST 7 DAYS OF HISTORICAL DATA
+      const last7Historical = (this.forecast.historical || []).slice(-7);
 
+      const historicalLabels = last7Historical.map((d) =>
+        this.formatDate(d.date),
+      );
+      const historicalData = last7Historical.map((d) => d["Clinic Share"]);
+
+      const forecastLabels = (this.forecast.forecast || []).map((d) =>
+        this.formatDate(d.date),
+      );
+      const sarima = this.forecast.forecast.map((d) => d.sarima_forecast);
+      const hybrid = this.forecast.forecast.map((d) => d.hybrid_forecast);
+
+      // 🧹 Clean up old chart
       if (this.chart) {
         this.chart.destroy();
         this.chart = null;
       }
 
-      const historicalLabels = this.forecast.historical.map((d) =>
-        this.formatDate(d.date)
-      );
-      const historicalData = this.forecast.historical.map(
-        (d) => d["Clinic Share"]
-      );
-
-      const forecastLabels = this.forecast.forecast.map((d) =>
-        this.formatDate(d.date)
-      );
-
-      const sarima = this.forecast.forecast.map((d) => d.sarima_forecast);
-      const hybrid = this.forecast.forecast.map((d) => d.hybrid_forecast);
-
-      this.chart = new Chart(canvas, {
+      this.chart = new Chart(ctx, {
         type: "line",
         data: {
           labels: [...historicalLabels, ...forecastLabels],
           datasets: [
             {
-              label: "Historical Revenue",
+              label: "Historical Revenue (Last 7 Days)",
               data: historicalData,
               borderColor: "#6B7280",
+              backgroundColor: "transparent",
               borderWidth: 2,
               tension: 0.3,
             },
@@ -180,6 +183,7 @@ export default {
               label: "SARIMA Forecast",
               data: [...Array(historicalData.length).fill(null), ...sarima],
               borderColor: "#FACC15",
+              backgroundColor: "transparent",
               borderDash: [6, 6],
               borderWidth: 3,
               tension: 0.3,
@@ -188,6 +192,7 @@ export default {
               label: "Hybrid Forecast",
               data: [...Array(historicalData.length).fill(null), ...hybrid],
               borderColor: "#2563EB",
+              backgroundColor: "transparent",
               borderDash: [3, 3],
               borderWidth: 3,
               tension: 0.3,
@@ -196,7 +201,7 @@ export default {
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false, // ✅ critical
+          maintainAspectRatio: false, // 👈 IMPORTANT for height
           plugins: {
             legend: {
               position: "bottom",
@@ -204,8 +209,9 @@ export default {
             },
             tooltip: {
               callbacks: {
-                label(ctx) {
-                  return `₱${Number(ctx.raw).toLocaleString()}`;
+                label(context) {
+                  if (context.raw == null) return "";
+                  return `₱${Number(context.raw).toLocaleString()}`;
                 },
               },
             },
@@ -222,74 +228,17 @@ export default {
         },
       });
     },
+    formatDate(date) {
+      return date ? new Date(date).toISOString().slice(0, 10) : "-";
+    },
 
-    async generateXlsx() {
-      if (!this.medications?.length) {
-        alert("⚠️ No data available.");
-        return;
-      }
-
-      this.loading = true;
-
-      try {
-        const rows = this.medications
-          .map((item) => {
-            const chart = item.dentalChart;
-            if (!chart) return null;
-
-            const patient = chart.patient;
-            const dentist = chart.user_accounts;
-
-            const procedureMap = {};
-            chart.teeth.forEach((tooth) => {
-              const proc = tooth.priceProcedure;
-              if (!proc) return;
-              procedureMap[proc.procedure_name] ??= {
-                count: 0,
-                type: proc.procedure_type,
-              };
-              procedureMap[proc.procedure_name].count++;
-            });
-
-            const total = Number(item.patient_payment || 0);
-            const type =
-              Object.values(procedureMap)[0]?.type || "Basic Procedure";
-
-            const clinicShare =
-              type === "Basic Procedure" ? total * 0.6 : total * 0.5;
-            const dentistShare = total - clinicShare;
-
-            return Object.entries(procedureMap).map(([name, d]) => ({
-              "Procedure Date": chart.procedure_date,
-              "Patient Full Name": `${patient.first_name} ${patient.last_name}`,
-              Dentist: dentist
-                ? `${dentist.first_name} ${dentist.last_name}`
-                : "",
-              Procedure: `${name} - ${d.count}`,
-              "Procedure Type": d.type,
-              "Patient Payment": total.toFixed(2),
-              "Clinic Share": clinicShare.toFixed(2),
-              "Dentist Share": dentistShare.toFixed(2),
-            }));
-          })
-          .flat();
-
-        const res = await axios.post(
-          process.env.VUE_APP_API_BASE_URL + "/revenue/generate-xlsx",
-          rows
-        );
-
-        toast.success("✅ Revenue Forecast Generated");
-
-        this.forecast = res.data.forecast;
-
-        this.$nextTick(() => this.renderChart());
-      } catch (err) {
-        console.error(err);
-        alert("❌ Forecast generation failed.");
-      } finally {
-        this.loading = false;
-      }
+    format(value) {
+      return value == null
+        ? "-"
+        : Number(value).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          });
     },
   },
 };

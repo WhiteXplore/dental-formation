@@ -48,7 +48,7 @@
       <div
         v-if="
           ['monthlyCensusPerDentist', 'monthlyIncomePerDentist'].includes(
-            reportType
+            reportType,
           )
         "
         class="flex flex-col"
@@ -92,141 +92,162 @@
     </div>
 
     <!-- Table -->
-    <div class="bg-white rounded-xl p-4 border">
-      <!-- Controls -->
-      <div class="flex justify-between mb-3">
-        <div>
-          <select
-            v-model="pageSize"
-            @change="changePage(1)"
-            class="border rounded px-2 py-1"
-          >
-            <option v-for="n in [5, 10, 15, 20]" :key="n" :value="n">
-              {{ n }}
-            </option>
-          </select>
-          <span class="ml-2">Per page</span>
+    <div class="text-[14px] bg-[#FDF5AA]-blue-800-white rounded-xl">
+      <div class="mt-4 overflow-x-auto border p-2 rounded-xl">
+        <!-- Controls -->
+        <div class="text-gray-700 flex justify-between items-start mt-1">
+          <div class="flex items-center">
+            <select
+              v-model="pageSize"
+              @change="changePage(1)"
+              class="border rounded px-2 py-1"
+            >
+              <option v-for="n in [5, 10, 15, 20]" :key="n" :value="n">
+                {{ n }}
+              </option>
+            </select>
+            <span class="ml-2">Per page</span>
+          </div>
+
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search..."
+            class="border rounded px-3 py-2 w-[300px]"
+          />
         </div>
 
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search..."
-          class="border rounded px-3 py-2 w-[300px]"
-        />
-      </div>
-
-      <!-- Table -->
-      <div class="overflow-x-auto max-h-[70vh]">
-        <table class="min-w-full border rounded-t-lg text-sm">
-          <thead class="bg-[#34699A] text-white sticky top-0">
-            <tr>
-              <th class="px-4 py-3 text-left rounded-t-lg">Patient ID</th>
-              <th class="px-4 py-3 text-left">Procedure Date</th>
-              <th class="px-4 py-3 text-left">Patient Name</th>
-              <th class="px-4 py-3 text-left">Admit Type</th>
-              <th class="px-4 py-3 text-left">Service Type</th>
-              <th v-if="isIncome" class="px-4 py-3 text-left">Clinic Income</th>
-              <th v-if="isIncome" class="px-4 py-3 text-left">
-                Dentist Income
-              </th>
-              <th v-else class="px-4 py-3 text-left">Guarantor</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr
-              v-for="item in paginatedCensus"
-              :key="item.prescription_id"
-              class="bg-white hover:bg-gray-50"
+        <!-- Table -->
+        <div class="w-full mt-3 rounded-xl shadow overflow-hidden">
+          <div class="overflow-y-auto max-h-[65vh] transition-all duration-300">
+            <table
+              class="min-w-full table-auto border-separate border-spacing-y-2 text-sm text-gray-700"
             >
-              <td class="px-4 py-2">
-                {{ item.dentalChart?.patient?.patient_id ?? "-" }}
-              </td>
-              <td class="px-4 py-2">
-                {{ formatDate(item.dentalChart?.procedure_date) }}
-              </td>
-              <td class="px-4 py-2">
-                {{ item.dentalChart?.patient?.first_name }}
-                {{ item.dentalChart?.patient?.last_name }}
-              </td>
-              <td class="px-4 py-2">
-                {{
-                  getAdmitType(
-                    item.dentalChart?.patient?.patient_id,
-                    item.dentalChart?.procedure_date
-                  )
-                }}
-              </td>
-              <td class="px-4 py-2">
-                {{ item.dentalChart?.priceProcedure?.procedure_type }}
-              </td>
-              <td v-if="isIncome" class="px-4 py-2">
-                {{ formatCurrency(calculateClinicIncome(item)) }}
-              </td>
-              <td v-if="isIncome" class="px-4 py-2">
-                {{ formatCurrency(calculateDentistIncome(item)) }}
-              </td>
-              <td v-else class="px-4 py-2">
-                {{ item.hmoGuarantor?.full_name ?? "-" }}
-              </td>
-            </tr>
-
-            <tr v-if="paginatedCensus.length === 0">
-              <td
-                :colspan="isIncome ? 7 : 6"
-                class="text-center py-6 text-gray-400"
+              <thead
+                class="bg-[#34699A] text-white sticky top-0 z-10 tracking-wide"
               >
-                No records found
-              </td>
-            </tr>
+                <tr>
+                  <th class="px-4 py-3 text-left rounded-tl-lg">Patient ID</th>
+                  <th class="px-4 py-3 text-left">Procedure Date</th>
+                  <th class="px-4 py-3 text-left">Patient Name</th>
+                  <th class="px-4 py-3 text-left">Admit Type</th>
+                  <th class="px-4 py-3 text-left">Service Type</th>
+                  <th v-if="isIncome" class="px-4 py-3 text-left">
+                    Clinic Income
+                  </th>
+                  <th v-if="isIncome" class="px-4 py-3 text-left">
+                    Dentist Income
+                  </th>
+                  <th v-else class="px-4 py-3 text-left rounded-tr-lg">
+                    Guarantor
+                  </th>
+                </tr>
+              </thead>
 
-            <tr
-              v-if="isIncome && paginatedCensus.length"
-              class="bg-gray-100 font-semibold"
+              <tbody>
+                <tr
+                  v-for="item in paginatedCensus"
+                  :key="item.prescription_id"
+                  class="bg-white hover:bg-gray-50"
+                >
+                  <td class="px-4 py-2">
+                    {{ item.dentalChart?.patient?.patient_id ?? "-" }}
+                  </td>
+                  <td class="px-4 py-2">
+                    {{ formatDate(item.dentalChart?.procedure_date) }}
+                  </td>
+                  <td class="px-4 py-2">
+                    {{ item.dentalChart?.patient?.first_name }}
+                    {{ item.dentalChart?.patient?.last_name }}
+                  </td>
+                  <td class="px-4 py-2">
+                    {{
+                      getAdmitType(
+                        item.dentalChart?.patient?.patient_id,
+                        item.dentalChart?.procedure_date,
+                      )
+                    }}
+                  </td>
+                  <td class="px-4 py-2">
+                    {{ item.dentalChart?.priceProcedure?.procedure_type }}
+                  </td>
+                  <td v-if="isIncome" class="px-4 py-2">
+                    {{ formatCurrency(calculateClinicIncome(item)) }}
+                  </td>
+                  <td v-if="isIncome" class="px-4 py-2">
+                    {{ formatCurrency(calculateDentistIncome(item)) }}
+                  </td>
+                  <td v-else class="px-4 py-2">
+                    {{ item.hmoGuarantor?.full_name ?? "-" }}
+                  </td>
+                </tr>
+
+                <tr v-if="paginatedCensus.length === 0">
+                  <td
+                    :colspan="isIncome ? 7 : 6"
+                    class="text-center py-6 text-gray-400"
+                  >
+                    No records found
+                  </td>
+                </tr>
+
+                <tr
+                  v-if="isIncome && paginatedCensus.length"
+                  class="bg-gray-100 font-semibold"
+                >
+                  <td colspan="5" class="text-right px-4 py-3">Total:</td>
+                  <td class="px-4 py-3">
+                    {{ formatCurrency(totalClinicIncome) }}
+                  </td>
+                  <td class="px-4 py-3">
+                    {{ formatCurrency(totalDentistIncome) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Pagination -->
+        <div class="flex justify-between items-center mt-4">
+          <span class="text-sm text-gray-600">
+            Showing {{ startIndex }} to {{ endIndex }} of
+            {{ filteredData.length }}
+          </span>
+
+          <div class="flex items-center gap-1">
+            <!-- Prev -->
+            <button
+              @click="changePage(currentPage - 1)"
+              :disabled="currentPage === 1"
+              class="px-3 py-1 rounded-l-md bg-gray-300 text-gray-700 hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <td colspan="5" class="text-right px-4 py-3">Total:</td>
-              <td class="px-4 py-3">{{ formatCurrency(totalClinicIncome) }}</td>
-              <td class="px-4 py-3">
-                {{ formatCurrency(totalDentistIncome) }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              ‹
+            </button>
 
-      <!-- Pagination -->
-      <div class="flex justify-between mt-4">
-        <span class="text-sm text-gray-600">
-          Showing {{ startIndex }} to {{ endIndex }} of
-          {{ filteredData.length }}
-        </span>
+            <!-- Pages -->
+            <button
+              v-for="p in pageNumbers"
+              :key="p"
+              @click="changePage(p)"
+              class="px-3 py-1 rounded text-sm transition"
+              :class="
+                p === currentPage
+                  ? 'bg-[#34699A] text-white font-semibold'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              "
+            >
+              {{ p }}
+            </button>
 
-        <div class="flex gap-1">
-          <button
-            @click="changePage(currentPage - 1)"
-            :disabled="currentPage === 1"
-          >
-            ‹
-          </button>
-          <button
-            v-for="p in pageNumbers"
-            :key="p"
-            @click="changePage(p)"
-            :class="
-              p === currentPage
-                ? 'bg-[#34699A] text-white px-3 py-1 rounded'
-                : 'px-3 py-1'
-            "
-          >
-            {{ p }}
-          </button>
-          <button
-            @click="changePage(currentPage + 1)"
-            :disabled="currentPage === totalPages"
-          >
-            ›
-          </button>
+            <!-- Next -->
+            <button
+              @click="changePage(currentPage + 1)"
+              :disabled="currentPage === totalPages"
+              class="px-3 py-1 rounded-r-md bg-gray-300 text-gray-700 hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ›
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -280,7 +301,7 @@ export default {
         let dentistMatch = true;
         if (
           ["monthlyCensusPerDentist", "monthlyIncomePerDentist"].includes(
-            this.reportType
+            this.reportType,
           ) &&
           this.filter.dentistId
         ) {
@@ -322,7 +343,7 @@ export default {
     pageNumbers() {
       return Array.from(
         { length: Math.ceil(this.filteredData.length / this.pageSize) },
-        (_, i) => i + 1
+        (_, i) => i + 1,
       );
     },
     startIndex() {
@@ -360,13 +381,13 @@ export default {
     totalClinicIncome() {
       return this.filteredData.reduce(
         (sum, item) => sum + this.calculateClinicIncome(item),
-        0
+        0,
       );
     },
     totalDentistIncome() {
       return this.filteredData.reduce(
         (sum, item) => sum + this.calculateDentistIncome(item),
-        0
+        0,
       );
     },
 
@@ -410,7 +431,7 @@ export default {
       const previousRecords = this.medications.filter(
         (m) =>
           m.dentalChart?.patient?.patient_id === patientId &&
-          dayjs(m.dentalChart?.procedure_date).isBefore(issued)
+          dayjs(m.dentalChart?.procedure_date).isBefore(issued),
       );
       return previousRecords.length > 0 ? "Old Patient" : "New Patient";
     },

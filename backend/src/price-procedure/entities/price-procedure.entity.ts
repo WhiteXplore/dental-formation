@@ -9,13 +9,13 @@ import {
 import { ProcedureInventory } from './price-procedure-inventory.entity';
 import { DentalChart } from 'src/dental-chart/entities/dental-chart.entity';
 import { ToothChart } from 'src/dental-chart/entities/tooth.entity';
+import { Appointment } from 'src/appointment/entities/appointment.entity';
 
 @Entity('price_procedures')
 export class PriceProcedure {
   @PrimaryGeneratedColumn()
   price_procedure_id: number;
 
-  // Allow null so TypeScript is happy
   @Column({ type: 'int', nullable: true })
   inventory_id: number | null;
 
@@ -54,6 +54,10 @@ export class PriceProcedure {
     cascade: true,
   })
   toothChart: ToothChart[];
+
+  // Add relation to appointments
+  @OneToMany(() => Appointment, (appointment) => appointment.priceProcedure)
+  appointments: Appointment[];
 
   @CreateDateColumn()
   created_at: Date;

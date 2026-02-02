@@ -190,7 +190,7 @@ const routes = [
         name: "tracker",
         component: () =>
           import("@/components/admin/admin-record/inventory-tracker.vue"),
-        meta: { requiresAuth: true, role: "Admin" },
+        meta: { requiresAuth: true, roles: ["Dentist", "Admin"] },
       },
       {
         path: "/hmo-guarantors",

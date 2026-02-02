@@ -34,6 +34,15 @@ export class Prescription {
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   patient_payment: number;
 
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    default: 0,
+  })
+  excess_payment: number;
+
   @Column({ type: 'varchar', length: 255, nullable: true })
   payment_type: string;
 

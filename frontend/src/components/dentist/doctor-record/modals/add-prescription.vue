@@ -223,12 +223,18 @@
 
                     <div class="flex flex-col">
                       <label class="text-xs text-gray-500">Preparation</label>
-                      <input
-                        type="text"
-                        class="border rounded-full px-2 py-1 text-sm w-full"
+                      <select
                         v-model="med.preparation"
-                        placeholder="before/after meal"
-                      />
+                        class="border rounded-full px-2 py-1 text-sm w-full"
+                      >
+                        <option disabled value="">Select preparation</option>
+                        <option value="Ampule">Ampule</option>
+                        <option value="Bottle">Bottle</option>
+                        <option value="Carpule">Carpule</option>
+                        <option value="Syrup">Syrup</option>
+                        <option value="Tablet">Tablet</option>
+                        <option value="Vial">Vial</option>
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -317,8 +323,8 @@ export default {
         (m) =>
           m.name.toLowerCase().includes(q) &&
           !this.form.prescribe_medications.some(
-            (selected) => selected.name === m.name
-          )
+            (selected) => selected.name === m.name,
+          ),
       );
     },
 
@@ -329,7 +335,7 @@ export default {
       // Filter charts for this user
       const charts = this.dentalCharts.filter(
         (chart) =>
-          chart.user_accounts?.user_id === userId && chart.dental_id != null
+          chart.user_accounts?.user_id === userId && chart.dental_id != null,
       );
 
       // Get latest chart per patient
@@ -379,7 +385,7 @@ export default {
     ...mapActions(useFetchDataStore, ["fetchDentalChart", "fetchInventories"]),
     toggleManualMedication(med) {
       const exists = this.form.prescribe_medications.some(
-        (item) => item.name === med.name
+        (item) => item.name === med.name,
       );
 
       if (!exists) {
@@ -441,7 +447,7 @@ export default {
       if (!inventory) return;
 
       const exists = this.form.prescribe_medications.some(
-        (med) => med.inventory_id === inventory.inventory_id
+        (med) => med.inventory_id === inventory.inventory_id,
       );
 
       if (!exists) {
@@ -543,7 +549,7 @@ export default {
         for (const payload of payloads) {
           await axios.post(
             process.env.VUE_APP_API_BASE_URL + "/prescription/add-prescription",
-            payload
+            payload,
           );
         }
 
@@ -555,10 +561,10 @@ export default {
       } catch (error) {
         console.error(
           "Prescription submit error:",
-          error.response?.data || error.message
+          error.response?.data || error.message,
         );
         toast.error(
-          error.response?.data?.message || "Failed to add prescription."
+          error.response?.data?.message || "Failed to add prescription.",
         );
       }
     },
@@ -569,7 +575,7 @@ export default {
           process.env.VUE_APP_API_BASE_URL + "/auth/me",
           {
             withCredentials: true,
-          }
+          },
         );
 
         if (response.data) {
@@ -593,8 +599,8 @@ export default {
     console.log(
       "Matching Records for Logged-in User:",
       this.dentalCharts.filter(
-        (item) => item.user_accounts?.user_id === this.user?.sub
-      )
+        (item) => item.user_accounts?.user_id === this.user?.sub,
+      ),
     );
   },
 };

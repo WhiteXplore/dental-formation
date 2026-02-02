@@ -1,4 +1,40 @@
 <template>
+  <div
+    v-if="loadingForecast"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-sm"
+  >
+    <div
+      class="flex flex-col items-center gap-4 p-6 rounded-2xl bg-white shadow-xl border"
+    >
+      <!-- Spinner -->
+      <svg
+        class="w-10 h-10 animate-spin text-blue-600"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        />
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+        />
+      </svg>
+
+      <!-- Text -->
+      <p class="text-sm font-semibold text-gray-700">
+        Running {{ forecastType === "daily" ? "Daily" : "Monthly" }} Forecast…
+      </p>
+      <p class="text-xs text-gray-500">Please wait, analyzing revenue trends</p>
+    </div>
+  </div>
   <div class="space-y-6">
     <!-- Header -->
     <div class="flex justify-between items-center">
@@ -8,37 +44,90 @@
           {{ forecast?.model }} • {{ forecast?.seasonality }} seasonality
         </p>
       </div>
-      <!-- Generate XLSX Button -->
-      <button
-        @click="generateXlsx"
-        :disabled="loading"
-        class="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
-      >
-        <span v-if="loading" class="flex gap-2 w-full">
-          <svg
-            class="animate-spin h-5 w-5 text-white"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
+      <div class="flex gap-2 items-center">
+        <!-- Controls -->
+        <div class="flex items-center gap-4">
+          <!-- Forecast Type Selector -->
+          <div
+            class="inline-flex rounded-xl border border-gray-300 bg-gray-100 p-1"
           >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
+            <button
+              @click="forecastType = 'daily'"
+              :class="[
+                'px-4 py-2 text-sm font-semibold rounded-lg transition',
+                forecastType === 'daily'
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'text-gray-600 hover:bg-white',
+              ]"
+            >
+              Daily
+            </button>
+
+            <button
+              @click="forecastType = 'monthly'"
+              :class="[
+                'px-4 py-2 text-sm font-semibold rounded-lg transition',
+                forecastType === 'monthly'
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'text-gray-600 hover:bg-white',
+              ]"
+            >
+              Monthly
+            </button>
+          </div>
+        </div>
+
+        <!-- Generate XLSX Button -->
+        <button
+          @click="generateXlsx"
+          :disabled="loading"
+          class="group relative inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-700 text-white text-sm font-semibold shadow-md shadow-emerald-500/30 hover:from-emerald-600 hover:to-green-700 hover:shadow-lg hover:shadow-emerald-500/40 active:scale-95 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          <!-- Loading -->
+          <span v-if="loading" class="flex items-center gap-2">
+            <svg
+              class="h-4 w-4 animate-spin text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
+            </svg>
+            Generating XLSX…
+          </span>
+
+          <!-- Default -->
+          <span v-else class="flex items-center gap-2">
+            <!-- Download Icon -->
+            <svg
+              class="h-4 w-4"
+              fill="none"
               stroke="currentColor"
-              stroke-width="4"
-            ></circle>
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-            ></path>
-          </svg>
-          Generating...
-        </span>
-        <span v-else>Generate Revenue XLSX</span>
-      </button>
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"
+              />
+            </svg>
+            Export Revenue (XLSX)
+          </span>
+        </button>
+      </div>
     </div>
 
     <div class="max-h-[75vh] overflow-y-auto space-y-4">
@@ -160,8 +249,30 @@
       </div>
 
       <!-- LINE CHART -->
-      <div class="bg-white p-4 rounded-xl shadow">
-        <canvas ref="revenueChart" height="120"></canvas>
+      <div class="bg-white p-4 rounded-xl border">
+        <!-- Chart -->
+        <canvas v-if="hasChartData" ref="revenueChart" height="120"></canvas>
+
+        <!-- Empty State -->
+        <div
+          v-else
+          class="h-[30vh] flex flex-col items-center justify-center text-gray-400 text-sm"
+        >
+          <svg
+            class="w-10 h-10 mb-2 text-gray-300"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M3 3v18h18M7 13l3-3 4 4 5-6"
+            />
+          </svg>
+          No forecast data available
+        </div>
       </div>
 
       <!-- INTERPRETATION -->
@@ -355,11 +466,21 @@
 
       <!-- FORECAST TABLE -->
       <div class="bg-white p-4 rounded-xl shadow overflow-x-auto">
-        <h3 class="font-semibold mb-3">7-Day Revenue Forecast</h3>
+        <h3 class="font-semibold mb-3">
+          {{
+            forecastType === "daily"
+              ? "7-Day Revenue Forecast"
+              : "Monthly Revenue Forecast"
+          }}
+        </h3>
+
         <table class="w-full text-sm border">
           <thead class="bg-gray-100">
             <tr>
-              <th class="p-2 border">Date</th>
+              <th class="p-2 border">
+                {{ forecastType === "daily" ? "Date" : "Month" }}
+              </th>
+
               <th class="p-2 border">SARIMA</th>
               <th class="p-2 border">Hybrid</th>
               <th class="p-2 border">Difference</th>
@@ -367,7 +488,14 @@
           </thead>
           <tbody>
             <tr v-for="row in forecast?.forecast" :key="row.date">
-              <td class="p-2 border">{{ formatDate(row.date) }}</td>
+              <td class="p-2 border">
+                {{
+                  forecastType === "daily"
+                    ? formatDate(row.date)
+                    : formatMonth(row.month)
+                }}
+              </td>
+
               <td class="p-2 border">₱{{ format(row.sarima_forecast) }}</td>
               <td class="p-2 border font-semibold">
                 ₱{{ format(row.hybrid_forecast) }}
@@ -409,7 +537,7 @@ Chart.register(
   LinearScale,
   CategoryScale,
   Tooltip,
-  Legend
+  Legend,
 );
 
 export default {
@@ -417,6 +545,13 @@ export default {
 
   computed: {
     ...mapState(useFetchDataStore, ["medications"]),
+    hasChartData() {
+      return (
+        this.forecast &&
+        this.forecast.forecast &&
+        this.forecast.forecast.length > 0
+      );
+    },
   },
 
   data() {
@@ -424,22 +559,123 @@ export default {
       forecast: null,
       chart: null,
       loading: false,
+      loadingForecast: false,
+      forecastType: "daily",
     };
+  },
+  watch: {
+    forecastType: {
+      immediate: true,
+      async handler(type) {
+        this.loadingForecast = true;
+
+        try {
+          const url =
+            type === "daily"
+              ? "http://localhost:8000/revenue/run-daily-forecast"
+              : "http://localhost:8000/revenue/run-monthly-forecast";
+
+          const res = await axios.post(url);
+
+          if (!res.data || !res.data.forecast) {
+            toast.error("⚠️ Failed to run forecast: No data returned.");
+            this.forecast = null;
+            return;
+          }
+
+          this.forecast = res.data;
+
+          this.$nextTick(() => {
+            if (this.hasChartData) {
+              this.renderChart();
+            }
+          });
+
+          toast.success(
+            `✅ ${type === "daily" ? "Daily" : "Monthly"} forecast loaded`,
+          );
+        } catch (err) {
+          console.error(err);
+          toast.error("❌ Failed to run forecast.");
+          this.forecast = null;
+        } finally {
+          this.loadingForecast = false;
+        }
+      },
+    },
   },
 
   async mounted() {
-    // Fetch forecast
-    const res = await axios.get(
-      "http://localhost:8000/analytics/revenue/forecast"
-    );
-    this.forecast = res.data.data;
-    this.renderChart();
-
-    // Fetch medications for XLSX
-    useFetchDataStore().fetchMedications?.();
+    try {
+      await useFetchDataStore().fetchMedications?.();
+    } catch (err) {
+      console.error("Failed to fetch medications:", err);
+    }
   },
-
   methods: {
+    async runForecast() {
+      this.loadingForecast = true;
+
+      try {
+        const url =
+          this.forecastType === "daily"
+            ? "http://localhost:8000/revenue/run-daily-forecast"
+            : "http://localhost:8000/revenue/run-monthly-forecast";
+
+        const res = await axios.post(url);
+
+        if (!res.data || !res.data.forecast) {
+          toast.error("⚠️ Failed to run forecast: No data returned.");
+          return;
+        }
+
+        this.forecast = res.data;
+        this.$nextTick(() => {
+          this.renderChart();
+        });
+
+        toast.success(
+          `✅ ${
+            this.forecastType === "daily" ? "Daily" : "Monthly"
+          } forecast completed!`,
+        );
+      } catch (error) {
+        console.error(error);
+        toast.error("❌ Failed to run forecast.");
+      } finally {
+        this.loadingForecast = false;
+      }
+    },
+
+    async runMonthlyForecast() {
+      this.loadingForecast = true;
+
+      try {
+        const res = await axios.post(
+          "http://localhost:8000/revenue/run-monthly-forecast",
+        );
+
+        if (!res.data || !res.data.forecast) {
+          toast.error("⚠️ Failed to run forecast: No data returned.");
+          return;
+        }
+
+        // Update the forecast
+        this.forecast = res.data;
+
+        // Update chart
+        this.$nextTick(() => {
+          this.renderChart();
+        });
+
+        toast.success("✅ Forecast run successfully!");
+      } catch (error) {
+        console.error(error);
+        toast.error("❌ Failed to run forecast.");
+      } finally {
+        this.loadingForecast = false;
+      }
+    },
     formatProcedureDate(date) {
       if (!date) return "-";
 
@@ -448,6 +684,14 @@ export default {
 
       return d.toISOString().slice(0, 10);
     },
+    formatMonth(date) {
+      if (!date) return "-";
+      return new Date(date).toLocaleString("default", {
+        year: "numeric",
+        month: "long",
+      });
+    },
+
     formatDate(date) {
       if (!date) return "-";
       return new Date(date).toISOString().slice(0, 10);
@@ -462,15 +706,17 @@ export default {
 
     renderChart() {
       const ctx = this.$refs.revenueChart;
-      const historicalLabels = this.forecast.historical.map((d) =>
-        this.formatDate(d.date)
+
+      // 🔥 ONLY LAST 7 DAYS OF HISTORICAL DATA
+      const last7Historical = this.forecast.historical.slice(-7);
+
+      const historicalLabels = last7Historical.map((d) =>
+        this.formatDate(d.date),
       );
-      const historicalData = this.forecast.historical.map(
-        (d) => d["Clinic Share"]
-      );
+      const historicalData = last7Historical.map((d) => d["Clinic Share"]);
 
       const forecastLabels = this.forecast.forecast.map((d) =>
-        this.formatDate(d.date)
+        this.formatDate(d.date),
       );
       const sarima = this.forecast.forecast.map((d) => d.sarima_forecast);
       const hybrid = this.forecast.forecast.map((d) => d.hybrid_forecast);
@@ -485,7 +731,7 @@ export default {
           labels: [...historicalLabels, ...forecastLabels],
           datasets: [
             {
-              label: "Historical Revenue",
+              label: "Historical Revenue (Last 7 Days)",
               data: historicalData,
               borderColor: "#6B7280",
               backgroundColor: "transparent",
@@ -536,7 +782,6 @@ export default {
         },
       });
     },
-
     // ------------------ XLSX Generation ------------------
     async generateXlsx() {
       if (!this.medications?.length) {
@@ -601,7 +846,7 @@ export default {
 
         const res = await axios.post(
           process.env.VUE_APP_API_BASE_URL + "/revenue/generate-xlsx",
-          rows
+          rows,
         );
 
         if (!res.data.forecast || !res.data.forecast.forecast?.length) {
@@ -613,10 +858,14 @@ export default {
 
         // Update chart and table
         this.forecast = res.data.forecast;
-        this.renderChart();
+        this.$nextTick(() => {
+          this.renderChart();
+        });
       } catch (error) {
         console.error(error);
-        alert("❌ Failed to generate forecast: Data may be insufficient.");
+        toast.warning(
+          " Failed to generate forecast: Data may be insufficient.",
+        );
       } finally {
         this.loading = false; // stop loading
       }
@@ -624,3 +873,16 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.25s ease;
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+</style>

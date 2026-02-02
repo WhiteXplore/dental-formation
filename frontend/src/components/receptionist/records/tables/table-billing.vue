@@ -382,7 +382,7 @@ export default {
           patient,
           dentist,
           procedure_date: this.formatScheduledDate(
-            item.dentalChart?.procedure_date || item.dentalChart?.created_at
+            item.dentalChart?.procedure_date || item.dentalChart?.created_at,
           ),
           payment_status: item.payment_status,
           instruction,
@@ -400,7 +400,7 @@ export default {
       if (!this.pendingPdfDefinition || !this.pendingPdfPatient) return;
       const fileName = this.getPdfFileName(
         this.pendingPdfType,
-        this.pendingPdfPatient
+        this.pendingPdfPatient,
       );
       pdfMake.createPdf(this.pendingPdfDefinition).download(fileName);
     },
@@ -444,17 +444,11 @@ export default {
       // ===========================
       const header = [
         { image: base64Logo, width: 200, alignment: "center" },
-
-        {
-          text: "TOOTH FORMATION DENTAL CLINIC",
-          style: "clinicHeader",
-        },
-
+        { text: "TOOTH FORMATION DENTAL CLINIC", style: "clinicHeader" },
         {
           text: "PANABO POLYMEDIC HOSPITAL, INC. - GROUP FLOOR",
           style: "subTitle",
         },
-
         {
           columns: [
             {
@@ -471,13 +465,10 @@ export default {
           columnGap: 1,
           margin: [120, 10, 120, 10],
         },
-
         {
           margin: [0, 8, 0, 8],
           stack: [
-            // ===========================
-            // DATE ISSUED (LEFT, TOP)
-            // ===========================
+            // DATE ISSUED
             {
               table: {
                 widths: ["auto", "*"],
@@ -499,10 +490,7 @@ export default {
               layout: "noBorders",
               margin: [0, 0, 0, 6],
             },
-
-            // ===========================
-            // ROW 1: PATIENT NAME / AGE & SEX
-            // ===========================
+            // PATIENT NAME / AGE & SEX
             {
               columns: [
                 {
@@ -529,7 +517,6 @@ export default {
                   },
                   layout: "noBorders",
                 },
-
                 {
                   width: "40%",
                   table: {
@@ -566,10 +553,7 @@ export default {
               ],
               columnGap: 10,
             },
-
-            // ===========================
-            // ROW 2: ADDRESS / STATUS
-            // ===========================
+            // ADDRESS / STATUS
             {
               columns: [
                 {
@@ -594,7 +578,6 @@ export default {
                   },
                   layout: "noBorders",
                 },
-
                 {
                   width: "40%",
                   table: {
@@ -630,56 +613,72 @@ export default {
       // PROCEDURE PDF WITH PRICING_SCOPE
       // ===========================
       if (type === "procedure") {
-        const countedOneTime = new Set();
-        const procedures =
-          row.dentalChart?.teeth?.map((tooth) => {
-            const proc = tooth.priceProcedure;
-            if (!proc)
-              return {
-                toothNumber: tooth.tooth_number || "N/A",
-                status: "No Procedure",
-                date: this.formatScheduledDate(
-                  row.dentalChart?.procedure_date || row.dentalChart?.created_at
-                ),
-                price: "₱0.00",
-                pricingScope: "-",
-              };
+        // Map to handle one-time procedures and per-tooth procedures
+        const procedureMap = new Map();
 
-            // Determine fee based on pricing_scope
-            let fee = 0;
-            if (proc.pricing_scope === "one_time") {
-              if (!countedOneTime.has(proc.price_procedure_id)) {
-                fee = Number(proc.price || 0);
-                countedOneTime.add(proc.price_procedure_id);
-              }
-            } else if (proc.pricing_scope === "per_tooth_payment") {
-              fee = Number(proc.price || 0);
-            }
+        (row.dentalChart?.teeth || []).forEach((tooth) => {
+          const proc = tooth.priceProcedure;
 
-            return {
+          if (!proc) {
+            procedureMap.set(`no-proc-${tooth.tooth_number}`, {
               toothNumber: tooth.tooth_number || "N/A",
-              status: proc.procedure_name || "Unknown",
+              status: "No Procedure",
               date: this.formatScheduledDate(
-                row.dentalChart?.procedure_date || row.dentalChart?.created_at
+                row.dentalChart?.procedure_date || row.dentalChart?.created_at,
               ),
-              price: `₱${fee.toFixed(2)}`,
-              pricingScope: proc.pricing_scope.replace(/_/g, " ").toUpperCase(),
-            };
-          }) || [];
+              pricingScope: "-",
+              price: "₱0.00",
+            });
+            return;
+          }
 
-        // Compute total based on the same logic
+          // ONE TIME PROCEDURE → only 1 row with Tooth = "All"
+          if (proc.pricing_scope === "one_time") {
+            if (!procedureMap.has(proc.price_procedure_id)) {
+              procedureMap.set(proc.price_procedure_id, {
+                toothNumber: "All",
+                status: proc.procedure_name || "Unknown",
+                date: this.formatScheduledDate(
+                  row.dentalChart?.procedure_date ||
+                    row.dentalChart?.created_at,
+                ),
+                pricingScope: "ONE TIME",
+                price: `₱${Number(proc.price || 0).toFixed(2)}`,
+              });
+            }
+            return;
+          }
+
+          // PER TOOTH PROCEDURE
+          procedureMap.set(`${proc.price_procedure_id}-${tooth.tooth_number}`, {
+            toothNumber: tooth.tooth_number || "N/A",
+            status: proc.procedure_name || "Unknown",
+            date: this.formatScheduledDate(
+              row.dentalChart?.procedure_date || row.dentalChart?.created_at,
+            ),
+            pricingScope: "PER TOOTH PAYMENT",
+            price: `₱${Number(proc.price || 0).toFixed(2)}`,
+          });
+        });
+
+        const procedures = Array.from(procedureMap.values());
+
+        // Total & Excess
         const totalProcedurePrice = procedures.reduce(
           (sum, p) => sum + (parseFloat(p.price.replace(/[₱,]/g, "")) || 0),
-          0
+          0,
+        );
+        const excessPayment = Number(
+          row.excess_payment || row.prescription?.excess_payment || 0,
         );
 
-        // Add Pricing Scope column to table
+        // Procedure Table
         content.push({ text: "Procedure Details", style: "sectionTitle" });
         content.push({
           style: "tableStyle",
           table: {
             headerRows: 1,
-            widths: ["auto", "*", "*", "auto", "auto"],
+            widths: ["auto", "*", "*", "*", "auto"],
             body: [
               [
                 { text: "Tooth", style: "tableHeader" },
@@ -690,8 +689,8 @@ export default {
               ],
               ...procedures.map((p) => [
                 p.toothNumber,
-                { text: p.status, bold: true, alignment: "left" },
-                { text: p.date, alignment: "right" },
+                { text: p.status, bold: true, alignment: "center" },
+                { text: p.date, alignment: "center" },
                 { text: p.pricingScope, alignment: "center" },
                 { text: p.price, alignment: "right" },
               ]),
@@ -702,8 +701,40 @@ export default {
           },
         });
 
+        // Excess Payment
+        content.push({ text: "Excess Payment", style: "sectionTitle" });
         content.push({
-          text: `Total Procedure Cost: ₱${totalProcedurePrice.toFixed(2)}`,
+          style: "tableStyle",
+          table: {
+            headerRows: 1,
+            widths: ["*", "auto"],
+            body: [
+              [
+                {
+                  text: "Description",
+                  style: "tableHeader",
+                  alignment: "left",
+                },
+                { text: "Amount", style: "tableHeader", alignment: "right" },
+              ],
+              [
+                { text: "Excess / Additional Charges", alignment: "left" },
+                {
+                  text: `₱${excessPayment.toFixed(2)}`,
+                  alignment: "right",
+                  bold: true,
+                },
+              ],
+            ],
+          },
+          layout: {
+            fillColor: (rowIndex) => (rowIndex === 0 ? "#FFF3E0" : null),
+          },
+        });
+
+        const grandTotal = totalProcedurePrice + excessPayment;
+        content.push({
+          text: `Grand Total Payment: ₱${grandTotal.toFixed(2)}`,
           style: "grandTotalText",
         });
       }
@@ -714,24 +745,22 @@ export default {
       else if (type === "medication") {
         const instructionText = row.instruction || "N/A";
 
-        const meds =
-          row.prescribedMedications?.map((med) => {
-            let dosage = med.dosage ? `${med.dosage}` : "";
-            dosage = dosage.replace(/\bpcs\b/gi, "").trim();
-            const cleanName = (med.name || "Unnamed")
-              .replace(/\bpcs\b/gi, "")
-              .trim();
-            return {
-              name: `${cleanName}${dosage ? " - " + dosage : ""}`,
-              qty: med.pcs || 0,
-              duration: med.duration || null,
-              frequencies: med.frequencies || null,
-              preparation: med.preparation || null,
-            };
-          }) || [];
+        const meds = (row.prescribedMedications || []).map((med) => {
+          let dosage = med.dosage ? `${med.dosage}` : "";
+          dosage = dosage.replace(/\bpcs\b/gi, "").trim();
+          const cleanName = (med.name || "Unnamed")
+            .replace(/\bpcs\b/gi, "")
+            .trim();
+          return {
+            name: `${cleanName}${dosage ? " - " + dosage : ""}`,
+            qty: med.pcs || 0,
+            duration: med.duration || null,
+            frequencies: med.frequencies || null,
+            preparation: med.preparation || null,
+          };
+        });
 
         content.push({ text: "Prescribed Medications", style: "sectionTitle" });
-
         content.push({
           style: "tableStyle",
           table: {
@@ -768,6 +797,7 @@ export default {
           layout: "lightHorizontalLines",
         });
 
+        // Instruction
         content.push({
           style: "tableStyle",
           table: {
@@ -789,7 +819,7 @@ export default {
       }
 
       // ===========================
-      // SINGLE FOOTER AT END
+      // FOOTER
       // ===========================
       const footerName =
         type === "procedure"
@@ -804,8 +834,8 @@ export default {
         type === "medication"
           ? row.dentalChart?.user_accounts?.license_no || "N/A"
           : "";
-
       const footerRole = type === "procedure" ? this.user?.role || "N/A" : "";
+
       content.push({
         margin: [0, 20, 0, 0],
         columns: [
@@ -949,7 +979,7 @@ export default {
         for (const row of this.groupToDelete.rows) {
           const id = row.prescription_id;
           await axios.delete(
-            process.env.VUE_APP_API_BASE_URL + `/prescription/delete/${id}`
+            process.env.VUE_APP_API_BASE_URL + `/prescription/delete/${id}`,
           );
         }
         toast.success("Prescription(s) deleted successfully.");
