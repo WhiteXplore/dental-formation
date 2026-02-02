@@ -18,7 +18,7 @@
       Revenue Forecasting
     </h3>
 
-    <!-- Loading -->
+    <!-- Loading Skeleton -->
     <div
       v-show="loadingForecast"
       class="h-[550px] flex items-center justify-center text-gray-400 text-sm"
@@ -26,7 +26,7 @@
       Running daily forecast…
     </div>
 
-    <!-- Chart (DO NOT USE v-if) -->
+    <!-- Chart -->
     <div
       v-show="!loadingForecast"
       class="bg-white p-4 rounded-xl border h-[550px]"
@@ -34,7 +34,7 @@
       <canvas ref="revenueChart"></canvas>
     </div>
 
-    <!-- Table -->
+    <!-- Forecast Table -->
     <div class="bg-white p-4 rounded-xl shadow overflow-x-auto">
       <h3 class="font-semibold mb-3">7-Day Revenue Forecast</h3>
 
@@ -97,7 +97,6 @@ Chart.register(
 
 export default {
   name: "RevenueForecastDashboard",
-
   data() {
     return {
       forecast: null,
@@ -105,20 +104,18 @@ export default {
       loadingForecast: false,
     };
   },
-
   mounted() {
-    this.runDailyForecast();
+    // Delay the forecast call slightly to let dashboard render faster
+    setTimeout(() => this.runDailyForecast(), 300);
   },
-
   beforeUnmount() {
     this.chart?.destroy();
   },
-
   methods: {
     async runDailyForecast() {
-      this.loadingForecast = true;
-      this.forecast = null;
+      if (this.forecast) return; // Already loaded, prevent refetch
 
+      this.loadingForecast = true;
       try {
         const res = await axios.post(
           "http://localhost:8000/revenue/run-daily-forecast",
@@ -126,12 +123,13 @@ export default {
 
         if (!res.data?.forecast?.length) {
           toast.warning("⚠️ No forecast data returned");
+          this.forecast = { forecast: [] };
           return;
         }
 
         this.forecast = res.data;
 
-        // ✅ wait for canvas to exist
+        // Wait for the canvas to exist (v-show ensures it does)
         await this.$nextTick();
         this.renderChart();
       } catch (err) {
@@ -146,9 +144,10 @@ export default {
       const ctx = this.$refs.revenueChart;
       if (!ctx || !this.forecast) return;
 
-      // 🔥 ONLY LAST 7 DAYS OF HISTORICAL DATA
-      const last7Historical = (this.forecast.historical || []).slice(-7);
+      // Destroy old chart if exists
+      if (this.chart) this.chart.destroy();
 
+      const last7Historical = (this.forecast.historical || []).slice(-7);
       const historicalLabels = last7Historical.map((d) =>
         this.formatDate(d.date),
       );
@@ -159,12 +158,6 @@ export default {
       );
       const sarima = this.forecast.forecast.map((d) => d.sarima_forecast);
       const hybrid = this.forecast.forecast.map((d) => d.hybrid_forecast);
-
-      // 🧹 Clean up old chart
-      if (this.chart) {
-        this.chart.destroy();
-        this.chart = null;
-      }
 
       this.chart = new Chart(ctx, {
         type: "line",
@@ -201,12 +194,9 @@ export default {
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false, // 👈 IMPORTANT for height
+          maintainAspectRatio: false,
           plugins: {
-            legend: {
-              position: "bottom",
-              labels: { usePointStyle: true },
-            },
+            legend: { position: "bottom", labels: { usePointStyle: true } },
             tooltip: {
               callbacks: {
                 label(context) {
@@ -228,6 +218,7 @@ export default {
         },
       });
     },
+
     formatDate(date) {
       return date ? new Date(date).toISOString().slice(0, 10) : "-";
     },
