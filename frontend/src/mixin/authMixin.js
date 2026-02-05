@@ -29,7 +29,7 @@ export default {
             email: this.email,
             password: this.password,
           },
-          { withCredentials: true }
+          { withCredentials: true },
         );
 
         const { role, status } = response.data;

@@ -118,7 +118,7 @@ export default {
       this.loadingForecast = true;
       try {
         const res = await axios.post(
-          "http://localhost:8000/revenue/run-daily-forecast",
+          process.env.VUE_APP_API_BASE_URL + "/revenue/run-daily-forecast",
         );
 
         if (!res.data?.forecast?.length) {

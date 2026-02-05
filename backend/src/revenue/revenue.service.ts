@@ -104,7 +104,7 @@ export class RevenueService {
 
     const jsonPath = path.join(
       this.pythonDataDir,
-      'revenue_forecast_next3months.json',
+      'revenue_forecast_nextmonth.json',
     );
     if (!fs.existsSync(jsonPath)) throw new Error('Forecast JSON not found');
 

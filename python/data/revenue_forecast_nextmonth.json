@@ -1,0 +1,43 @@
+{
+  "model": "Naive Baseline Forecast",
+  "methodology": "Last observed monthly revenue is used as the next month forecast",
+  "forecast_months": 1,
+  "generated_at": "2026-02-04T01:50:41.329871",
+  "forecast_confidence": {
+    "level": "MEDIUM",
+    "score": 0.5,
+    "reason": "3 months of historical data available; "
+  },
+  "validation": {
+    "accuracy_available": false,
+    "reason": "No completed forecast vs actual cycles yet",
+    "minimum_months_required": 1,
+    "historical_months_available": 3
+  },
+  "historical": [
+    {
+      "month": "2026-02",
+      "clinic_share": 4860.0
+    },
+    {
+      "month": "2026-03",
+      "clinic_share": 1680.0
+    },
+    {
+      "month": "2026-04",
+      "clinic_share": 1960.0
+    }
+  ],
+  "forecast": [
+    {
+      "month": "2026-05",
+      "forecast": 1960.0,
+      "method": "Naive (Last Month Value)"
+    }
+  ],
+  "summary": {
+    "last_month_actual": 1960.0,
+    "next_month_forecast": 1960.0,
+    "difference": 0.0
+  }
+}
