@@ -43,32 +43,30 @@
               >
                 <div v-if="filteredPatients.length > 0">
                   <div
-                    v-for="dentalChart in filteredPatients"
-                    :key="dentalChart.dental_id"
+                    v-for="patient in filteredPatients"
+                    :key="patient.dental_id"
                     class="px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                    @mousedown="toggleDentalSelection(dentalChart)"
+                    @mousedown="toggleDentalSelection(patient)"
                   >
                     <div class="flex gap-1 items-start">
                       <input
                         type="checkbox"
-                        :checked="form.user_id.includes(dentalChart.dental_id)"
+                        :checked="form.user_id.includes(patient.dental_id)"
                         class="mr-2 mt-2"
                       />
                       <div class="flex flex-col">
                         <div>
-                          {{ dentalChart.patient?.last_name }},
-                          {{ dentalChart.patient?.first_name }}
-                          {{ dentalChart.patient?.middle_name }} -
-                          <!-- {{ dentalChart.tooth_number }} - -->
-                          {{ dentalChart.status }}
+                          {{ patient.last_name }}, {{ patient.first_name }}
+                          {{ patient.middle_name }}
                         </div>
                         <span class="italic text-gray-600">
-                          {{ formatDate(dentalChart.procedure_date) }}
+                          {{ formatDate(patient.procedure_date) }}
                         </span>
                       </div>
                     </div>
                   </div>
                 </div>
+
                 <div v-else class="px-3 py-2 text-gray-500 italic">
                   No results found
                 </div>
@@ -327,12 +325,31 @@ export default {
           ),
       );
     },
+    simplifiedPatients() {
+      return this.dentalCharts.map((chart) => {
+        const patient = chart.patient || {};
+        return {
+          dental_id: chart.dental_id,
+          patient_id: chart.patient_id,
+          first_name: patient.first_name || "",
+          middle_name: patient.middle_name || "",
+          last_name: patient.last_name || "",
+          birthdate: patient.birthdate || "",
+          gender: patient.gender || "",
+          age: patient.age || "",
+          contact_number: patient.contact_number || "",
+          address: patient.address || "",
+          allergies: patient.allergies || "",
+          // add any other patient field you want
+        };
+      });
+    },
 
     filteredPatients() {
       const query = this.searchPatientQuery.toLowerCase();
       const userId = this.user?.sub || null;
 
-      // Filter charts for this user
+      // Filter charts for this user and valid dental_id
       const charts = this.dentalCharts.filter(
         (chart) =>
           chart.user_accounts?.user_id === userId && chart.dental_id != null,
@@ -353,21 +370,36 @@ export default {
         return acc;
       }, {});
 
-      // Convert object to array
-      const latestCharts = Object.values(latestPerPatient);
+      // Convert object to array and map to simplified patient object
+      const simplifiedPatients = Object.values(latestPerPatient).map(
+        (chart) => {
+          const patient = chart.patient || {};
+          return {
+            dental_id: chart.dental_id,
+            patient_id: chart.patient_id,
+            first_name: patient.first_name || "",
+            middle_name: patient.middle_name || "",
+            last_name: patient.last_name || "",
+            birthdate: patient.birthdate || "",
+            gender: patient.gender || "",
+            age: patient.age || "",
+            contact_number: patient.contact_number || "",
+            address: patient.address || "",
+            allergies: patient.allergies || "",
+            procedure_date: chart.procedure_date || "", // Added here
+          };
+        },
+      );
 
-      // Filter by search query
-      return latestCharts.filter((chart) => {
+      // Filter by search query (full name)
+      return simplifiedPatients.filter((patient) => {
         if (!query) return true;
-        const patient = chart.patient;
-        if (!patient) return false;
         const fullName = `${patient.last_name}, ${patient.first_name} ${
           patient.middle_name || ""
         }`.toLowerCase();
         return fullName.includes(query);
       });
     },
-
     filteredMedications() {
       const query = this.searchMedicationQuery.toLowerCase();
       const today = dayjs().startOf("day");
