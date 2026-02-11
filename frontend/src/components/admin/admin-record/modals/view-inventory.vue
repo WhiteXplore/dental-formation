@@ -692,8 +692,7 @@ export default {
       this.inventories = res.data.map((item) => ({
         ...item,
         image: item.image
-          ? process.env.VUE_APP_API_BASE_URL +
-            `/inventory/inventory-image/${item.inventory_id}`
+          ? `${process.env.VUE_APP_API_BASE_URL}/inventory/inventory-image/${item.inventory_id}`
           : null,
         id: item.inventory_id,
       }));
@@ -749,12 +748,14 @@ export default {
       this.showModal = true;
     },
 
-    handleImageUpload(e) {
-      const file = e.target.files[0];
-      if (file) {
-        this.form.file = file;
-        this.form.preview = URL.createObjectURL(file);
-      }
+    handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      this.form.file = file;
+
+      const reader = new FileReader();
+      reader.onload = (e) => (this.form.preview = e.target.result);
+      reader.readAsDataURL(file);
     },
 
     async saveItem() {

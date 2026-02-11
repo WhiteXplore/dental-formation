@@ -927,6 +927,7 @@ export default {
     // ===========================
     // USER FETCH
     // ===========================
+<<<<<<< HEAD
 async fetchUser() {
   try {
     // Ensure API base URL comes from environment variables
@@ -949,6 +950,30 @@ async fetchUser() {
     this.$router.push("/");
   }
 },
+=======
+    async fetchUser() {
+      try {
+        // Ensure API base URL comes from environment variables
+        const baseUrl = process.env.VUE_APP_API_BASE_URL;
+
+        // Make request using Axios
+        const response = await axios.get(`${baseUrl}/auth/me`, {
+          withCredentials: true, // keep cookies for auth
+        });
+
+        if (response.data) {
+          this.user = response.data;
+        } else {
+          // If no user data, redirect to home
+          this.$router.push("/");
+          location.reload();
+        }
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+        this.$router.push("/");
+      }
+    },
+>>>>>>> bbd463a28b69b249ffd0931c24f832f182ef6749
     // ===========================
     // PAGINATION, MODALS
     // ===========================

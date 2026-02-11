@@ -1,8 +1,8 @@
 import { NestApplication, NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
-import * as cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
+<<<<<<< HEAD
 import { join } from 'path';
 import * as fs from 'fs';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -21,6 +21,30 @@ async function bootstrap() {
     key: fs.readFileSync(join(__dirname, '../key.pem')),
     cert: fs.readFileSync(join(__dirname, '../certificate.pem')),
   };
+=======
+import { NestExpressApplication } from '@nestjs/platform-express';
+
+import * as cookieParser from 'cookie-parser';
+import * as bodyParser from 'body-parser';
+import { join } from 'path';
+
+async function bootstrap() {
+  try {
+    const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+    // ✅ Increase payload size limit
+    app.use(bodyParser.json({ limit: '10mb' }));
+    app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
+
+    // ✅ Global validation
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+>>>>>>> bbd463a28b69b249ffd0931c24f832f182ef6749
 
    const app = await NestFactory.create(AppModule, {
     cors: {
@@ -29,6 +53,26 @@ async function bootstrap() {
         if (!origin || whitelist.indexOf(origin) !== -1) {
           // if (whitelist.indexOf(origin) !== -1) {
 
+<<<<<<< HEAD
+=======
+    // ✅ Serve static files from uploads folder
+    app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+      prefix: '/uploads/',
+    });
+
+    // ✅ CORS configuration
+    const whiteList = [
+      'http://localhost:8080',
+      'http://localhost:5173',
+      'http://192.168.1.16:8080',
+      'http://192.168.1.16:5173',
+    ];
+
+    app.enableCors({
+      origin: (origin, callback) => {
+        const date = new Date().toLocaleString();
+        if (!origin || whiteList.includes(origin)) {
+>>>>>>> bbd463a28b69b249ffd0931c24f832f182ef6749
           console.log(
             'allowed cors for: ',
             origin + ' Date: ' + curdate.toString().substring(0, 24),
@@ -48,6 +92,7 @@ async function bootstrap() {
       credentials: true,
     },
 
+<<<<<<< HEAD
     httpsOptions,
    });
   const logger = new Logger(NestApplication.name);
@@ -73,6 +118,18 @@ async function bootstrap() {
 
   await app.listen(8080);
   logger.log(`Application started and listening on ${8080}`);
+=======
+    // ✅ Listen on LAN and localhost
+    const port = process.env.PORT || 8000;
+    await app.listen(port, '0.0.0.0');
+
+    console.log(`🚀 Application running locally at: http://localhost:${port}`);
+    console.log(`🌐 Accessible on LAN at: http://192.168.1.16:${port}`);
+  } catch (error) {
+    console.error('❌ Error starting application:', error);
+    process.exit(1);
+  }
+>>>>>>> bbd463a28b69b249ffd0931c24f832f182ef6749
 }
 
 bootstrap();

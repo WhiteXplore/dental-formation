@@ -12,33 +12,46 @@ import {
   Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
 import { InventoryService } from './inventory.service';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
 import { Response } from 'express';
+import { existsSync } from 'fs';
 
 @Controller('inventory')
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
   /* ================= CREATE ================= */
-
   @Post('add-inventory')
   @UseInterceptors(
     FileInterceptor('image', {
-      storage: memoryStorage(),
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `inventory-${uniqueSuffix}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+          return cb(new Error('Only image files are allowed!'), false);
+        }
+        cb(null, true);
+      },
     }),
   )
   create(
     @Body() createInventoryDto: CreateInventoryDto,
     @UploadedFile() image?: Express.Multer.File,
   ) {
-    return this.inventoryService.create(createInventoryDto, image?.buffer);
+    return this.inventoryService.create(createInventoryDto, image?.filename);
   }
 
   /* ================= READ ================= */
-
   @Get('get-inventory')
   findAll() {
     return this.inventoryService.findAll();
@@ -60,20 +73,33 @@ export class InventoryController {
       return res.status(404).send('Image not found');
     }
 
-    res.set({
-      'Content-Type': 'image/jpeg',
-      'Content-Length': item.image.length,
-    });
+    const imagePath = join(__dirname, '../../uploads', item.image);
 
-    return res.send(item.image);
+    if (!existsSync(imagePath)) {
+      return res.status(404).send('Image file not found on server');
+    }
+
+    return res.sendFile(imagePath);
   }
 
   /* ================= UPDATE ================= */
-
   @Patch('update/:id')
   @UseInterceptors(
     FileInterceptor('image', {
-      storage: memoryStorage(),
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `inventory-${uniqueSuffix}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+          return cb(new Error('Only image files are allowed!'), false);
+        }
+        cb(null, true);
+      },
     }),
   )
   update(
@@ -81,7 +107,11 @@ export class InventoryController {
     @Body() updateInventoryDto: UpdateInventoryDto,
     @UploadedFile() image?: Express.Multer.File,
   ) {
-    return this.inventoryService.update(id, updateInventoryDto, image?.buffer);
+    return this.inventoryService.update(
+      id,
+      updateInventoryDto,
+      image?.filename,
+    );
   }
 
   /* 🔔 MARK SINGLE INVENTORY NOTIFICATION AS VIEWED */
@@ -97,14 +127,12 @@ export class InventoryController {
   }
 
   /* ================= DELETE ================= */
-
   @Delete('delete/:id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.inventoryService.remove(id);
   }
 
   /* ================= STOCK ================= */
-
   @Patch('deduct')
   deductInventory(@Body() body: { inventoryId: number; quantity: number }) {
     return this.inventoryService.deductInventory(

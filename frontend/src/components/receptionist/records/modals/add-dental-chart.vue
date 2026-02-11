@@ -591,13 +591,13 @@ export default {
         appointments = [...this.appointments];
       } else if (this.user.role === "Dentist") {
         appointments = this.appointments.filter(
-          (a) => a.user_id === this.user.user_id || a.user_id === this.user.sub
+          (a) => a.user_id === this.user.user_id || a.user_id === this.user.sub,
         );
       }
 
       // Only upcoming appointments
       appointments = appointments.filter(
-        (a) => new Date(a.scheduled_date) >= today
+        (a) => new Date(a.scheduled_date) >= today,
       );
 
       // Apply search filter
@@ -608,13 +608,13 @@ export default {
             a.patient.middle_name || ""
           }`
             .toLowerCase()
-            .includes(query)
+            .includes(query),
         );
       }
 
       // Sort by nearest date first
       appointments.sort(
-        (a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date)
+        (a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date),
       );
 
       return appointments;
@@ -625,7 +625,7 @@ export default {
       return this.inventories.filter((inv) => {
         // hide already selected inventories
         const alreadySelected = this.form.selected_inventories.some(
-          (i) => i.inventory_id === inv.inventory_id
+          (i) => i.inventory_id === inv.inventory_id,
         );
 
         if (alreadySelected) return false;
@@ -657,7 +657,7 @@ export default {
     },
     selectedProcedure() {
       return this.prices.find(
-        (p) => p.price_procedure_id === this.form.price_procedure_id
+        (p) => p.price_procedure_id === this.form.price_procedure_id,
       );
     },
 
@@ -687,7 +687,7 @@ export default {
     ]),
     toggleInventory(item) {
       const exists = this.form.selected_inventories.some(
-        (i) => i.inventory_id === item.inventory_id
+        (i) => i.inventory_id === item.inventory_id,
       );
 
       if (!exists) {
@@ -783,18 +783,45 @@ export default {
 
     handleImageUpload(e) {
       const file = e.target.files[0];
-      if (file && file.type.startsWith("image/")) {
-        this.xrayFile = file;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.xrayPreview = e.target.result; // ✅ sets preview
-        };
-        reader.readAsDataURL(file);
-      } else {
-        toast.warning("Please select a valid image file.");
+
+      if (!file) {
         this.xrayFile = null;
         this.xrayPreview = null;
+        return;
       }
+
+      // ✅ Validate file type
+      const allowedTypes = [
+        "image/png",
+        "image/jpeg",
+        "image/jpg",
+        "image/webp",
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        toast.warning(
+          "Please select a valid image file (PNG, JPG, JPEG, WEBP).",
+        );
+        this.xrayFile = null;
+        this.xrayPreview = null;
+        return;
+      }
+
+      // ✅ Validate file size (max 5 MB)
+      const maxSizeMB = 5;
+      if (file.size / 1024 / 1024 > maxSizeMB) {
+        toast.warning(`Image size should not exceed ${maxSizeMB} MB.`);
+        this.xrayFile = null;
+        this.xrayPreview = null;
+        return;
+      }
+
+      // ✅ Set file & generate preview
+      this.xrayFile = file;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        this.xrayPreview = event.target.result;
+      };
+      reader.readAsDataURL(file);
     },
 
     hideDropdown(type) {
@@ -809,7 +836,7 @@ export default {
           process.env.VUE_APP_API_BASE_URL + "/auth/me",
           {
             withCredentials: true,
-          }
+          },
         );
         if (response.data) {
           this.user = response.data;
@@ -835,7 +862,7 @@ export default {
           const procId = tooth.price_procedure_id;
 
           const procedure = this.prices.find(
-            (p) => p.price_procedure_id === procId
+            (p) => p.price_procedure_id === procId,
           );
           if (!procedure?.procedureInventories?.length) return;
 
@@ -866,7 +893,7 @@ export default {
           {
             inventoryId: Number(inventoryId),
             quantity,
-          }
+          },
         );
       }
 
@@ -878,7 +905,7 @@ export default {
         {
           teeth: editedData.teeth,
           addItems: editedData.addItems,
-        }
+        },
       );
 
       /* ===============================
@@ -903,7 +930,7 @@ export default {
           dc.patient_id === this.form.patient_id &&
           dayjs(dc.procedure_date).isSame(
             dayjs(this.form.procedure_date),
-            "day"
+            "day",
           ) &&
           dc.price_procedure_id === this.form.price_procedure_id
         );
@@ -911,7 +938,7 @@ export default {
 
       if (hasDuplicate) {
         toast.error(
-          "This procedure is already recorded for this patient on the same date."
+          "This procedure is already recorded for this patient on the same date.",
         );
         return;
       }
@@ -942,8 +969,8 @@ export default {
           this.form.selected_inventories.map((item) => ({
             inventory_id: item.inventory_id,
             pcs: Number(item.selected_quantity) || 1,
-          }))
-        )
+          })),
+        ),
       );
 
       try {
@@ -952,7 +979,7 @@ export default {
           await axios.patch(
             `${process.env.VUE_APP_API_BASE_URL}/dental-chart/update/${this.form.dental_id}`,
             formData,
-            { headers: { "Content-Type": "multipart/form-data" } }
+            { headers: { "Content-Type": "multipart/form-data" } },
           );
 
           // Get previous teeth
@@ -961,7 +988,7 @@ export default {
           // Newly added teeth only
           const newlyEditedTeeth = this.selectedTeeth
             .filter(
-              (tooth) => !prevChartTeeth.some((t) => t.tooth_number === tooth)
+              (tooth) => !prevChartTeeth.some((t) => t.tooth_number === tooth),
             )
             .map((tooth) => ({
               tooth_number: tooth,
@@ -981,7 +1008,7 @@ export default {
 
           localStorage.setItem(
             "latestEditedDentalChart",
-            JSON.stringify(latestEdited)
+            JSON.stringify(latestEdited),
           );
 
           await this.deductEditedInventory();
@@ -991,7 +1018,7 @@ export default {
           await axios.post(
             `${process.env.VUE_APP_API_BASE_URL}/dental-chart/add-dental-chart`,
             formData,
-            { headers: { "Content-Type": "multipart/form-data" } }
+            { headers: { "Content-Type": "multipart/form-data" } },
           );
 
           const newDentalData = {
@@ -1006,7 +1033,7 @@ export default {
 
           localStorage.setItem(
             "latestAddedDentalChart",
-            JSON.stringify(newDentalData)
+            JSON.stringify(newDentalData),
           );
 
           toast.success("Dental chart added successfully!");
@@ -1019,7 +1046,7 @@ export default {
         toast.error(
           this.editMode
             ? "Failed to update dental chart."
-            : "Failed to add dental chart."
+            : "Failed to add dental chart.",
         );
       }
     },

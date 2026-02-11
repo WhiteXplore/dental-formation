@@ -2,7 +2,11 @@
   "model": "Hybrid SARIMA + RandomForest",
   "seasonality": "Weekly",
   "forecast_days": 7,
+<<<<<<< HEAD
   "generated_at": "2026-02-11T11:52:07.790069",
+=======
+  "generated_at": "2026-02-08T22:15:21.293179",
+>>>>>>> bbd463a28b69b249ffd0931c24f832f182ef6749
   "historical": [
     {
       "date": "2026-02-02",

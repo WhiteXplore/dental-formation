@@ -540,7 +540,6 @@ export default {
             frequencies: med.frequencies,
             preparation: med.preparation,
             pcs: Number(med.pcs),
-            issued_date: issuedDate,
           })),
         };
       });

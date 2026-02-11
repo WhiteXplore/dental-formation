@@ -29,4 +29,7 @@ export class CreateInventoryDto {
   @IsOptional()
   @IsString()
   cleared_status?: string;
+  @IsOptional()
+  @IsString()
+  image?: string;
 }
