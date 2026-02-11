@@ -235,7 +235,7 @@ export default {
       let data =
         this.loggedUser?.role === "Dentist"
           ? this.dentalCharts.filter(
-              (item) => item.user_accounts?.user_id === this.loggedUser.sub
+              (item) => item.user_accounts?.user_id === this.loggedUser.sub,
             )
           : this.dentalCharts;
       return data.filter((item) => {
@@ -263,7 +263,7 @@ export default {
     endIndex() {
       return Math.min(
         this.currentPage * this.itemsPerPage,
-        this.filteredData.length
+        this.filteredData.length,
       );
     },
     pageNumbers() {
@@ -288,7 +288,7 @@ export default {
       try {
         const { data } = await axios.get(
           process.env.VUE_APP_API_BASE_URL + "/auth/me",
-          { withCredentials: true }
+          { withCredentials: true },
         );
         this.loggedUser = data;
       } catch (err) {
@@ -306,7 +306,7 @@ export default {
     },
     editDentalChart(patientId) {
       const records = this.dentalCharts.filter(
-        (item) => item.patient?.patient_id === patientId
+        (item) => item.patient?.patient_id === patientId,
       );
 
       // Check if multiple procedures exist on the same date
@@ -318,7 +318,7 @@ export default {
       });
 
       const multipleProcedures = Object.values(proceduresByDate).filter(
-        (arr) => arr.length > 1
+        (arr) => arr.length > 1,
       );
 
       if (multipleProcedures.length > 0) {

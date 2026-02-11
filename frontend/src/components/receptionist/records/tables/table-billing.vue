@@ -929,15 +929,18 @@ export default {
     // ===========================
     async fetchUser() {
       try {
-        const host = window.location.hostname;
-        this.apiBaseUrl = `http://${host}:8000`;
-        const response = await axios.get(`${this.apiBaseUrl}/auth/me`, {
-          withCredentials: true,
+        // Ensure API base URL comes from environment variables
+        const baseUrl = process.env.VUE_APP_API_BASE_URL;
+
+        // Make request using Axios
+        const response = await axios.get(`${baseUrl}/auth/me`, {
+          withCredentials: true, // keep cookies for auth
         });
 
         if (response.data) {
           this.user = response.data;
         } else {
+          // If no user data, redirect to home
           this.$router.push("/");
           location.reload();
         }
@@ -946,7 +949,6 @@ export default {
         this.$router.push("/");
       }
     },
-
     // ===========================
     // PAGINATION, MODALS
     // ===========================

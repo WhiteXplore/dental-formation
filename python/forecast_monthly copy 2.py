@@ -31,7 +31,7 @@ df = df.sort_values("Procedure Date")
 # Monthly aggregation
 # ----------------------------
 monthly_revenue = df.groupby(
-    pd.Grouper(key="Procedure Date", freq="ME")
+    pd.Grouper(key="Procedure Date", freq="M")
 )["Clinic Share"].sum()
 
 history_len = len(monthly_revenue)
