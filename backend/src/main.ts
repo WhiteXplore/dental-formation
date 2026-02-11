@@ -1,17 +1,36 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import * as cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+
+import * as cookieParser from 'cookie-parser';
+import * as bodyParser from 'body-parser';
+import { join } from 'path';
 
 async function bootstrap() {
   try {
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+    // ✅ Increase payload size limit
+    app.use(bodyParser.json({ limit: '10mb' }));
+    app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
     // ✅ Global validation
-    app.useGlobalPipes(new ValidationPipe());
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
 
     // ✅ Enable cookie parser
     app.use(cookieParser());
+
+    // ✅ Serve static files from uploads folder
+    app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+      prefix: '/uploads/',
+    });
 
     // ✅ CORS configuration
     const whiteList = [
@@ -40,10 +59,9 @@ async function bootstrap() {
 
     // ✅ Listen on LAN and localhost
     const port = process.env.PORT || 8000;
-    await app.listen(port, '0.0.0.0'); // <— critical for LAN access
+    await app.listen(port, '0.0.0.0');
 
-    const appUrl = `http://localhost:${port}`;
-    console.log(`🚀 Application running locally at: ${appUrl}`);
+    console.log(`🚀 Application running locally at: http://localhost:${port}`);
     console.log(`🌐 Accessible on LAN at: http://192.168.1.16:${port}`);
   } catch (error) {
     console.error('❌ Error starting application:', error);

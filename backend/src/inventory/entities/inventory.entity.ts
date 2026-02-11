@@ -26,8 +26,8 @@ export class Inventory {
   @Column({ type: 'varchar', length: 100 })
   unit: string;
 
-  @Column({ type: 'longblob', nullable: true })
-  image: Buffer;
+  @Column({ type: 'text', nullable: true })
+  image: string;
 
   @Column({ type: 'varchar', length: 10, nullable: true })
   notif_status: string | null; // ✅ FIX

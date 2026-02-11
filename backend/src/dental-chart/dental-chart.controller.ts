@@ -12,10 +12,13 @@ import {
   Patch,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { diskStorage } from 'multer';
 import { DentalChartService } from './dental-chart.service';
 import { CreateDentalChartDto } from './dto/create-dental-chart.dto';
-import { Express, Response } from 'express';
+import { UpdateDentalChartDto } from './dto/update-dental-chart.dto';
+import { Response } from 'express';
+import { join } from 'path';
+import { existsSync } from 'fs';
 
 @Controller('dental-chart')
 export class DentalChartController {
@@ -24,40 +27,42 @@ export class DentalChartController {
   @Post('add-dental-chart')
   @UseInterceptors(
     FileInterceptor('xray_image', {
-      storage: memoryStorage(),
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const filename = uniqueSuffix + '-' + file.originalname;
+          cb(null, filename);
+        },
+      }),
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
   async create(@UploadedFile() file: Express.Multer.File, @Body() body: any) {
     try {
-      const dto: CreateDentalChartDto & {
-        xray_image?: Buffer;
-        xray_mime_type?: string | null;
-      } = {
+      const dto: CreateDentalChartDto & { xray_image_name?: string } = {
         patient_id: Number(body.patient_id),
         user_id: Number(body.user_id),
         price_procedure_id: Number(body.price_procedure_id),
-        procedure_notes: body.procedure_notes || '',
-        procedure_date:
-          body.procedure_date && !isNaN(Date.parse(body.procedure_date))
-            ? new Date(body.procedure_date)
-            : new Date(),
+        procedure_notes: body.procedure_notes ?? '',
+        procedure_date: body.procedure_date
+          ? new Date(body.procedure_date)
+          : new Date(),
         payment_amount: body.payment_amount
           ? parseFloat(body.payment_amount)
           : 0,
         selected_teeth: JSON.parse(body.selected_teeth || '[]'),
         tooth_status_map: JSON.parse(body.tooth_status_map || '{}'),
-        // ✅ NEW: parse additional items from JSON string
         additional_items: body.additional_items
           ? JSON.parse(body.additional_items)
           : [],
-        xray_image: file?.buffer || null,
-        xray_mime_type: file?.mimetype || null,
+        xray_image_name: file?.filename ?? undefined,
       };
 
       return await this.dentalChartService.create(dto);
     } catch (err) {
-      console.error('❌ Failed to parse dental chart DTO:', err);
+      console.error('❌ Failed to create dental chart:', err);
       throw new BadRequestException('Invalid input data.');
     }
   }
@@ -65,44 +70,48 @@ export class DentalChartController {
   @Patch('update/:id')
   @UseInterceptors(
     FileInterceptor('xray_image', {
-      storage: memoryStorage(),
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const filename = uniqueSuffix + '-' + file.originalname;
+          cb(null, filename);
+        },
+      }),
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
   async update(
     @Param('id') id: number,
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: any,
+    @Body() body: UpdateDentalChartDto,
   ) {
     try {
-      const updateDto: any = {
+      // build update DTO safely
+      const updateDto: UpdateDentalChartDto & { xray_image_name?: string } = {
+        ...body,
         patient_id: body.patient_id ? Number(body.patient_id) : undefined,
         user_id: body.user_id ? Number(body.user_id) : undefined,
-        procedure_notes: body.procedure_notes,
+        xray_image_name: file?.filename ?? undefined,
+        selected_teeth: body.selected_teeth
+          ? JSON.parse(body.selected_teeth as unknown as string)
+          : undefined,
+        tooth_status_map: body.tooth_status_map
+          ? JSON.parse(body.tooth_status_map as unknown as string)
+          : undefined,
+        additional_items: body.additional_items
+          ? JSON.parse(body.additional_items as unknown as string)
+          : undefined,
         procedure_date: body.procedure_date
           ? new Date(body.procedure_date)
           : undefined,
-        payment_amount: body.payment_amount
-          ? parseFloat(body.payment_amount)
-          : undefined,
-        selected_teeth: body.selected_teeth
-          ? JSON.parse(body.selected_teeth)
-          : [],
-        tooth_status_map: body.tooth_status_map
-          ? JSON.parse(body.tooth_status_map)
-          : {},
-        // ✅ NEW: parse additional items for update
-        additional_items: body.additional_items
-          ? JSON.parse(body.additional_items)
-          : [],
-        xray_image: file?.buffer || undefined,
-        xray_mime_type: file?.mimetype || undefined,
       };
 
       const result = await this.dentalChartService.update(id, updateDto);
       return { message: 'Dental chart updated', result };
     } catch (err) {
-      console.error('❌ Failed to parse update DTO:', err);
+      console.error('❌ Failed to update dental chart:', err);
       throw new BadRequestException('Invalid input data for update.');
     }
   }
@@ -127,16 +136,11 @@ export class DentalChartController {
     return this.dentalChartService.getHistoryByPatientId(+patientId);
   }
 
-  @Get('xray/:id')
-  async serveXrayImage(@Param('id') id: number, @Res() res: Response) {
-    const chart = await this.dentalChartService.findOne(id);
-
-    if (!chart || !chart.xray_image) {
-      return res.status(404).send('Image not found');
-    }
-
-    res.setHeader('Content-Type', chart.xray_mime_type || 'image/jpeg');
-    res.send(chart.xray_image);
+  @Get('xray/:filename')
+  serveXrayImage(@Param('filename') filename: string, @Res() res: Response) {
+    const filePath = join(__dirname, '..', '..', 'uploads', filename);
+    if (!existsSync(filePath)) return res.status(404).send('Image not found');
+    return res.sendFile(filePath);
   }
 
   @Patch('deduct-inventory/:id')

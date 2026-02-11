@@ -15,17 +15,17 @@ export class InventoryService {
   constructor(
     @InjectRepository(Inventory)
     private readonly inventoryRepository: Repository<Inventory>,
-    private readonly gateway: InventoryGateway, // Inject gateway
+    private readonly gateway: InventoryGateway, // WebSocket gateway
   ) {}
 
   /* ================= CREATE ================= */
   async create(
     createInventoryDto: CreateInventoryDto,
-    imageBuffer?: Buffer,
+    imageFilename?: string,
   ): Promise<Inventory> {
     const item = this.inventoryRepository.create({
       ...createInventoryDto,
-      image: imageBuffer,
+      image: imageFilename, // store filename instead of Buffer
       notif_status: null,
       notif_viewed_at: null,
       cleared_status: null,
@@ -62,18 +62,16 @@ export class InventoryService {
   async update(
     id: number,
     updateInventoryDto: UpdateInventoryDto,
-    imageBuffer?: Buffer,
+    imageFilename?: string,
   ): Promise<Inventory> {
     const item = await this.findOne(id);
     Object.assign(item, updateInventoryDto);
 
-    if (imageBuffer) {
-      item.image = imageBuffer;
+    if (imageFilename) {
+      item.image = imageFilename;
     }
 
-    /**
-     * 🔁 RESET NOTIFICATION WHEN STOCK IS SAFE AGAIN
-     */
+    // Reset notification if stock safe again
     if (
       updateInventoryDto.quantity !== undefined &&
       updateInventoryDto.quantity > 10
@@ -115,9 +113,7 @@ export class InventoryService {
 
     item.quantity -= quantity;
 
-    /**
-     * 🔔 TRIGGER NOTIFICATION WHEN LOW / OUT OF STOCK
-     */
+    // Trigger notification if low/out of stock
     if (item.quantity <= 10 && item.notif_status !== null) {
       item.notif_status = null;
       item.notif_viewed_at = null;
@@ -144,7 +140,6 @@ export class InventoryService {
 
     const savedItem = await this.inventoryRepository.save(item);
 
-    // 🔔 Emit WebSocket update
     this.gateway.emitInventoryUpdate(savedItem);
 
     return savedItem;
@@ -162,13 +157,11 @@ export class InventoryService {
       .andWhere('notif_status IS NULL')
       .execute();
 
-    // Fetch updated items using QueryBuilder
     const updatedItems = await this.inventoryRepository
       .createQueryBuilder('inventory')
       .where('quantity <= 10')
       .getMany();
 
-    // Emit WebSocket for each updated item
     updatedItems.forEach((item) => this.gateway.emitInventoryUpdate(item));
 
     return { message: 'All inventory notifications marked as viewed' };

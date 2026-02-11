@@ -240,10 +240,13 @@
                     </td>
                     <td class="border p-2">
                       <img
-                        v-if="record.xray"
-                        :src="apiUrl + `/dental-chart/xray/${record.dental_id}`"
+                        v-if="record.xray_image_name"
+                        :src="`${apiUrl}/dental-chart/xray/${
+                          record.xray_image_name
+                        }?t=${Date.now()}`"
                         class="w-20 mx-auto rounded"
                       />
+
                       <span v-else class="italic text-gray-400">None</span>
                     </td>
                     <td class="border p-2">
@@ -315,12 +318,31 @@ export default {
   },
 
   methods: {
+    async updateDentalChart(id, formData) {
+      await axios.patch(
+        `${process.env.VUE_APP_API_BASE_URL}/dental-chart/update/${id}`,
+        formData,
+        { withCredentials: true },
+      );
+
+      // Refresh only the updated record
+      const recordGroup = this.groupedHistory.find((g) =>
+        g.records.some((r) => r.dental_id === id),
+      );
+      if (recordGroup) {
+        const dentalRecord = recordGroup.records.find(
+          (r) => r.dental_id === id,
+        );
+        dentalRecord.xray = true; // mark X-ray exists
+        dentalRecord.xrayUpdatedAt = Date.now(); // trigger cache-busting
+      }
+    },
     async fetchHistory() {
       if (!this.user) return;
 
       const res = await axios.get(
-        `${this.apiUrl}/dental-chart/history/${this.patientId}`,
-        { withCredentials: true }
+        `${process.env.VUE_APP_API_BASE_URL}/dental-chart/history/${this.patientId}`,
+        { withCredentials: true },
       );
 
       const mapByDate = {};
@@ -356,7 +378,7 @@ export default {
           dental_id: entry.dental_id,
           dentist: `${entry.user_accounts.last_name}, ${entry.user_accounts.first_name}`,
           notes: entry.procedure_notes,
-          xray: entry.xray_mime_type,
+          xray_image_name: entry.xray_image_name,
           procedure_type: entry.priceProcedure || {
             procedure_name: "Unknown",
           },
@@ -366,7 +388,7 @@ export default {
 
       // 📅 Sort latest first
       this.allGrouped = Object.values(mapByDate).sort(
-        (a, b) => new Date(b.date) - new Date(a.date)
+        (a, b) => new Date(b.date) - new Date(a.date),
       );
 
       this.groupedHistory = [...this.allGrouped];
@@ -382,8 +404,9 @@ export default {
 
     async fetchProcedureColors() {
       const res = await axios.get(
-        `${this.apiUrl}/price-procedure/get-price-procedure`
+        `${process.env.VUE_APP_API_BASE_URL}/price-procedure/get-price-procedure`,
       );
+
       res.data
         .filter((p) => p.is_active)
         .forEach((p) => {
@@ -412,9 +435,10 @@ export default {
     },
     async fetchUser() {
       const res = await axios.get(
-        process.env.VUE_APP_API_BASE_URL + "/auth/me",
-        { withCredentials: true }
+        `${process.env.VUE_APP_API_BASE_URL}/auth/me`,
+        { withCredentials: true },
       );
+
       this.user = res.data;
     },
   },
