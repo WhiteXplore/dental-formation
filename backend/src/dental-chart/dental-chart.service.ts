@@ -26,7 +26,7 @@ export class DentalChartService {
   ) {}
 
   /** CREATE */
-  async create(dto: CreateDentalChartDto & { xray_image_name?: string }) {
+  async create(dto: CreateDentalChartDto & { xray_image?: string }) {
     const {
       patient_id,
       user_id,
@@ -37,14 +37,14 @@ export class DentalChartService {
       procedure_date,
       payment_amount,
       additional_items,
-      xray_image_name,
+      xray_image,
     } = dto;
 
     const dentalChart = this.dentalChartRepo.create({
       procedure_notes: procedure_notes ?? '',
       procedure_date: procedure_date ? new Date(procedure_date) : new Date(),
       payment_amount: Number(payment_amount) || 0,
-      xray_image_name: xray_image_name ?? undefined,
+      xray_image: xray_image ?? undefined,
       patient: { patient_id: Number(patient_id) } as Patient,
       user_accounts: { user_id: Number(user_id) } as User_Accounts,
       priceProcedure: price_procedure_id
@@ -104,7 +104,7 @@ export class DentalChartService {
   /** UPDATE */
   async update(
     id: number,
-    dto: UpdateDentalChartDto & { xray_image_name?: string },
+    dto: UpdateDentalChartDto & { xray_image?: string },
   ) {
     const {
       patient_id,
@@ -116,7 +116,7 @@ export class DentalChartService {
       procedure_date,
       payment_amount,
       additional_items,
-      xray_image_name,
+      xray_image,
     } = dto;
 
     const existingChart = await this.dentalChartRepo.findOne({
@@ -135,8 +135,8 @@ export class DentalChartService {
       payment_amount !== undefined
         ? Number(payment_amount)
         : existingChart.payment_amount;
-    existingChart.xray_image_name =
-      xray_image_name ?? existingChart.xray_image_name;
+    existingChart.xray_image =
+      xray_image ?? existingChart.xray_image;
 
     if (patient_id)
       existingChart.patient = { patient_id: Number(patient_id) } as Patient;

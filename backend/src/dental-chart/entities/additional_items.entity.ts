@@ -13,8 +13,8 @@ export class AdditionalItems {
   @PrimaryGeneratedColumn()
   additional_item_id: number;
 
-  @Column({ type: 'varchar', length: 255 })
-  pcs: string;
+  @Column({ type: 'int' })
+  pcs: number;
 
   // ✅ Explicit FK column
   @Column({ type: 'int' })

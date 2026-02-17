@@ -14,9 +14,10 @@ import { Type } from 'class-transformer';
 export class AdditionalItemDto {
   @IsInt()
   inventory_id: number;
-
-  @IsString()
-  pcs: string;
+  
+  @IsOptional()
+  @IsNumber()
+  pcs: number;
 }
 
 export class CreateDentalChartDto {

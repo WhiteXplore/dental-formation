@@ -1,72 +1,91 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
-
+import { ConfigService } from '@nestjs/config';
+import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import * as bodyParser from 'body-parser';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { join } from 'path';
+import * as fs from 'fs';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  try {
-    const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const whitelist = [
+    'https://toothformation.online:8080',
+    'https://toothformation.online',
+  ];
 
-    // ✅ Increase payload size limit
-    app.use(bodyParser.json({ limit: '10mb' }));
-    app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
+  const httpsOptions = {
+    key: fs.readFileSync(join(__dirname, '../key.pem')),
+    cert: fs.readFileSync(join(__dirname, '../certificate.pem')),
+  };
 
-    // ✅ Global validation
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
-    );
-
-    // ✅ Enable cookie parser
-    app.use(cookieParser());
-
-    // ✅ Serve static files from uploads folder
-    app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-      prefix: '/uploads/',
-    });
-
-    // ✅ CORS configuration
-    const whiteList = [
-      'http://localhost:8080',
-      'http://localhost:5173',
-      'http://192.168.1.16:8080',
-      'http://192.168.1.16:5173',
-    ];
-
-    app.enableCors({
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    httpsOptions,
+    cors: {
       origin: (origin, callback) => {
-        const date = new Date().toLocaleString();
-        if (!origin || whiteList.includes(origin)) {
+        const curdate = new Date();
+        if (!origin || whitelist.indexOf(origin) !== -1) {
           console.log(
-            `✅ Allowed CORS: ${origin || 'Postman/Server'} @ ${date}`,
+            'Allowed CORS for:',
+            origin + ' Date: ' + curdate.toString().substring(0, 24),
           );
           callback(null, true);
         } else {
-          console.warn(`🚫 Blocked CORS: ${origin} @ ${date}`);
+          console.log(
+            'Blocked CORS for:',
+            origin + ' Date: ' + curdate.toString().substring(0, 24),
+          );
           callback(new Error('Not allowed by CORS'));
         }
       },
-      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+      allowedHeaders:
+        'Origin, Authorization, X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept, Observe',
+      methods: 'GET,PUT,POST,PATCH,DELETE,UPDATE,OPTIONS',
       credentials: true,
-    });
+    },
+  });
 
-    // ✅ Listen on LAN and localhost
-    const port = process.env.PORT || 8000;
-    await app.listen(port, '0.0.0.0');
+  const logger = new Logger('Bootstrap');
 
-    console.log(`🚀 Application running locally at: http://localhost:${port}`);
-    console.log(`🌐 Accessible on LAN at: http://192.168.1.16:${port}`);
-  } catch (error) {
-    console.error('❌ Error starting application:', error);
-    process.exit(1);
-  }
+  // Body parser to handle large payloads
+  app.use(bodyParser.json({ limit: '10mb' }));
+  app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
+
+  // Global validation
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  // Cookie parser
+  app.use(cookieParser());
+
+  // Serve static files
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
+
+  // Swagger setup
+  const config = new DocumentBuilder()
+    .setTitle('QCE Questions')
+    .setDescription('QCE questions API')
+    .setVersion('1.0')
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document, {
+    swaggerOptions: { defaultModelsExpandDepth: -1 },
+  });
+
+  const configService: ConfigService = app.get(ConfigService);
+
+  await app.listen(8080);
+  logger.log(`Application started and listening on ${8080}`);
 }
 
 bootstrap();

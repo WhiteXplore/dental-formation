@@ -387,19 +387,22 @@ export default {
   },
   data() {
     return {
-      form: {
-        patient_id: "",
-        user_id: "",
-        scheduled_date: "",
-        appointment_status: "",
-        appointment_time: "",
-        call_type: "",
-        contact_number: "",
-        procedure: "", // price_procedure_id
-        birthdate: "",
-        hmo_account_no: "",
-        valid_id: "",
-      },
+   form: {
+      patient_id: null,        // number
+      user_id: null,           // dentist ID
+      scheduled_date: "",      // YYYY-MM-DD
+      appointment_time: "",    // HH:mm
+      appointment_status: "",  // Call / Walk-In / No-Show
+      call_type: "",           // Cash / HMO
+      contact_number: "",      // optional
+      price_procedure_id: null,// procedure ID
+      birthdate: "",           // for HMO
+      hmo_account_no: "",      // for HMO
+      valid_id: "",            // for HMO
+      medical_history: "",     // optional
+      notif_status: "",        // optional
+      notif_viewed_at: null,   // optional
+    },
       searchPatientQuery: "",
       searchDentistQuery: "",
       searchProcedureQuery: "",
@@ -582,11 +585,12 @@ export default {
       } ${dentist.middle_name || ""}`;
       this.showDentistDropdown = false;
     },
-    selectProcedure(proc) {
-      this.form.procedure = proc.price_procedure_id; // store ID
-      this.searchProcedureQuery = proc.procedure_name;
-      this.showProcedureDropdown = false;
-    },
+   selectProcedure(proc) {
+  this.form.price_procedure_id = proc.price_procedure_id; // store ID
+  this.searchProcedureQuery = proc.procedure_name;
+  this.showProcedureDropdown = false;
+}
+,
     hideDropdown(type) {
       setTimeout(() => {
         if (type === "patient") this.showPatientDropdown = false;
@@ -594,71 +598,57 @@ export default {
         if (type === "procedure") this.showProcedureDropdown = false;
       }, 150);
     },
-    async submitData() {
-      const formEl = this.$refs.patientForm;
-      if (!formEl.checkValidity()) {
-        formEl.reportValidity();
-        return;
-      }
+   async submitData() {
+  const formEl = this.$refs.patientForm;
+  if (!formEl.checkValidity()) {
+    formEl.reportValidity();
+    return;
+  }
 
-      try {
-        const manilaDate = dayjs(this.form.scheduled_date).format("YYYY-MM-DD");
+  try {
+    // Format date
+    const formattedDate = dayjs(this.form.scheduled_date).format("YYYY-MM-DD");
 
-        // Prepare payload
-        const payload = {
-          ...this.form,
-          scheduled_date: manilaDate,
-          price_procedure_id:
-            this.form.appointment_status === "Call"
-              ? this.form.procedure
-              : null,
-          call_type:
-            this.form.appointment_status === "Call"
-              ? this.form.call_type
-              : null,
-          contact_number:
-            this.form.appointment_status === "Call"
-              ? this.form.contact_number
-              : null,
-          birthdate:
-            this.form.appointment_status === "Call" &&
-            this.form.call_type === "HMO"
-              ? this.form.birthdate
-              : null,
-          hmo_account_no:
-            this.form.appointment_status === "Call" &&
-            this.form.call_type === "HMO"
-              ? this.form.hmo_account_no
-              : null,
-          valid_id:
-            this.form.appointment_status === "Call" &&
-            this.form.call_type === "HMO"
-              ? this.form.valid_id
-              : null,
-        };
+    // Prepare payload matching backend DTO
+    const payload = {
+      patient_id: this.form.patient_id,
+      user_id: this.form.user_id,                   // dentist ID
+      price_procedure_id: this.form.price_procedure_id || null,
+      scheduled_date: formattedDate,
+      appointment_time: this.form.appointment_time,
+      appointment_status: this.form.appointment_status,
+      call_type: this.form.appointment_status === "Call" ? this.form.call_type : null,
+      contact_number: this.form.call_type === "Call" ? this.form.contact_number : null,
+      birthdate: this.form.call_type === "HMO" ? this.form.birthdate : null,
+      hmo_account_no: this.form.call_type === "HMO" ? this.form.hmo_account_no : null,
+      valid_id: this.form.call_type === "HMO" ? this.form.valid_id : null,
+      medical_history: this.form.medical_history || null,
+      notif_status: this.form.notif_status || null,
+      notif_viewed_at: this.form.notif_viewed_at || null,
+    };
 
-        if (!this.isEditMode) {
-          await axios.post(
-            process.env.VUE_APP_API_BASE_URL + "/appointment/add-appointment",
-            payload,
-          );
-          toast.success("Appointment added successfully!");
-        } else {
-          await axios.patch(
-            process.env.VUE_APP_API_BASE_URL +
-              `/appointment/${this.editData.appointment_id}`,
-            payload,
-          );
-          toast.success("Appointment updated successfully!");
-        }
+    if (!this.isEditMode) {
+      await axios.post(
+        process.env.VUE_APP_API_BASE_URL + "/appointment/add-appointment",
+        payload
+      );
+      toast.success("Appointment added successfully!");
+    } else {
+      await axios.patch(
+        process.env.VUE_APP_API_BASE_URL + `/appointment/${this.editData.appointment_id}`,
+        payload
+      );
+      toast.success("Appointment updated successfully!");
+    }
 
-        this.$emit("refresh");
-        this.$emit("close");
-      } catch (error) {
-        console.error(error);
-        toast.error("Failed to save appointment.");
-      }
-    },
+    this.$emit("refresh");
+    this.$emit("close");
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to save appointment.");
+  }
+}
+,
     setEditForm() {
       // Set all form fields from editData
       this.form = {

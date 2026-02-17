@@ -18,10 +18,7 @@ export default {
     async login() {
       try {
         // ✅ Automatically detect if running locally or on LAN
-        const baseURL =
-          window.location.hostname === "localhost"
-            ? process.env.VUE_APP_API_BASE_URL + "/auth/login"
-            : "http://192.168.1.16:8000/auth/login";
+       const baseURL = `${process.env.VUE_APP_API_BASE_URL}/auth/login`;
 
         const response = await axios.post(
           baseURL,

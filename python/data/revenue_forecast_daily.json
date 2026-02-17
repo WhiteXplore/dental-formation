@@ -2,7 +2,7 @@
   "model": "Hybrid SARIMA + RandomForest",
   "seasonality": "Weekly",
   "forecast_days": 7,
-  "generated_at": "2026-02-08T22:15:21.293179",
+  "generated_at": "2026-02-16T07:54:41.235491",
   "historical": [
     {
       "date": "2026-02-02",
@@ -80,10 +80,10 @@
     },
     {
       "date": "2026-05-04",
-      "sarima_forecast": 1000.0000000000001,
-      "hybrid_forecast": 849.9333333333334,
-      "difference": -150.06666666666672,
-      "absolute_difference": 150.06666666666672
+      "sarima_forecast": 999.9999999999995,
+      "hybrid_forecast": 849.9333333333329,
+      "difference": -150.0666666666666,
+      "absolute_difference": 150.0666666666666
     },
     {
       "date": "2026-05-05",
@@ -101,9 +101,9 @@
     }
   ],
   "summary": {
-    "avg_sarima": 520.0,
-    "avg_hybrid": 369.93333333333334,
-    "avg_difference": -150.06666666666666,
-    "max_expected_revenue": 849.9333333333334
+    "avg_sarima": 519.9999999999999,
+    "avg_hybrid": 369.9333333333333,
+    "avg_difference": -150.06666666666663,
+    "max_expected_revenue": 849.9333333333329
   }
 }

@@ -186,15 +186,22 @@
     </div>
   </div>
 
-  <!-- Modals -->
-  <addPrescription v-if="isAdd" @close="closeView" @refresh="loadMedications" />
-  <editPrescription
-    v-if="isEdit && editGroup"
-    :prescription="editGroup"
-    :isEdit="true"
-    @close="closeEdit"
-    @refresh="loadMedications"
-  />
+ <!-- Add Prescription Modal -->
+<addPrescription
+  v-if="isAdd"
+  @close="closeModal"
+  @refresh="loadMedications"
+/>
+
+<!-- Edit Prescription Modal -->
+<editPrescripion
+  v-if="isEdit"
+  :prescription="editGroup"
+  @close="closeModal"
+  @refresh="loadMedications"
+/>
+
+
 
   <viewMedication
     v-if="isViewMedication"
@@ -253,7 +260,7 @@
 <script>
 import icon from "@/assets/icon.vue";
 import addPrescription from "../modals/add-prescription.vue";
-import editPrescription from "../modals/edit-prescription.vue";
+import editPrescripion from  "../modals/edit-prescription.vue";
 import viewMedication from "../modals/view-medication.vue";
 import { useFetchDataStore } from "../../../../store/fetch-data-store";
 import { mapState } from "pinia";
@@ -262,7 +269,7 @@ import axios from "axios";
 
 export default {
   name: "TableDentalChart",
-  components: { icon, addPrescription, editPrescription, viewMedication },
+  components: { icon, addPrescription, viewMedication, editPrescripion },
   data() {
     return {
       currentPage: 1,
@@ -375,9 +382,24 @@ export default {
         (r) => this.formatScheduledDate(r.dentalChart?.created_at) !== firstDate
       );
     },
-    toggleAdd() {
-      this.isAdd = true;
-    },
+  toggleAdd() {
+  this.isAdd = true;
+  this.isEdit = false;
+  this.editGroup = null;
+},
+
+editPrescription(prescription) {
+  this.editGroup = prescription;
+  this.isEdit = true;
+  this.isAdd = false;
+},
+
+closeModal() {
+  this.isAdd = false;
+  this.isEdit = false;
+  this.editGroup = null;
+},
+
     toggleDelete(row) {
       this.selectedPrescriptionToDelete = row; // store the selected row
       this.showDeleteModal = true; // show modal
@@ -400,15 +422,7 @@ export default {
       }
     },
 
-    closeView() {
-      this.isAdd = false;
-    },
-
-    editPrescription(prescription) {
-      console.log("EDITING PRESCRIPTION:", prescription);
-      this.editGroup = prescription; // still using same variable name
-      this.isEdit = true;
-    },
+    
     closeEdit() {
       this.isEdit = false;
       this.editGroup = null;

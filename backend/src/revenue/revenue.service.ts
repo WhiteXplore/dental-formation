@@ -14,12 +14,7 @@ export class RevenueService {
   private readonly pythonDataDir = path.join(this.pythonDir, 'data');
 
   // Path to virtual environment Python
-  private readonly pythonBin = path.join(
-    this.pythonDir,
-    'venv',
-    'bin',
-    'python3',
-  );
+  private readonly pythonBin = path.join(this.pythonDir, 'venv', 'bin', 'python3');
 
   // Default XLSX and scripts
   private readonly defaultXlsxPath = path.join(
@@ -78,9 +73,7 @@ export class RevenueService {
     const filePath = xlsxPath || this.defaultXlsxPath;
 
     if (!fs.existsSync(filePath))
-      throw new InternalServerErrorException(
-        `XLSX file not found: ${filePath}`,
-      );
+      throw new InternalServerErrorException(`XLSX file not found: ${filePath}`);
 
     if (!fs.existsSync(this.pythonScriptForDaily))
       throw new InternalServerErrorException(
@@ -100,15 +93,10 @@ export class RevenueService {
       );
     }
 
-    const jsonPath = path.join(
-      this.pythonDataDir,
-      'revenue_forecast_daily.json',
-    );
+    const jsonPath = path.join(this.pythonDataDir, 'revenue_forecast_daily.json');
 
     if (!fs.existsSync(jsonPath))
-      throw new InternalServerErrorException(
-        'Daily forecast JSON not generated',
-      );
+      throw new InternalServerErrorException('Daily forecast JSON not generated');
 
     return JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
   }
@@ -120,9 +108,7 @@ export class RevenueService {
     const filePath = xlsxPath || this.defaultXlsxPath;
 
     if (!fs.existsSync(filePath))
-      throw new InternalServerErrorException(
-        `XLSX file not found: ${filePath}`,
-      );
+      throw new InternalServerErrorException(`XLSX file not found: ${filePath}`);
 
     if (!fs.existsSync(this.pythonScriptForMonthly))
       throw new InternalServerErrorException(
@@ -142,15 +128,10 @@ export class RevenueService {
       );
     }
 
-    const jsonPath = path.join(
-      this.pythonDataDir,
-      'revenue_forecast_nextmonth.json',
-    );
+    const jsonPath = path.join(this.pythonDataDir, 'revenue_forecast_nextmonth.json');
 
     if (!fs.existsSync(jsonPath))
-      throw new InternalServerErrorException(
-        'Monthly forecast JSON not generated',
-      );
+      throw new InternalServerErrorException('Monthly forecast JSON not generated');
 
     return JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
   }

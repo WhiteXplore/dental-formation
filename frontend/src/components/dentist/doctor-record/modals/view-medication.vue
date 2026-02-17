@@ -57,7 +57,7 @@
               Teeth Involved
             </h3>
             <div
-              class="border rounded-xl bg-white p-4 max-h-[40vh] overflow-y-auto"
+              class="border rounded-xl bg-white p-4 max-h-[30vh] overflow-y-auto"
             >
               <table class="min-w-full border-collapse text-gray-700">
                 <thead>
@@ -94,33 +94,39 @@
             </div>
           </section>
 
-          <!--  Medications -->
-          <section>
-            <h3
-              class="text-md font-semibold text-gray-700 mb-2 flex items-center gap-2"
-            >
-              Prescribed Medications
-            </h3>
-            <div class="border rounded-xl bg-white p-4 space-y-2">
-              <ul class="list-disc list-inside text-gray-700">
-                <li
-                  v-for="med in prescription.prescribedMedications || []"
-                  :key="med.prescribe_medication_id"
-                >
-                  <span class="font-semibold">{{ med.name }}</span> –
-                  {{ med.dosage || "N/A" }} – {{ med.pcs }}
-                  {{ med.unit || "pcs" }}
-                </li>
+       <!--  Medications -->
+<section>
+  <h3
+    class="text-md font-semibold text-gray-700 mb-2 flex items-center gap-2"
+  >
+    Prescribed Medications
+  </h3>
+  <div class="border rounded-xl bg-white p-4 space-y-2">
+    <ul class="list-disc list-inside text-gray-700">
+      <li
+        v-for="med in prescription.prescribedMedications || []"
+        :key="med.prescribe_medication_id"
+      >
+        <span class="font-semibold">{{ med.name }}</span> –
+        {{ med.dosage || "N/A" }} – {{ med.pcs }} {{ med.unit || "pcs" }}
+        <template v-if="med.duration || med.frequencies || med.preparation">
+          •
+          <span v-if="med.duration">Duration: {{ med.duration }}</span>
+          <span v-if="med.frequencies">, Frequency: {{ med.frequencies }}</span>
+          <span v-if="med.preparation">, Preparation: {{ med.preparation }}</span>
+        </template>
+      </li>
 
-                <li
-                  v-if="!prescription.prescribedMedications?.length"
-                  class="text-gray-400 italic"
-                >
-                  No medications prescribed.
-                </li>
-              </ul>
-            </div>
-          </section>
+      <li
+        v-if="!prescription.prescribedMedications?.length"
+        class="text-gray-400 italic"
+      >
+        No medications prescribed.
+      </li>
+    </ul>
+  </div>
+</section>
+
 
           <!--  Instructions -->
           <section>

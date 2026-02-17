@@ -348,11 +348,17 @@
                 Cancel
               </button>
               <button
-                class="bg-[#34699A] p-2 px-3 rounded-lg text-white hover:bg-white border hover:border-green-800 hover:text-green-800 hover:shadow-md"
-                type="submit"
-              >
-                Submit
-              </button>
+  class="bg-[#34699A] p-2 px-3 rounded-lg text-white 
+         hover:bg-white border hover:border-green-800 
+         hover:text-green-800 hover:shadow-md 
+         disabled:opacity-50 disabled:cursor-not-allowed"
+  type="submit"
+  :disabled="isSubmitting"
+>
+  <span v-if="isSubmitting">Submitting...</span>
+  <span v-else>Submit</span>
+</button>
+
             </div>
           </div>
         </div>
@@ -452,7 +458,8 @@ export default {
         ],
       },
       showXrayModal: false,
-      xrayModalSrc: null,
+      xrayModalSrc: null, 
+      isSubmitting: false,
     };
   },
   watch: {
@@ -685,6 +692,12 @@ export default {
       "fetchDentalChart",
       "fetchInventories",
     ]),
+
+    formatDate(date) {
+  if (!date) return "";
+
+  return dayjs(date).format("MMM DD, YYYY");
+},
     toggleInventory(item) {
       const exists = this.form.selected_inventories.some(
         (i) => i.inventory_id === item.inventory_id,
@@ -916,143 +929,135 @@ export default {
 
       await this.fetchInventories();
     },
-    async submitData() {
-      // 1️⃣ Validate required fields
-      if (!this.form.patient_id || this.selectedTeeth.length === 0) {
-        toast.warning("Please select a patient and at least one tooth.");
-        return;
-      }
+async submitData() {
 
-      // 2️⃣ Duplicate check
-      const hasDuplicate = this.dentalCharts.some((dc) => {
-        if (this.editMode && dc.dental_id === this.form.dental_id) return false;
-        return (
-          dc.patient_id === this.form.patient_id &&
-          dayjs(dc.procedure_date).isSame(
-            dayjs(this.form.procedure_date),
-            "day",
-          ) &&
-          dc.price_procedure_id === this.form.price_procedure_id
-        );
-      });
+  // 🛑 Prevent double submit FIRST
+  if (this.isSubmitting) return;
+  this.isSubmitting = true;
 
-      if (hasDuplicate) {
-        toast.error(
-          "This procedure is already recorded for this patient on the same date.",
-        );
-        return;
-      }
+  try {
 
-      // 3️⃣ Build FormData
-      const formData = new FormData();
-      Object.entries(this.form).forEach(([key, val]) => {
+    // 1️⃣ Validate required fields
+    if (!this.form.patient_id || this.selectedTeeth.length === 0) {
+      toast.warning("Please select a patient and at least one tooth.");
+      return;
+    }
+
+    // 2️⃣ Duplicate check
+    const hasDuplicate = this.dentalCharts.some((dc) => {
+      if (this.editMode && dc.dental_id === this.form.dental_id) return false;
+
+      return (
+        dc.patient?.patient_id === Number(this.form.patient_id) &&
+        dayjs(dc.procedure_date).isSame(
+          dayjs(this.form.procedure_date),
+          "day"
+        ) &&
+        dc.priceProcedure?.price_procedure_id ===
+          Number(this.form.price_procedure_id)
+      );
+    });
+
+    if (hasDuplicate) {
+      toast.error(
+        "This procedure is already recorded for this patient on the same date."
+      );
+      return;
+    }
+
+    // 3️⃣ Build FormData
+    const formData = new FormData();
+
+    const allowedFields = [
+      "patient_id",
+      "user_id",
+      "price_procedure_id",
+      "procedure_notes",
+      "procedure_date",
+      "payment_amount",
+    ];
+
+    allowedFields.forEach((key) => {
+      const value = this.form[key];
+
+      if (value !== null && value !== undefined && value !== "") {
         if (
-          !["selected_teeth", "selected_inventories"].includes(key) &&
-          val !== null &&
-          val !== undefined
+          key === "patient_id" ||
+          key === "user_id" ||
+          key === "price_procedure_id"
         ) {
-          formData.append(key, val);
+          formData.append(key, Number(value));
+        } else {
+          formData.append(key, value);
         }
-      });
+      }
+    });
 
-      formData.set("procedure_date", this.form.procedure_date);
-      if (this.xrayFile) formData.append("xray_image", this.xrayFile);
+    formData.append(
+      "selected_teeth",
+      JSON.stringify(this.selectedTeeth.map(Number))
+    );
 
-      // 4️⃣ REQUIRED BACKEND PAYLOADS
-      formData.append("selected_teeth", JSON.stringify(this.selectedTeeth));
-      formData.append("tooth_status_map", JSON.stringify(this.toothStatusMap));
+    formData.append(
+      "tooth_status_map",
+      JSON.stringify(this.toothStatusMap || {})
+    );
 
-      // 🔥 THIS IS THE FIX — SEND additional_items
-      formData.append(
-        "additional_items",
-        JSON.stringify(
-          this.form.selected_inventories.map((item) => ({
-            inventory_id: item.inventory_id,
-            pcs: Number(item.selected_quantity) || 1,
-          })),
-        ),
+    formData.append(
+      "additional_items",
+      JSON.stringify(
+        (this.form.selected_inventories || []).map((item) => ({
+          inventory_id: Number(item.inventory_id),
+          pcs: Number(item.selected_quantity) || 1,
+        }))
+      )
+    );
+
+    if (this.xrayFile instanceof File) {
+      formData.append("xray_image", this.xrayFile);
+    }
+
+    // ===========================
+    // UPDATE
+    // ===========================
+    if (this.editMode) {
+      await axios.patch(
+        `${process.env.VUE_APP_API_BASE_URL}/dental-chart/update/${this.form.dental_id}`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
 
-      try {
-        if (this.editMode) {
-          // ✅ UPDATE
-          await axios.patch(
-            `${process.env.VUE_APP_API_BASE_URL}/dental-chart/update/${this.form.dental_id}`,
-            formData,
-            { headers: { "Content-Type": "multipart/form-data" } },
-          );
+      toast.success("Dental chart updated successfully!");
+    }
 
-          // Get previous teeth
-          const prevChartTeeth = this.existingData?.teeth || [];
+    // ===========================
+    // CREATE
+    // ===========================
+    else {
+      await axios.post(
+        `${process.env.VUE_APP_API_BASE_URL}/dental-chart/add-dental-chart`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
 
-          // Newly added teeth only
-          const newlyEditedTeeth = this.selectedTeeth
-            .filter(
-              (tooth) => !prevChartTeeth.some((t) => t.tooth_number === tooth),
-            )
-            .map((tooth) => ({
-              tooth_number: tooth,
-              price_procedure_id:
-                this.toothStatusMap[tooth] || this.form.price_procedure_id,
-            }));
+      toast.success("Dental chart added successfully!");
+    }
 
-          // Save latest edit for deduction
-          const latestEdited = {
-            dental_id: this.form.dental_id,
-            teeth: newlyEditedTeeth,
-            addItems: this.form.selected_inventories.map((item) => ({
-              inventory_id: item.inventory_id,
-              pcs: Number(item.selected_quantity) || 1,
-            })),
-          };
+    this.$emit("refresh");
+    this.$emit("close");
 
-          localStorage.setItem(
-            "latestEditedDentalChart",
-            JSON.stringify(latestEdited),
-          );
-
-          await this.deductEditedInventory();
-          toast.success("Dental chart updated successfully!");
-        } else {
-          // ✅ CREATE
-          await axios.post(
-            `${process.env.VUE_APP_API_BASE_URL}/dental-chart/add-dental-chart`,
-            formData,
-            { headers: { "Content-Type": "multipart/form-data" } },
-          );
-
-          const newDentalData = {
-            dental_id: this.form.dental_id,
-            teeth: this.selectedTeeth.map((tooth) => ({
-              tooth_number: tooth,
-              status: this.toothStatusMap[tooth] || null,
-              price_procedure_id:
-                this.toothStatusMap[tooth] || this.form.price_procedure_id,
-            })),
-          };
-
-          localStorage.setItem(
-            "latestAddedDentalChart",
-            JSON.stringify(newDentalData),
-          );
-
-          toast.success("Dental chart added successfully!");
-        }
-
-        this.$emit("refresh");
-        this.$emit("close");
-      } catch (err) {
-        console.error(err);
-        toast.error(
-          this.editMode
-            ? "Failed to update dental chart."
-            : "Failed to add dental chart.",
-        );
-      }
-    },
-    formatDate(date) {
-      return dayjs(date).format("MMMM DD, YYYY");
-    },
+  } catch (err) {
+    console.error(err);
+    toast.error(
+      this.editMode
+        ? "Failed to update dental chart."
+        : "Failed to add dental chart."
+    );
+  } finally {
+    // ✅ ALWAYS release lock
+    this.isSubmitting = false;
+  }
+},
   },
   async mounted() {
     await this.fetchUser();

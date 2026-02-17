@@ -14,7 +14,10 @@
         >
           <div class="flex gap-1 items-center">
             <icon :name="'add-students'" />
-            <h1 class="font-bold tracking-wide text-lg">Add Patients</h1>
+           <h1 class="font-bold tracking-wide text-lg">
+  {{ isEdit ? "Edit Patient" : "Add Patient" }}
+</h1>
+
           </div>
           <icon
             :name="'circle-close3'"
@@ -103,7 +106,7 @@
               <label for="contact_number" class="font-bold">Contact No.:</label>
               <input
                 v-model="form.contact_number"
-                type="number"
+                type="text"
                 id="contact_number"
                 required
                 class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
@@ -583,6 +586,12 @@ import axios from "axios";
 export default {
   name: "AddPatient",
   components: { icon },
+props: {
+  patient: {
+    type: Object,
+    default: null,
+  },
+},
 
   data() {
     return {
@@ -730,6 +739,11 @@ export default {
       deep: true,
     },
   },
+computed: {
+  isEdit() {
+    return !!this.patient;
+  },
+},
 
   methods: {
     sanitizeBloodPressure() {
@@ -761,59 +775,136 @@ export default {
     /* ===============================
        SUBMIT
     =============================== */
-    async submitData() {
-      const formEl = this.$refs.patientForm;
-      if (!formEl.checkValidity()) {
-        formEl.reportValidity();
+ async submitData() {
+  const formEl = this.$refs.patientForm;
+  if (!formEl.checkValidity()) {
+    formEl.reportValidity();
+    return;
+  }
+
+  try {
+    // ✅ Build payload only with allowed fields
+    const payload = {
+      first_name: this.form.first_name,
+      middle_name: this.form.middle_name,
+      last_name: this.form.last_name,
+      gender: this.form.gender,
+      birthdate: this.form.birthdate,
+      age: this.form.age,
+      contact_number: this.form.contact_number,
+      religion: this.form.religion,
+      nationality: this.form.nationality,
+      marital_status: this.form.marital_status,
+      occupation: this.form.occupation,
+      parent_fullname: this.form.parent_fullname,
+      address: this.form.address,
+
+      has_insurance: this.form.has_insurance,
+      dental_insurance:
+        this.form.has_insurance === "Yes" && this.form.dental_insurance === "Other"
+          ? this.form.other_insurance
+          : this.form.dental_insurance,
+
+      good_health: this.form.good_health,
+      health_details: this.form.health_details,
+
+      medical_treatment: this.form.medical_treatment,
+      medical_treatment_details: this.form.medical_treatment_details,
+
+      serious_illness: this.form.serious_illness,
+      serious_illness_details: this.form.serious_illness_details,
+
+      hospitalized: this.form.hospitalized,
+      hospitalized_details: this.form.hospitalized_details,
+
+      taking_medication: this.form.taking_medication,
+      taking_medication_details: this.form.taking_medication_details,
+
+      use_tobacco: this.form.use_tobacco,
+      use_alcohol: this.form.use_alcohol,
+
+      allergies: this.form.allergies,
+      allergies_details: this.form.allergies_details,
+
+      bleeding_time_details: this.form.bleeding_time_details,
+
+      pregnant: this.form.pregnant,
+      nursing: this.form.nursing,
+      control_pills: this.form.control_pills,
+
+      blood_type: this.form.blood_type,
+      blood_pressure: this.form.blood_pressure,
+
+      medical_conditions: this.form.medical_conditions,
+      other_condition_details: this.form.other_condition_details,
+    };
+
+    /* =========================
+       EDIT MODE
+    ========================= */
+    if (this.isEdit && this.patient && this.patient.patient_id) {
+      await axios.patch(
+        process.env.VUE_APP_API_BASE_URL +
+          `/patient/update-patient/${this.patient.patient_id}`,
+        payload
+      );
+
+      toast.success("Patient updated successfully!");
+    } 
+    /* =========================
+       ADD MODE
+    ========================= */
+    else {
+      // Duplicate check only for add
+      const { data: patients } = await axios.get(
+        process.env.VUE_APP_API_BASE_URL + "/patient/get-patient"
+      );
+
+      const duplicate = patients.find(
+        (p) =>
+          p.first_name?.toLowerCase() === payload.first_name.toLowerCase() &&
+          p.middle_name?.toLowerCase() === payload.middle_name.toLowerCase() &&
+          p.last_name?.toLowerCase() === payload.last_name.toLowerCase()
+      );
+
+      if (duplicate) {
+        toast.warning("Patient already exists!");
+        new Audio(require("@/assets/add.mp3")).play();
         return;
       }
 
-      try {
-        /* 🔹 Duplicate check */
-        const { data: patients } = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/patient/get-patient",
-        );
+      await axios.post(
+        process.env.VUE_APP_API_BASE_URL + "/patient/add-patient",
+        payload
+      );
 
-        const duplicate = patients.find(
-          (p) =>
-            p.first_name?.toLowerCase() ===
-              this.form.first_name.toLowerCase() &&
-            p.middle_name?.toLowerCase() ===
-              this.form.middle_name.toLowerCase() &&
-            p.last_name?.toLowerCase() === this.form.last_name.toLowerCase(),
-        );
+      toast.success("Patient added successfully!");
+    }
 
-        if (duplicate) {
-          toast.warning("Patient already exists!");
-          new Audio(require("@/assets/add.mp3")).play();
-          return;
-        }
+    new Audio(require("@/assets/add.mp3")).play();
 
-        /* 🔹 Normalize insurance */
-        if (
-          this.form.has_insurance === "Yes" &&
-          this.form.dental_insurance === "Other"
-        ) {
-          this.form.dental_insurance = this.form.other_insurance;
-        }
+    this.$emit("refresh");
+    this.$emit("close");
+  } catch (err) {
+    console.error(err);
+    toast.error(this.isEdit ? "Failed to update patient." : "Failed to add patient.");
+  }
+}
+,
 
-        /* 🔹 Submit */
-        await axios.post(
-          process.env.VUE_APP_API_BASE_URL + "/patient/add-patient",
-          this.form,
-        );
+  },  mounted() {
+  if (this.patient) {
+    const allowedKeys = Object.keys(this.form);
 
-        toast.success("Patient added successfully!");
-        new Audio(require("@/assets/add.mp3")).play();
-
-        this.$emit("refresh");
-        this.$emit("close");
-      } catch (err) {
-        console.error(err);
-        toast.error("Failed to add patient.");
+    allowedKeys.forEach((key) => {
+      if (this.patient[key] !== undefined) {
+        this.form[key] = this.patient[key];
       }
-    },
-  },
+    });
+  }
+}
+
+
 };
 </script>
 

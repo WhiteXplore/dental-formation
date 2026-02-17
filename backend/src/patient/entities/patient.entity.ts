@@ -68,6 +68,10 @@ export class Patient {
   @Column({ type: 'varchar', length: 255, nullable: true })
   dental_insurance: string;
 
+    @Column({ type: 'varchar', length: 255, nullable: true })
+  other_insurance: string;
+
+
   /* ===============================
      HEALTH QUESTIONNAIRE
   =============================== */

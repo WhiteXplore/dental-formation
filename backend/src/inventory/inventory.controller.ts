@@ -10,6 +10,7 @@ import {
   UploadedFile,
   ParseIntPipe,
   Res,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -25,11 +26,12 @@ export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
   /* ================= CREATE ================= */
+ /* ================= CREATE ================= */
   @Post('add-inventory')
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
-        destination: './uploads',
+        destination: join(__dirname, '../../uploads'),
         filename: (req, file, cb) => {
           const uniqueSuffix =
             Date.now() + '-' + Math.round(Math.random() * 1e9);
@@ -38,7 +40,7 @@ export class InventoryController {
       }),
       fileFilter: (req, file, cb) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-          return cb(new Error('Only image files are allowed!'), false);
+          return cb(new BadRequestException('Only image files are allowed!'), false);
         }
         cb(null, true);
       },
@@ -50,6 +52,7 @@ export class InventoryController {
   ) {
     return this.inventoryService.create(createInventoryDto, image?.filename);
   }
+
 
   /* ================= READ ================= */
   @Get('get-inventory')
@@ -87,7 +90,7 @@ export class InventoryController {
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
-        destination: './uploads',
+        destination: join(__dirname, '../../uploads'),
         filename: (req, file, cb) => {
           const uniqueSuffix =
             Date.now() + '-' + Math.round(Math.random() * 1e9);
@@ -96,7 +99,7 @@ export class InventoryController {
       }),
       fileFilter: (req, file, cb) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-          return cb(new Error('Only image files are allowed!'), false);
+          return cb(new BadRequestException('Only image files are allowed!'), false);
         }
         cb(null, true);
       },
@@ -107,11 +110,7 @@ export class InventoryController {
     @Body() updateInventoryDto: UpdateInventoryDto,
     @UploadedFile() image?: Express.Multer.File,
   ) {
-    return this.inventoryService.update(
-      id,
-      updateInventoryDto,
-      image?.filename,
-    );
+    return this.inventoryService.update(id, updateInventoryDto, image?.filename);
   }
 
   /* 🔔 MARK SINGLE INVENTORY NOTIFICATION AS VIEWED */

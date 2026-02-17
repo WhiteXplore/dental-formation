@@ -191,7 +191,13 @@
       </div>
     </div>
   </div>
-  <addPatient v-if="isAdd" @close="closeView" @refresh="loadPatient" />
+<addPatient
+  v-if="isAdd"
+  :patient="selectedpatient"
+  @close="closePatientModal"
+  @refresh="loadPatient"
+/>
+
   <viewPatient
     v-if="showEditModal && selectedpatient"
     :patient="selectedpatient"
@@ -206,12 +212,6 @@
     @refresh="loadPatient"
   />
 
-  <editPatient
-    v-if="showEditPatient && selectedpatient"
-    :patient="selectedpatient"
-    @close="closeEditPatient"
-    @refresh="loadPatient"
-  />
 
   <!-- Delete Confirmation Modal -->
   <div
@@ -337,7 +337,7 @@
 <script>
 import icon from "@/assets/icon.vue";
 import addPatient from "../modals/add-patient.vue";
-import editPatient from "../modals/edit-patient.vue";
+
 import viewPatient from "../modals/view-patient.vue";
 import viewDentalHistory from "../modals/view-dental-history.vue";
 import { toast } from "vue3-toastify";
@@ -349,7 +349,7 @@ export default {
   components: {
     icon,
     addPatient,
-    editPatient,
+
     viewPatient,
     viewDentalHistory,
   },
@@ -359,7 +359,7 @@ export default {
       itemsPerPage: 10,
       searchQuery: "",
       isAdd: false,
-      isEdit: false,
+  
       isTable: true,
       isUploadData: false,
       showDeleteModal: false,
@@ -368,7 +368,7 @@ export default {
       showEditModal: false,
       isViewHistory: false,
       selectedPatientId: null,
-      showEditPatient: false,
+    
       showDischargeModal: false,
       patientToDischarge: null,
       showPaymentPendingModal: false,
@@ -557,10 +557,11 @@ export default {
       this.isUploadData = true;
       this.isTable = true;
     },
-    toggleAdd() {
-      this.isAdd = true;
-      this.isTable = true;
-    },
+toggleAdd() {
+  this.selectedpatient = null; // important reset
+  this.isAdd = true;
+},
+
     viewHistory(patientId) {
       this.selectedPatientId = patientId;
       this.isViewHistory = true;
@@ -569,10 +570,11 @@ export default {
       this.selectedpatient = item;
       this.showEditModal = true;
     },
-    toggleEdit(item) {
-      this.selectedpatient = item;
-      this.showEditPatient = true;
-    },
+   toggleEdit(item) {
+  this.selectedpatient = item;
+  this.isAdd = true; // reuse add modal
+},
+
     closeEditPatient() {
       this.showEditPatient = false;
       this.selectedpatient = null;
@@ -612,10 +614,11 @@ export default {
     changePage(page) {
       this.currentPage = Math.max(1, Math.min(page, this.totalPages));
     },
-    closeView() {
-      this.isAdd = false;
-      this.isUploadData = false;
-    },
+  closePatientModal() {
+  this.isAdd = false;
+  this.selectedpatient = null;
+},
+
     closeModal() {
       this.showEditModal = false;
       this.selectedpatient = null;

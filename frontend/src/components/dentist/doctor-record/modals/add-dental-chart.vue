@@ -199,50 +199,37 @@
 
           <!-- RIGHT: X-RAY -->
           <div class="w-[30vw] space-y-3 border p-2 rounded-md">
-            <label class="font-bold">X-Ray Image:</label>
-            <input
-              type="file"
-              accept="image/*"
-              @change="handleImageUpload"
-              class="block w-full text-sm text-gray-700 border border-gray-400 rounded-md cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-            />
-            <div
-              v-if="xrayPreview"
-              class="mt-2 border rounded-lg p-2 bg-gray-50 text-center"
-            >
-              <p class="font-semibold text-gray-700 text-sm mb-2">
-                X-Ray Preview
-              </p>
-              <img
-                :src="xrayPreview"
-                alt="X-Ray Preview"
-                class="max-w-full max-h-[400px] mx-auto rounded shadow"
-              />
-            </div>
-            <!-- Notes -->
-            <div>
-              <label class="font-bold">Procedure Notes:</label>
-              <textarea
-                v-model="form.procedure_notes"
-                rows="3"
-                placeholder="Enter notes..."
-                class="w-full border px-3 py-2 rounded-md text-sm border-gray-400"
-              ></textarea>
-            </div>
+  <label class="font-bold">X-Ray Image:</label>
+  <input
+    type="file"
+    name="xray_image"             
+    accept="image/*"
+    @change="handleImageUpload"
+    class="block w-full text-sm text-gray-700 border border-gray-400 rounded-md cursor-pointer
+           file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold
+           file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+  />
+  <div v-if="xrayPreview" class="mt-2 border rounded-lg p-2 bg-gray-50 text-center">
+    <p class="font-semibold text-gray-700 text-sm mb-2">X-Ray Preview</p>
+    <img
+      :src="xrayPreview"
+      alt="X-Ray Preview"
+      class="max-w-full max-h-[400px] mx-auto rounded shadow"
+    />
+  </div>
 
-            <!-- Payment -->
-            <!-- <div>
-              <label class="font-bold">Payment Amount (₱):</label>
-              <input
-                type="number"
-                v-model="form.payment_amount"
-                class="w-full border px-3 py-2 rounded-md text-sm border-gray-400"
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-              />
-            </div> -->
-          </div>
+  <!-- Notes -->
+  <div>
+    <label class="font-bold">Procedure Notes:</label>
+    <textarea
+      v-model="form.procedure_notes"
+      rows="3"
+      placeholder="Enter notes..."
+      class="w-full border px-3 py-2 rounded-md text-sm border-gray-400"
+    ></textarea>
+  </div>
+</div>
+
         </div>
       </form>
     </div>
