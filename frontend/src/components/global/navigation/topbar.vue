@@ -89,16 +89,28 @@
             </template>
 
             <!-- DENTIST -->
-            <p class="text-xs text-gray-400">
-              <span v-if="notif.notif_status === null"
-                >New •
-                {{ new Date(notif.notif_viewed_at).toLocaleString() }}</span
-              >
-              <span v-else
-                >Viewed •
-                {{ new Date(notif.notif_viewed_at).toLocaleString() }}</span
-              >
-            </p>
+            <!-- DENTIST -->
+            <template v-if="notif.type === 'appointment'">
+              <p class="text-sm font-medium text-green-700">
+                Appointment with {{ notif.patient?.first_name || "Unknown" }}
+                {{ notif.patient?.last_name || "" }} on
+                {{ new Date(notif.procedure_date).toLocaleDateString() }}
+              </p>
+              <p class="text-xs text-gray-400">
+                <span v-if="notif.notif_status === null">
+                  New •
+                  {{
+                    new Date(
+                      notif.notif_viewed_at || notif.procedure_date,
+                    ).toLocaleString()
+                  }}
+                </span>
+                <span v-else>
+                  Viewed •
+                  {{ new Date(notif.notif_viewed_at).toLocaleString() }}
+                </span>
+              </p>
+            </template>
           </li>
 
           <li
@@ -201,10 +213,10 @@ export default {
           .map((a) => ({
             type: "appointment",
             appointment_id: a.appointment_id,
-            patient: a.patient,
+            patient: a.patient || { first_name: "Unknown", last_name: "" },
             procedure_date: a.scheduled_date,
             notif_status: a.notif_status,
-            notif_viewed_at: a.notif_viewed_at,
+            notif_viewed_at: a.notif_viewed_at || new Date(),
           }));
         this.notifications = dentistNotifs;
         this.unreadCount = dentistNotifs.filter(
@@ -254,34 +266,54 @@ export default {
 
     /* ================= CLICK ================= */
     async handleNotificationClick(notif, index) {
-      if (notif.type === "appointment" && notif.notif_status === null) {
-        await axios.patch(
-          `${this.appointmentApi}/${notif.appointment_id}`,
-          { notif_status: "Viewed" },
-          { withCredentials: true },
-        );
+      // If already viewed, do nothing
+      if (notif.notif_status !== null) {
+        console.log("Notification already viewed, doing nothing.");
+        return;
+      }
+
+      try {
+        // Appointment notifications
+        if (notif.type === "appointment") {
+          if (!notif.appointment_id) {
+            console.warn("Appointment ID missing for notification", notif);
+            return;
+          }
+
+          await axios.patch(
+            `${process.env.VUE_APP_API_BASE_URL}/appointment/${notif.appointment_id}`, // singular route
+            { notif_status: "Viewed" },
+            { withCredentials: true },
+          );
+        }
+
+        // Inventory notifications
+        if (notif.type === "inventory") {
+          await axios.patch(
+            `${this.inventoryApi}/${notif.inventory_id}/notification`,
+            {},
+            { withCredentials: true },
+          );
+        }
+
+        // Update local notification state
         this.notifications[index].notif_status = "Viewed";
         this.notifications[index].notif_viewed_at = new Date();
         this.unreadCount--;
-      }
-
-      if (notif.type === "inventory" && notif.notif_status === null) {
-        await axios.patch(
-          `${this.inventoryApi}/${notif.inventory_id}/notification`,
-          {},
-          { withCredentials: true },
+      } catch (error) {
+        console.error(
+          "Failed to update notification:",
+          error.response?.data || error,
         );
-        this.notifications[index].notif_status = "Viewed";
-        this.notifications[index].notif_viewed_at = new Date();
-        this.unreadCount--;
+        return; // stop navigation if PATCH fails
       }
 
+      // Close notifications dropdown and navigate
       this.isOpenNotifications = false;
       this.$router.push(
         this.user.role === "Admin" ? "/inventory" : "/dentist-appointments",
       );
     },
-
     /* ================= MARK ALL ================= */
     async markAllRead() {
       if (this.user.role === "Dentist") {
