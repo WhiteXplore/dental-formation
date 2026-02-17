@@ -42,6 +42,9 @@ export class Patient {
   religion: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
+  other_religion: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
   nationality: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
@@ -68,9 +71,8 @@ export class Patient {
   @Column({ type: 'varchar', length: 255, nullable: true })
   dental_insurance: string;
 
-    @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   other_insurance: string;
-
 
   /* ===============================
      HEALTH QUESTIONNAIRE

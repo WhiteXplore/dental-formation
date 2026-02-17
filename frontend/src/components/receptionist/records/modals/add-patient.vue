@@ -14,10 +14,9 @@
         >
           <div class="flex gap-1 items-center">
             <icon :name="'add-students'" />
-           <h1 class="font-bold tracking-wide text-lg">
-  {{ isEdit ? "Edit Patient" : "Add Patient" }}
-</h1>
-
+            <h1 class="font-bold tracking-wide text-lg">
+              {{ isEdit ? "Edit Patient" : "Add Patient" }}
+            </h1>
           </div>
           <icon
             :name="'circle-close3'"
@@ -115,15 +114,35 @@
             </div>
             <div class="w-full space-y-1.5 text-left flex flex-col">
               <label for="religion" class="font-bold">Religion:</label>
-              <input
+              <select
                 v-model="form.religion"
-                type="text"
-                id="religion"
                 required
                 class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-                placeholder="Enter religion"
+              >
+                <option disabled value="">Select Religion</option>
+                <option value="Roman Catholic">Roman Catholic</option>
+                <option value="Christian – Protestant">
+                  Christian – Protestant
+                </option>
+                <option value="Islam (Muslim)">Islam (Muslim)</option>
+                <option value="Buddhism">Buddhism</option>
+                <option value="Hinduism">Hinduism</option>
+                <option value="Sikhism">Sikhism</option>
+                <option value="Judaism">Judaism</option>
+                <option value="Agnostic">Agnostic</option>
+                <option value="Atheist">Atheist</option>
+                <option value="Others">Others</option>
+              </select>
+
+              <input
+                v-if="form.religion === 'Others'"
+                v-model="form.other_religion"
+                type="text"
+                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+                placeholder="Please specify religion"
               />
             </div>
+
             <div class="w-full space-y-1.5 text-left flex flex-col">
               <label for="nationality" class="font-bold">Nationality:</label>
               <input
@@ -586,12 +605,12 @@ import axios from "axios";
 export default {
   name: "AddPatient",
   components: { icon },
-props: {
-  patient: {
-    type: Object,
-    default: null,
+  props: {
+    patient: {
+      type: Object,
+      default: null,
+    },
   },
-},
 
   data() {
     return {
@@ -651,6 +670,7 @@ props: {
         age: "",
         contact_number: "",
         religion: "",
+        other_religion: "",
         nationality: "",
         marital_status: "",
         occupation: "",
@@ -703,6 +723,13 @@ props: {
      WATCHERS
   =============================== */
   watch: {
+    // When user changes the religion dropdown
+    "form.religion"(val) {
+      if (val !== "Others") {
+        this.form.other_religion = "";
+      }
+    },
+
     "form.birthdate"(newDate) {
       if (!newDate) {
         this.form.age = "";
@@ -718,7 +745,6 @@ props: {
       this.form.age = age;
     },
 
-    /* Reset conditional fields */
     "form.has_insurance"(val) {
       if (val !== "Yes") {
         this.form.dental_insurance = "";
@@ -730,6 +756,7 @@ props: {
       if (val !== "OTHERS") this.form.allergies_details = "";
     },
 
+    // Deep watch for medical_conditions
     medical_conditions: {
       handler(val) {
         if (!val.includes("Others")) {
@@ -739,11 +766,11 @@ props: {
       deep: true,
     },
   },
-computed: {
-  isEdit() {
-    return !!this.patient;
+  computed: {
+    isEdit() {
+      return !!this.patient;
+    },
   },
-},
 
   methods: {
     sanitizeBloodPressure() {
@@ -775,136 +802,178 @@ computed: {
     /* ===============================
        SUBMIT
     =============================== */
- async submitData() {
-  const formEl = this.$refs.patientForm;
-  if (!formEl.checkValidity()) {
-    formEl.reportValidity();
-    return;
-  }
-
-  try {
-    // ✅ Build payload only with allowed fields
-    const payload = {
-      first_name: this.form.first_name,
-      middle_name: this.form.middle_name,
-      last_name: this.form.last_name,
-      gender: this.form.gender,
-      birthdate: this.form.birthdate,
-      age: this.form.age,
-      contact_number: this.form.contact_number,
-      religion: this.form.religion,
-      nationality: this.form.nationality,
-      marital_status: this.form.marital_status,
-      occupation: this.form.occupation,
-      parent_fullname: this.form.parent_fullname,
-      address: this.form.address,
-
-      has_insurance: this.form.has_insurance,
-      dental_insurance:
-        this.form.has_insurance === "Yes" && this.form.dental_insurance === "Other"
-          ? this.form.other_insurance
-          : this.form.dental_insurance,
-
-      good_health: this.form.good_health,
-      health_details: this.form.health_details,
-
-      medical_treatment: this.form.medical_treatment,
-      medical_treatment_details: this.form.medical_treatment_details,
-
-      serious_illness: this.form.serious_illness,
-      serious_illness_details: this.form.serious_illness_details,
-
-      hospitalized: this.form.hospitalized,
-      hospitalized_details: this.form.hospitalized_details,
-
-      taking_medication: this.form.taking_medication,
-      taking_medication_details: this.form.taking_medication_details,
-
-      use_tobacco: this.form.use_tobacco,
-      use_alcohol: this.form.use_alcohol,
-
-      allergies: this.form.allergies,
-      allergies_details: this.form.allergies_details,
-
-      bleeding_time_details: this.form.bleeding_time_details,
-
-      pregnant: this.form.pregnant,
-      nursing: this.form.nursing,
-      control_pills: this.form.control_pills,
-
-      blood_type: this.form.blood_type,
-      blood_pressure: this.form.blood_pressure,
-
-      medical_conditions: this.form.medical_conditions,
-      other_condition_details: this.form.other_condition_details,
-    };
-
-    /* =========================
-       EDIT MODE
-    ========================= */
-    if (this.isEdit && this.patient && this.patient.patient_id) {
-      await axios.patch(
-        process.env.VUE_APP_API_BASE_URL +
-          `/patient/update-patient/${this.patient.patient_id}`,
-        payload
-      );
-
-      toast.success("Patient updated successfully!");
-    } 
-    /* =========================
-       ADD MODE
-    ========================= */
-    else {
-      // Duplicate check only for add
-      const { data: patients } = await axios.get(
-        process.env.VUE_APP_API_BASE_URL + "/patient/get-patient"
-      );
-
-      const duplicate = patients.find(
-        (p) =>
-          p.first_name?.toLowerCase() === payload.first_name.toLowerCase() &&
-          p.middle_name?.toLowerCase() === payload.middle_name.toLowerCase() &&
-          p.last_name?.toLowerCase() === payload.last_name.toLowerCase()
-      );
-
-      if (duplicate) {
-        toast.warning("Patient already exists!");
-        new Audio(require("@/assets/add.mp3")).play();
+    async submitData() {
+      const formEl = this.$refs.patientForm;
+      if (!formEl.checkValidity()) {
+        formEl.reportValidity();
         return;
       }
 
-      await axios.post(
-        process.env.VUE_APP_API_BASE_URL + "/patient/add-patient",
-        payload
-      );
+      try {
+        // ✅ Build payload only with allowed fields
+        const payload = {
+          first_name: this.form.first_name,
+          middle_name: this.form.middle_name,
+          last_name: this.form.last_name,
+          gender: this.form.gender,
+          birthdate: this.form.birthdate,
+          age: this.form.age,
+          contact_number: this.form.contact_number,
+          religion:
+            this.form.religion === "Others"
+              ? this.form.other_religion
+              : this.form.religion,
+          nationality: this.form.nationality,
+          marital_status: this.form.marital_status,
+          occupation: this.form.occupation,
+          parent_fullname: this.form.parent_fullname,
+          address: this.form.address,
 
-      toast.success("Patient added successfully!");
-    }
+          has_insurance: this.form.has_insurance,
+          dental_insurance:
+            this.form.has_insurance === "Yes" &&
+            this.form.dental_insurance === "Other"
+              ? this.form.other_insurance
+              : this.form.dental_insurance,
 
-    new Audio(require("@/assets/add.mp3")).play();
+          good_health: this.form.good_health,
+          health_details: this.form.health_details,
 
-    this.$emit("refresh");
-    this.$emit("close");
-  } catch (err) {
-    console.error(err);
-    toast.error(this.isEdit ? "Failed to update patient." : "Failed to add patient.");
-  }
-}
-,
+          medical_treatment: this.form.medical_treatment,
+          medical_treatment_details: this.form.medical_treatment_details,
 
-  },  mounted() {
-  if (this.patient) {
-    const allowedKeys = Object.keys(this.form);
+          serious_illness: this.form.serious_illness,
+          serious_illness_details: this.form.serious_illness_details,
 
-    allowedKeys.forEach((key) => {
-      if (this.patient[key] !== undefined) {
-        this.form[key] = this.patient[key];
+          hospitalized: this.form.hospitalized,
+          hospitalized_details: this.form.hospitalized_details,
+
+          taking_medication: this.form.taking_medication,
+          taking_medication_details: this.form.taking_medication_details,
+
+          use_tobacco: this.form.use_tobacco,
+          use_alcohol: this.form.use_alcohol,
+
+          allergies: this.form.allergies,
+          allergies_details: this.form.allergies_details,
+
+          bleeding_time_details: this.form.bleeding_time_details,
+
+          pregnant: this.form.pregnant,
+          nursing: this.form.nursing,
+          control_pills: this.form.control_pills,
+
+          blood_type: this.form.blood_type,
+          blood_pressure: this.form.blood_pressure,
+
+          medical_conditions: this.form.medical_conditions,
+          other_condition_details: this.form.other_condition_details,
+        };
+
+        /* =========================
+       EDIT MODE
+    ========================= */
+        if (this.isEdit && this.patient && this.patient.patient_id) {
+          await axios.patch(
+            process.env.VUE_APP_API_BASE_URL +
+              `/patient/update-patient/${this.patient.patient_id}`,
+            payload,
+          );
+
+          toast.success("Patient updated successfully!");
+        } else {
+          /* =========================
+       ADD MODE
+    ========================= */
+          // Duplicate check only for add
+          const { data: patients } = await axios.get(
+            process.env.VUE_APP_API_BASE_URL + "/patient/get-patient",
+          );
+
+          const duplicate = patients.find(
+            (p) =>
+              p.first_name?.toLowerCase() ===
+                payload.first_name.toLowerCase() &&
+              p.middle_name?.toLowerCase() ===
+                payload.middle_name.toLowerCase() &&
+              p.last_name?.toLowerCase() === payload.last_name.toLowerCase(),
+          );
+
+          if (duplicate) {
+            toast.warning("Patient already exists!");
+            new Audio(require("@/assets/add.mp3")).play();
+            return;
+          }
+
+          await axios.post(
+            process.env.VUE_APP_API_BASE_URL + "/patient/add-patient",
+            payload,
+          );
+
+          toast.success("Patient added successfully!");
+        }
+
+        new Audio(require("@/assets/add.mp3")).play();
+
+        this.$emit("refresh");
+        this.$emit("close");
+      } catch (err) {
+        console.error(err);
+        toast.error(
+          this.isEdit ? "Failed to update patient." : "Failed to add patient.",
+        );
       }
-    });
-  }
-}
+    },
+  },
+  mounted() {
+    if (this.patient) {
+      const allowedKeys = Object.keys(this.form);
 
+      // Prefill all allowed fields from patient
+      allowedKeys.forEach((key) => {
+        if (this.patient[key] !== undefined && this.patient[key] !== null) {
+          this.form[key] = this.patient[key];
+        }
+      });
 
+      // ===============================
+      // Handle custom religion
+      // ===============================
+      const predefinedReligions = [
+        "Roman Catholic",
+        "Christian – Protestant",
+        "Islam (Muslim)",
+        "Buddhism",
+        "Hinduism",
+        "Sikhism",
+        "Judaism",
+        "Agnostic",
+        "Atheist",
+      ];
+
+      if (!predefinedReligions.includes(this.patient.religion)) {
+        this.form.religion = "Others"; // Set dropdown to Others
+        this.form.other_religion = this.patient.religion; // Fill the text input
+      }
+
+      // ===============================
+      // Handle other insurance if needed
+      // ===============================
+      const predefinedInsurances = [
+        "Philhealth",
+        "Maxicare",
+        "Intellicare",
+        "Medicard",
+      ];
+      if (
+        this.patient.has_insurance === "Yes" &&
+        !predefinedInsurances.includes(this.patient.dental_insurance)
+      ) {
+        this.form.dental_insurance = "Other";
+        this.form.other_insurance = this.patient.dental_insurance;
+      }
+    }
+  },
 };
 </script>
 

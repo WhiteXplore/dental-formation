@@ -1,12 +1,6 @@
-import {
-  IsString,
-  IsOptional,
-  IsNumber,
-  IsArray,
-} from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsArray } from 'class-validator';
 
 export class CreatePatientDto {
-
   /* BASIC INFO */
 
   @IsOptional()
@@ -35,6 +29,10 @@ export class CreatePatientDto {
   @IsOptional()
   @IsString()
   religion: string;
+
+  @IsOptional()
+  @IsString()
+  other_religion: string;
 
   @IsOptional()
   @IsString()
@@ -70,7 +68,6 @@ export class CreatePatientDto {
   @IsString()
   dental_insurance: string;
 
-  
   @IsOptional()
   @IsString()
   other_insurance: string;

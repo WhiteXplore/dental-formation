@@ -42,7 +42,7 @@
           <!-- Date Filter Toggle -->
           <div class="flex bg-gray-100 rounded-xl p-1 shadow-inner">
             <button
-              v-for="type in ['All', 'Past', 'Present', 'Upcoming']"
+              v-for="type in ['All', 'Past', 'Today', 'Upcoming']"
               :key="type"
               @click="setDateFilter(type)"
               class="px-4 py-1 text-sm rounded-lg transition-all duration-200"
@@ -312,7 +312,7 @@ export default {
             return appointmentDate.isBefore(today);
           }
 
-          if (this.activeDateFilter === "Present") {
+          if (this.activeDateFilter === "Today") {
             return appointmentDate.isSame(today);
           }
 

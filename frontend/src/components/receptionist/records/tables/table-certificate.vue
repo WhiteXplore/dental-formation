@@ -212,6 +212,16 @@
           ></textarea>
         </div>
 
+        <!-- <div class="mb-4">
+          <label class="font-semibold text-sm">Diagnosis</label>
+          <textarea
+            v-model="diagnosis"
+            class="w-full border rounded-md p-2 mt-1 text-sm"
+            rows="3"
+            placeholder="Enter diagnosis here..."
+          ></textarea>
+        </div> -->
+
         <!-- ===== Recommendation ===== -->
         <div class="mb-6">
           <label class="font-semibold text-sm">Recommendation</label>
@@ -298,23 +308,39 @@ export default {
     ============================= */
     filteredData() {
       const q = this.searchQuery.toLowerCase().trim();
-
       return this.medications
-        .filter((m) => m.payment_status === "Paid" && m.is_discharged === true)
+        .filter((m) => m.payment_status === "Paid")
         .filter((m) => {
           if (!q) return true;
 
           const patientName = this.fullName(
-            m.dentalChart?.patient
+            m.dentalChart?.patient,
           ).toLowerCase();
 
           const dentistName = this.fullName(
-            m.dentalChart?.user_accounts
+            m.dentalChart?.user_accounts,
           ).toLowerCase();
 
           return patientName.includes(q) || dentistName.includes(q);
         });
     },
+
+    //   return this.medications
+    //     .filter((m) => m.payment_status === "Paid" && m.is_discharged === true)
+    //     .filter((m) => {
+    //       if (!q) return true;
+
+    //       const patientName = this.fullName(
+    //         m.dentalChart?.patient
+    //       ).toLowerCase();
+
+    //       const dentistName = this.fullName(
+    //         m.dentalChart?.user_accounts
+    //       ).toLowerCase();
+
+    //       return patientName.includes(q) || dentistName.includes(q);
+    //     });
+    // },
 
     /* =============================
        GROUP BY PATIENT + PROCEDURE DATE
@@ -356,7 +382,7 @@ export default {
       const start = (this.currentPage - 1) * this.itemsPerPage;
       return this.groupedByPatientAndDate.slice(
         start,
-        start + this.itemsPerPage
+        start + this.itemsPerPage,
       );
     },
 
@@ -373,7 +399,7 @@ export default {
     endIndex() {
       return Math.min(
         this.currentPage * this.itemsPerPage,
-        this.groupedByPatientAndDate.length
+        this.groupedByPatientAndDate.length,
       );
     },
   },
@@ -402,7 +428,8 @@ export default {
     openModal(visit) {
       this.selectedReport = visit.sourceItem;
       this.recommendation = "";
-      this.diagnosis = "";
+      // Populate diagnosis from procedure_notes
+      this.diagnosis = visit.sourceItem.dentalChart.procedure_notes || "";
       this.showModal = true;
       this.pdfDataUrl = null;
     },
@@ -448,7 +475,7 @@ export default {
       const teeth = this.selectedReport.dentalChart.teeth || [];
 
       const logoBase64 = await this.toBase64(
-        require("@/assets/img/clinic-logo.png")
+        require("@/assets/img/clinic-logo.png"),
       );
 
       const toothNumbers = teeth.map((t) => t.tooth_number).join(", ");
@@ -592,7 +619,7 @@ export default {
                 decoration: "underline",
               },
               `on ${this.formatDate(
-                this.selectedReport.dentalChart.procedure_date
+                this.selectedReport.dentalChart.procedure_date,
               )}. `,
               "The patient underwent the dental procedure ",
               { text: `${procedure.procedure_name || "N/A"} `, bold: true },

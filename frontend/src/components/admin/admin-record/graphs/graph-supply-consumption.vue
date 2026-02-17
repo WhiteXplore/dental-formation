@@ -30,7 +30,7 @@ Chart.register(
   BarElement,
   CategoryScale,
   LinearScale,
-  BarController
+  BarController,
 );
 
 export default {
@@ -135,7 +135,7 @@ export default {
               if (!countedAllTeeth.has(name)) {
                 monthData.inventories.set(
                   name,
-                  (monthData.inventories.get(name) || 0) + qty
+                  (monthData.inventories.get(name) || 0) + qty,
                 );
                 countedAllTeeth.add(name);
               }
@@ -143,7 +143,7 @@ export default {
               // PER_TOOTH: count each tooth individually
               monthData.inventories.set(
                 name,
-                (monthData.inventories.get(name) || 0) + qty
+                (monthData.inventories.get(name) || 0) + qty,
               );
             }
           });
@@ -160,7 +160,7 @@ export default {
 
           monthData.addItems.set(
             inventoryName,
-            (monthData.addItems.get(inventoryName) || 0) + qty
+            (monthData.addItems.get(inventoryName) || 0) + qty,
           );
         });
       });
@@ -175,14 +175,14 @@ export default {
 
       // --- Sort months ---
       const months = Array.from(monthMap.keys()).sort(
-        (a, b) => new Date(a + " 1") - new Date(b + " 1")
+        (a, b) => new Date(a + " 1") - new Date(b + " 1"),
       );
 
       // --- Procedure Inventory datasets ---
       const inventoryDatasets = Array.from(inventoryItems).map((name, idx) => ({
         label: `Inventory: ${name}`,
         data: months.map(
-          (month) => monthMap.get(month).inventories.get(name) || 0
+          (month) => monthMap.get(month).inventories.get(name) || 0,
         ),
         backgroundColor: generateColor(idx),
 
@@ -197,7 +197,7 @@ export default {
         return {
           label: `Add Item: ${name}`,
           data: months.map(
-            (month) => monthMap.get(month).addItems.get(key) || 0
+            (month) => monthMap.get(month).addItems.get(key) || 0,
           ),
           backgroundColor: `hsl(${(idx * 60 + 180) % 360}, 70%, 50%)`,
           borderRadius: 6,
