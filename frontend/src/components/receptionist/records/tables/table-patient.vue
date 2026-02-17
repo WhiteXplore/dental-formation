@@ -131,12 +131,7 @@
                         class="px-3 py-1 h-8 border border-red-300 hover:bg-red-200 text-red-800 rounded-lg flex items-center gap-1"
                         @click="toggleDelete(patient_data)"
                       >
-                        <icon name="delete" /> Delete</button
-                      ><button
-                        class="px-3 py-1 h-8 border border-yellow-300 hover:bg-yellow-200 text-yellow-800 rounded-lg flex items-center gap-1"
-                        @click="toggleDischarge(patient_data)"
-                      >
-                        <icon name="delete" /> Discharge
+                        <icon name="delete" /> Delete
                       </button>
                     </div>
                   </td>
@@ -191,12 +186,12 @@
       </div>
     </div>
   </div>
-<addPatient
-  v-if="isAdd"
-  :patient="selectedpatient"
-  @close="closePatientModal"
-  @refresh="loadPatient"
-/>
+  <addPatient
+    v-if="isAdd"
+    :patient="selectedpatient"
+    @close="closePatientModal"
+    @refresh="loadPatient"
+  />
 
   <viewPatient
     v-if="showEditModal && selectedpatient"
@@ -211,7 +206,6 @@
     @close="isViewHistory = false"
     @refresh="loadPatient"
   />
-
 
   <!-- Delete Confirmation Modal -->
   <div
@@ -255,126 +249,49 @@
       </button>
     </div>
   </div>
-  <!-- Discharge Modal -->
-  <div
-    v-if="showDischargeModal"
-    class="fixed inset-0 bg-gray-800 bg-opacity-40 flex justify-center items-center z-50"
-  >
-    <div
-      class="rounded-xl shadow-lg w-[300px] md:w-[400px] bg-white py-6 px-4 flex flex-col items-center"
-    >
-      <div
-        class="rounded-full w-16 h-16 md:w-20 md:h-20 flex justify-center items-center bg-yellow-300 animate-pulse"
-      >
-        <icon name="exclamation-circle" class="text-white" />
-      </div>
-      <h1 class="text-[14px] md:text-[16px] font-semibold mt-4">
-        Discharge Confirmation
-      </h1>
-      <p class="mt-2 text-[12px] md:text-[13px] text-center px-8">
-        Are you sure you want to discharge {{ patientToDischarge?.first_name }}
-        {{ patientToDischarge?.last_name }}?
-      </p>
-
-      <div class="w-full h-[1px] rounded-md bg-gray-200 mt-4"></div>
-
-      <div class="tracking-wide flex gap-2 mt-4">
-        <button
-          class="bg-gray-400 p-2 px-3 text-[11px] md:text-[13px] rounded-md text-white hover:bg-white border hover:border-gray-800 hover:text-gray-800 hover:shadow-md"
-          @click="showDischargeModal = false"
-        >
-          Cancel
-        </button>
-        <button
-          class="bg-yellow-400 p-2 px-3 text-[11px] md:text-[13px] rounded-md text-white hover:bg-white border hover:border-yellow-800 hover:text-yellow-800 hover:shadow-md"
-          @click="confirmDischarge"
-        >
-          Yes, Discharge
-        </button>
-      </div>
-    </div>
-  </div>
-  <div
-    v-if="showPaymentPendingModal"
-    class="fixed inset-0 bg-gray-800 bg-opacity-40 flex justify-center items-center z-50"
-  >
-    <div
-      class="rounded-xl shadow-lg w-[300px] md:w-[400px] bg-white py-6 px-4 flex flex-col items-center"
-    >
-      <div
-        class="rounded-full w-16 h-16 md:w-20 md:h-20 flex justify-center items-center bg-red-300 animate-pulse"
-      >
-        <icon name="exclamation-circle" class="w-full text-white" />
-      </div>
-      <h1 class="text-[14px] md:text-[16px] font-semibold mt-4">
-        Payment Pending
-      </h1>
-      <p class="mt-2 text-[12px] md:text-[13px] text-center px-8">
-        Cannot discharge {{ patientToDischarge?.first_name }}
-        {{ patientToDischarge?.last_name }}. Please settle the payment first.
-      </p>
-
-      <div class="w-full h-[1px] rounded-md bg-gray-200 mt-4"></div>
-
-      <div class="tracking-wide flex gap-2 mt-4">
-        <button
-          class="bg-gray-400 p-2 px-3 text-[11px] md:text-[13px] rounded-md text-white hover:bg-white border hover:border-gray-800 hover:text-gray-800 hover:shadow-md"
-          @click="showPaymentPendingModal = false"
-        >
-          Close
-        </button>
-        <router-link
-          to="/billing-payments"
-          class="bg-green-400 p-2 px-3 text-[11px] md:text-[13px] rounded-md text-white hover:bg-white border hover:border-gray-800 hover:text-gray-800 hover:shadow-md"
-        >
-          Proceed to Payment
-        </router-link>
-      </div>
-    </div>
-  </div>
 </template>
 
 <script>
 import icon from "@/assets/icon.vue";
 import addPatient from "../modals/add-patient.vue";
-
 import viewPatient from "../modals/view-patient.vue";
 import viewDentalHistory from "../modals/view-dental-history.vue";
 import { toast } from "vue3-toastify";
 import { useFetchDataStore } from "../../../../store/fetch-data-store";
 import { mapState } from "pinia";
 import axios from "axios";
+
 export default {
   name: "TablePatient",
+
   components: {
     icon,
     addPatient,
-
     viewPatient,
     viewDentalHistory,
   },
+
   data() {
     return {
       currentPage: 1,
       itemsPerPage: 10,
       searchQuery: "",
+
       isAdd: false,
-  
       isTable: true,
       isUploadData: false,
+
       showDeleteModal: false,
       recordToDelete: null,
+
       selectedpatient: null,
       showEditModal: false,
+
       isViewHistory: false,
       selectedPatientId: null,
-    
-      showDischargeModal: false,
-      patientToDischarge: null,
-      showPaymentPendingModal: false,
-      dischargedPatients: [],
     };
   },
+
   computed: {
     ...mapState(useFetchDataStore, ["patients"]),
 
@@ -383,34 +300,43 @@ export default {
       return this.patients.filter((item) =>
         `${item.first_name} ${item.middle_name} ${item.last_name}`
           .toLowerCase()
-          .includes(query)
+          .includes(query),
       );
     },
+
     totalPages() {
       return Math.ceil(this.filteredData.length / this.itemsPerPage) || 1;
     },
+
     paginatedData() {
       const start = (this.currentPage - 1) * this.itemsPerPage;
       return this.filteredData.slice(start, start + this.itemsPerPage);
     },
+
     startIndex() {
       return this.filteredData.length === 0
         ? 0
         : (this.currentPage - 1) * this.itemsPerPage + 1;
     },
+
     endIndex() {
       const end = this.currentPage * this.itemsPerPage;
       return end > this.filteredData.length ? this.filteredData.length : end;
     },
+
     pageNumbers() {
       return Array.from({ length: this.totalPages }, (_, i) => i + 1);
     },
+
     tableHeightClass() {
-      const count = this.paginatedData.length;
-      return count <= 10 ? "h-auto" : "h-[65vh]";
+      return this.paginatedData.length <= 10 ? "h-auto" : "h-[65vh]";
     },
   },
+
   methods: {
+    /* ===============================
+       LOAD DATA
+    =============================== */
     async loadPatient() {
       const store = useFetchDataStore();
       await store.fetchPatients();
@@ -420,26 +346,10 @@ export default {
       const store = useFetchDataStore();
       await store.fetchMedications();
     },
-    // getPaymentStatus(patient) {
 
-    //   const store = useFetchDataStore();
-
-    //   const prescription = store.medications
-    //     .filter((med) => med.dentalChart?.patient_id === patient.patient_id)
-    //     .sort((a, b) => new Date(b.issued_date) - new Date(a.issued_date))[0];
-
-    //   if (!prescription) return "Ongoing";
-
-    //   // If already discharged → Discharged
-    //   if (prescription.is_discharged) return "Discharged";
-
-    //   // If payment not yet done → Ongoing
-    //   if (prescription.payment_status !== "Paid") return "Ongoing";
-
-    //   // Payment done but not discharged yet → Ongoing
-    //   return "Ongoing";
-    // },
-
+    /* ===============================
+       STATUS (AUTO DISCHARGE BASED ON PAYMENT)
+    =============================== */
     getPaymentStatus(patient) {
       const store = useFetchDataStore();
 
@@ -447,193 +357,103 @@ export default {
         .filter((med) => med.dentalChart?.patient_id === patient.patient_id)
         .sort((a, b) => new Date(b.issued_date) - new Date(a.issued_date))[0];
 
+      // No prescription at all → Ongoing
       if (!prescription) return "Ongoing";
 
-      // If payment_status is null, empty, or not "Paid" → Ongoing
-      if (
-        !prescription.payment_status ||
-        prescription.payment_status !== "Paid"
-      ) {
+      const status = prescription.payment_status;
+
+      // If null, undefined, or empty string → Ongoing
+      if (!status || status.trim() === "") {
         return "Ongoing";
       }
 
-      // If payment done AND is_discharged → Discharged
-      if (
-        prescription.is_discharged &&
-        prescription.payment_status === "Paid"
-      ) {
+      // If explicitly Paid → Discharged
+      if (status === "Paid") {
         return "Discharged";
       }
 
-      // Otherwise → Ongoing
+      // Any other value → Ongoing
       return "Ongoing";
     },
-    async toggleDischarge(patient) {
-      if (!patient || !patient.patient_id) {
-        toast.error("Invalid patient selected.");
-        return;
-      }
-
-      try {
-        // Fetch latest medication/payment for the patient
-        const store = useFetchDataStore();
-        await store.fetchMedications(); // ensure medications are up-to-date
-
-        const medications = store.medications.filter(
-          (med) => med.dentalChart?.patient_id === patient.patient_id
-        );
-
-        if (!medications.length) {
-          toast.info("No medication record found for this patient.");
-          return;
-        }
-
-        // Get the latest medication by date or id
-        const latestMed = medications.sort(
-          (a, b) => new Date(b.date_created) - new Date(a.date_created)
-        )[0];
-
-        if (latestMed.payment_status === "Paid") {
-          // Show discharge confirmation modal
-          this.patientToDischarge = patient;
-          this.showDischargeModal = true;
-        } else {
-          // Show payment pending modal
-          this.patientToDischarge = patient;
-          this.showPaymentPendingModal = true;
-        }
-      } catch (error) {
-        console.error("Failed to check discharge:", error);
-        toast.error("Failed to check discharge status.");
-      }
+    /* ===============================
+       UI ACTIONS
+    =============================== */
+    toggleAdd() {
+      this.selectedpatient = null;
+      this.isAdd = true;
     },
-    confirmDischarge() {
-      if (!this.patientToDischarge) return;
 
-      const store = useFetchDataStore();
-      const prescription = store.medications.find(
-        (med) =>
-          med.dentalChart?.patient_id === this.patientToDischarge.patient_id
-      );
-
-      if (!prescription) {
-        toast.error("No prescription found for this patient.");
-        this.showDischargeModal = false;
-        return;
-      }
-
-      axios
-        .patch(
-          process.env.VUE_APP_API_BASE_URL +
-            `/prescription/discharge-prescription/${prescription.prescription_id}`,
-          { is_discharged: true }
-        )
-        .then(async () => {
-          // Update local discharged state
-          if (
-            !this.dischargedPatients.includes(
-              this.patientToDischarge.patient_id
-            )
-          ) {
-            this.dischargedPatients.push(this.patientToDischarge.patient_id);
-          }
-
-          toast.success(
-            `Patient ${this.patientToDischarge.first_name} discharged successfully`
-          );
-
-          this.patientToDischarge = null;
-          this.showDischargeModal = false;
-
-          // REFRESH MEDICATIONS to update payment/discharge status
-          await this.loadMedications();
-        })
-        .catch((error) => {
-          console.error("Discharge failed:", error);
-          toast.error("Failed to discharge patient.");
-        });
+    toggleEdit(item) {
+      this.selectedpatient = item;
+      this.isAdd = true; // reuse modal
     },
-    toggleUploadData() {
-      this.isUploadData = true;
-      this.isTable = true;
+
+    toggleView(item) {
+      this.selectedpatient = item;
+      this.showEditModal = true;
     },
-toggleAdd() {
-  this.selectedpatient = null; // important reset
-  this.isAdd = true;
-},
 
     viewHistory(patientId) {
       this.selectedPatientId = patientId;
       this.isViewHistory = true;
     },
-    toggleView(item) {
-      this.selectedpatient = item;
-      this.showEditModal = true;
-    },
-   toggleEdit(item) {
-  this.selectedpatient = item;
-  this.isAdd = true; // reuse add modal
-},
 
-    closeEditPatient() {
-      this.showEditPatient = false;
+    closePatientModal() {
+      this.isAdd = false;
       this.selectedpatient = null;
     },
-
-    toggleDelete(item) {
-      this.recordToDelete = item;
-      this.showDeleteModal = true;
-    },
-    confirmDelete() {
-      if (!this.recordToDelete || isNaN(this.recordToDelete.patient_id)) {
-        toast.error("Invalid program ID.");
-        return;
-      }
-
-      const patientId = this.recordToDelete.patient_id;
-
-      axios
-        .delete(
-          process.env.VUE_APP_API_BASE_URL + `/patient/delete-id/${patientId}`
-        )
-        .then(() => {
-          this.recordToDelete = null;
-          this.showDeleteModal = false;
-          // Play sound after successful delete
-          const audio = new Audio(require("@/assets/delete.mp3"));
-          audio.play();
-
-          this.loadPatient();
-          toast.success("Patient deleted successfully");
-        })
-        .catch((error) => {
-          console.error("Delete failed:", error);
-          toast.error("Failed to delete record.");
-        });
-    },
-    changePage(page) {
-      this.currentPage = Math.max(1, Math.min(page, this.totalPages));
-    },
-  closePatientModal() {
-  this.isAdd = false;
-  this.selectedpatient = null;
-},
 
     closeModal() {
       this.showEditModal = false;
       this.selectedpatient = null;
     },
 
-    handleBackToTable() {
-      this.isEdit = false;
-      this.isAdd = false;
-      this.isUploadData = false;
-      this.isTable = true;
+    /* ===============================
+       DELETE
+    =============================== */
+    toggleDelete(item) {
+      this.recordToDelete = item;
+      this.showDeleteModal = true;
+    },
+
+    async confirmDelete() {
+      if (!this.recordToDelete || isNaN(this.recordToDelete.patient_id)) {
+        toast.error("Invalid patient ID.");
+        return;
+      }
+
+      const patientId = this.recordToDelete.patient_id;
+
+      try {
+        await axios.delete(
+          process.env.VUE_APP_API_BASE_URL + `/patient/delete-id/${patientId}`,
+        );
+
+        this.recordToDelete = null;
+        this.showDeleteModal = false;
+
+        const audio = new Audio(require("@/assets/delete.mp3"));
+        audio.play();
+
+        await this.loadPatient();
+        toast.success("Patient deleted successfully");
+      } catch (error) {
+        console.error("Delete failed:", error);
+        toast.error("Failed to delete record.");
+      }
+    },
+
+    /* ===============================
+       PAGINATION
+    =============================== */
+    changePage(page) {
+      this.currentPage = Math.max(1, Math.min(page, this.totalPages));
     },
   },
-  mounted() {
-    this.loadPatient();
-    this.loadMedications();
+
+  async mounted() {
+    await this.loadPatient();
+    await this.loadMedications();
   },
 };
 </script>

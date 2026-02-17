@@ -11,6 +11,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const whitelist = [
+    'http://localhost:8080',
     'https://toothformation.online:8080',
     'https://toothformation.online',
   ];
@@ -84,8 +85,8 @@ async function bootstrap() {
 
   const configService: ConfigService = app.get(ConfigService);
 
-  await app.listen(8080);
-  logger.log(`Application started and listening on ${8080}`);
+  await app.listen(3000);
+  logger.log(`Application started and listening on ${3000}`);
 }
 
 bootstrap();

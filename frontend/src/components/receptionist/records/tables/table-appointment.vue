@@ -23,12 +23,12 @@
     <div class="text-[14px] bg-white rounded-xl mt-4">
       <div class="overflow-x-auto border p-2 rounded-xl">
         <!-- Top controls -->
-        <div class="text-gray-700 flex justify-between items-start mt-1">
+        <div class="text-gray-700 flex justify-between items-center mt-1">
           <!-- Items Per Page -->
           <div class="flex items-center">
             <select
               v-model="itemsPerPage"
-              class="px-1 py-1 border rounded-md"
+              class="px-2 py-1 border rounded-md"
               @change="changePage(1)"
             >
               <option value="5">5</option>
@@ -36,7 +36,23 @@
               <option value="15">15</option>
               <option value="20">20</option>
             </select>
-            <span class="ml-2">Per page</span>
+            <span class="ml-2 text-sm">Per page</span>
+          </div>
+
+          <!-- Date Filter Toggle -->
+          <div class="flex bg-gray-100 rounded-xl p-1 shadow-inner">
+            <button
+              v-for="type in ['All', 'Past', 'Present', 'Upcoming']"
+              :key="type"
+              @click="setDateFilter(type)"
+              class="px-4 py-1 text-sm rounded-lg transition-all duration-200"
+              :class="{
+                'bg-[#34699A] text-white shadow-md': activeDateFilter === type,
+                'text-gray-600 hover:bg-gray-200': activeDateFilter !== type,
+              }"
+            >
+              {{ type }}
+            </button>
           </div>
 
           <!-- Search -->
@@ -259,6 +275,7 @@ export default {
       showDeleteModal: false,
       recordToDelete: null,
       loggedUser: null,
+      activeDateFilter: "All",
     };
   },
   computed: {
@@ -285,15 +302,35 @@ export default {
     // Then apply search filter on top
     filteredData() {
       const query = this.searchQuery.toLowerCase();
-      return this.filteredAppointmentsByUser.filter((item) =>
-        `${item.user_accounts?.first_name} ${
-          item.user_accounts?.middle_name || ""
-        } ${item.user_accounts?.last_name} ${item.patient?.first_name} ${
-          item.patient?.middle_name || ""
-        } ${item.patient?.last_name}`
-          .toLowerCase()
-          .includes(query),
-      );
+      const today = dayjs().startOf("day");
+
+      return this.filteredAppointmentsByUser
+        .filter((item) => {
+          const appointmentDate = dayjs(item.scheduled_date).startOf("day");
+
+          if (this.activeDateFilter === "Past") {
+            return appointmentDate.isBefore(today);
+          }
+
+          if (this.activeDateFilter === "Present") {
+            return appointmentDate.isSame(today);
+          }
+
+          if (this.activeDateFilter === "Upcoming") {
+            return appointmentDate.isAfter(today);
+          }
+
+          return true; // All
+        })
+        .filter((item) =>
+          `${item.user_accounts?.first_name} ${
+            item.user_accounts?.middle_name || ""
+          } ${item.user_accounts?.last_name} ${item.patient?.first_name} ${
+            item.patient?.middle_name || ""
+          } ${item.patient?.last_name}`
+            .toLowerCase()
+            .includes(query),
+        );
     },
 
     totalPages() {
@@ -321,6 +358,11 @@ export default {
     },
   },
   methods: {
+    setDateFilter(type) {
+      this.activeDateFilter = type;
+      this.changePage(1);
+    },
+
     formatTime12(time) {
       if (!time) return "-";
 

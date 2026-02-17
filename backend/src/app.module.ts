@@ -23,16 +23,27 @@ import { ForecastModule } from './forecast/forecast.module';
       isGlobal: true, // loads .env and makes process.env available
     }),
 
+    // TypeOrmModule.forRoot({
+    //    type: 'mysql',
+    //     host: process.env.DATABASE_HOST,
+    //     port: parseInt(process.env.DATABASE_PORT || '3306', 10),
+    //     username:'developer',
+    //     password: 'Toothsystem123*',
+    //     database: 'dental_formation',
+    //     entities: [__dirname + '/**/*.entity{.ts,.js}'],
+    //     synchronize: true,
+
+    // }),
+
     TypeOrmModule.forRoot({
-       type: 'mysql',
-        host: process.env.DATABASE_HOST,
-        port: parseInt(process.env.DATABASE_PORT || '3306', 10),
-        username:'developer',
-        password: 'Toothsystem123*',
-        database: 'dental_formation',
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true,
-     
+      type: 'mysql',
+      host: process.env.DATABASE_HOST,
+      port: parseInt(process.env.DATABASE_PORT || '3306', 10),
+      username: 'root',
+      password: 'admin12345..',
+      database: 'dental_formation',
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      synchronize: true,
     }),
 
     HttpModule,
@@ -51,6 +62,5 @@ import { ForecastModule } from './forecast/forecast.module';
     RevenueModule,
     ForecastModule,
   ],
-  
 })
 export class AppModule {}
