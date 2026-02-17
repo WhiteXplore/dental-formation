@@ -282,16 +282,16 @@ export default {
               },
             ],
           },
-          {
-            title: "Prescription Management",
-            items: [
-              {
-                name: "Medication",
-                icon: "general",
-                route: "/prescription-medication",
-              },
-            ],
-          },
+          // {
+          //   title: "Prescription Management",
+          //   items: [
+          //     {
+          //       name: "Medication",
+          //       icon: "general",
+          //       route: "/prescription-medication",
+          //     },
+          //   ],
+          // },
           {
             title: "Reports",
             items: [

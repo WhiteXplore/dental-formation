@@ -142,11 +142,6 @@
                 Issued on: {{ formatDate(selectedReport.issued_date) }}
               </p>
             </div>
-            <span
-              class="px-4 py-1 text-sm font-semibold rounded-full bg-red-500 text-white shadow-md"
-            >
-              OUT
-            </span>
           </div>
 
           <!-- Patient and Dentist Info -->
@@ -335,13 +330,13 @@ export default {
       const q = this.searchQuery.toLowerCase();
 
       return this.medications
-        .filter((m) => m.payment_status === "Paid" && Boolean(m.is_discharged))
+        .filter((m) => m.payment_status === "Paid")
         .filter((m) => {
           if (!q) return true;
 
           const patient = this.fullName(m.dentalChart.patient).toLowerCase();
           const dentist = this.fullName(
-            m.dentalChart.user_accounts
+            m.dentalChart.user_accounts,
           ).toLowerCase();
 
           return patient.includes(q) || dentist.includes(q);
@@ -366,7 +361,7 @@ export default {
       });
 
       return Object.values(map).sort(
-        (a, b) => new Date(b.procedure_date) - new Date(a.procedure_date)
+        (a, b) => new Date(b.procedure_date) - new Date(a.procedure_date),
       );
     },
 
@@ -380,7 +375,7 @@ export default {
       const start = (this.currentPage - 1) * this.itemsPerPage;
       return this.groupedByPatientAndDate.slice(
         start,
-        start + this.itemsPerPage
+        start + this.itemsPerPage,
       );
     },
 
@@ -393,7 +388,7 @@ export default {
     endIndex() {
       return Math.min(
         this.currentPage * this.itemsPerPage,
-        this.groupedByPatientAndDate.length
+        this.groupedByPatientAndDate.length,
       );
     },
   },

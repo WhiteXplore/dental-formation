@@ -369,6 +369,12 @@
       </form>
     </div>
   </div>
+  <viewFullyBookModal
+    v-if="showFullyBookedModal"
+    :date="form.scheduled_date"
+    :patients="fullyBookedPatients"
+    @close="showFullyBookedModal = false"
+  />
 </template>
 
 <script>
@@ -378,37 +384,41 @@ import axios from "axios";
 import { useFetchDataStore } from "@/store/fetch-data-store";
 import { mapState, mapActions } from "pinia";
 import dayjs from "dayjs";
+import viewFullyBookModal from "./view-fully-book-modal.vue";
 
 export default {
   name: "AddAppointment",
-  components: { icon },
+  components: { icon, viewFullyBookModal },
   props: {
     editData: { type: Object, default: null },
   },
+
   data() {
     return {
-   form: {
-      patient_id: null,        // number
-      user_id: null,           // dentist ID
-      scheduled_date: "",      // YYYY-MM-DD
-      appointment_time: "",    // HH:mm
-      appointment_status: "",  // Call / Walk-In / No-Show
-      call_type: "",           // Cash / HMO
-      contact_number: "",      // optional
-      price_procedure_id: null,// procedure ID
-      birthdate: "",           // for HMO
-      hmo_account_no: "",      // for HMO
-      valid_id: "",            // for HMO
-      medical_history: "",     // optional
-      notif_status: "",        // optional
-      notif_viewed_at: null,   // optional
-    },
+      form: {
+        patient_id: null, // number
+        user_id: null, // dentist ID
+        scheduled_date: "", // YYYY-MM-DD
+        appointment_time: "", // HH:mm
+        appointment_status: "", // Call / Walk-In / No-Show
+        call_type: "", // Cash / HMO
+        contact_number: "", // optional
+        price_procedure_id: null, // procedure ID
+        birthdate: "", // for HMO
+        hmo_account_no: "", // for HMO
+        valid_id: "", // for HMO
+        medical_history: "", // optional
+        notif_status: "", // optional
+        notif_viewed_at: null, // optional
+      },
       searchPatientQuery: "",
       searchDentistQuery: "",
       searchProcedureQuery: "",
       showPatientDropdown: false,
       showDentistDropdown: false,
       showProcedureDropdown: false,
+      showFullyBookedModal: false,
+      fullyBookedPatients: [],
     };
   },
   computed: {
@@ -585,12 +595,11 @@ export default {
       } ${dentist.middle_name || ""}`;
       this.showDentistDropdown = false;
     },
-   selectProcedure(proc) {
-  this.form.price_procedure_id = proc.price_procedure_id; // store ID
-  this.searchProcedureQuery = proc.procedure_name;
-  this.showProcedureDropdown = false;
-}
-,
+    selectProcedure(proc) {
+      this.form.price_procedure_id = proc.price_procedure_id; // store ID
+      this.searchProcedureQuery = proc.procedure_name;
+      this.showProcedureDropdown = false;
+    },
     hideDropdown(type) {
       setTimeout(() => {
         if (type === "patient") this.showPatientDropdown = false;
@@ -598,93 +607,113 @@ export default {
         if (type === "procedure") this.showProcedureDropdown = false;
       }, 150);
     },
-   async submitData() {
-  const formEl = this.$refs.patientForm;
-  if (!formEl.checkValidity()) {
-    formEl.reportValidity();
-    return;
-  }
-
-  try {
-    // Format date
-    const formattedDate = dayjs(this.form.scheduled_date).format("YYYY-MM-DD");
-
-    // Prepare payload matching backend DTO
-    const payload = {
-      patient_id: this.form.patient_id,
-      user_id: this.form.user_id,                   // dentist ID
-      price_procedure_id: this.form.price_procedure_id || null,
-      scheduled_date: formattedDate,
-      appointment_time: this.form.appointment_time,
-      appointment_status: this.form.appointment_status,
-      call_type: this.form.appointment_status === "Call" ? this.form.call_type : null,
-      contact_number: this.form.call_type === "Call" ? this.form.contact_number : null,
-      birthdate: this.form.call_type === "HMO" ? this.form.birthdate : null,
-      hmo_account_no: this.form.call_type === "HMO" ? this.form.hmo_account_no : null,
-      valid_id: this.form.call_type === "HMO" ? this.form.valid_id : null,
-      medical_history: this.form.medical_history || null,
-      notif_status: this.form.notif_status || null,
-      notif_viewed_at: this.form.notif_viewed_at || null,
-    };
-
-    if (!this.isEditMode) {
-      await axios.post(
-        process.env.VUE_APP_API_BASE_URL + "/appointment/add-appointment",
-        payload
-      );
-      toast.success("Appointment added successfully!");
-    } else {
-      await axios.patch(
-        process.env.VUE_APP_API_BASE_URL + `/appointment/${this.editData.appointment_id}`,
-        payload
-      );
-      toast.success("Appointment updated successfully!");
-    }
-
-    this.$emit("refresh");
-    this.$emit("close");
-  } catch (error) {
-    console.error(error);
-    toast.error("Failed to save appointment.");
-  }
-}
-,
-    setEditForm() {
-      // Set all form fields from editData
-      this.form = {
-        ...this.editData,
-        scheduled_date: this.editData.scheduled_date
-          ? dayjs(this.editData.scheduled_date).format("YYYY-MM-DD")
-          : "",
-      };
-
-      // Set Patient display
-      const patient = this.patients.find(
-        (p) => p.patient_id === this.form.patient_id,
-      );
-      if (patient) {
-        this.searchPatientQuery = `${patient.last_name}, ${
-          patient.first_name
-        } ${patient.middle_name || ""}`;
+    async submitData() {
+      const formEl = this.$refs.patientForm;
+      if (!formEl.checkValidity()) {
+        formEl.reportValidity();
+        return;
       }
 
-      // Set Dentist display
-      const dentist = this.dentists.find(
-        (d) => d.user_id === this.form.user_id,
-      );
-      if (dentist) {
-        this.searchDentistQuery = `Dr. ${dentist.last_name}, ${
-          dentist.first_name
-        } ${dentist.middle_name || ""}`;
-      }
+      try {
+        // Format date
+        const formattedDate = dayjs(this.form.scheduled_date).format(
+          "YYYY-MM-DD",
+        );
 
-      // Set Procedure display
-      const procedure = this.prices.find(
-        (p) => p.price_procedure_id === this.form.price_procedure_id,
-      );
-      if (procedure) {
-        this.searchProcedureQuery = procedure.procedure_name;
-        this.form.procedure = procedure.price_procedure_id;
+        // Check dentist availability
+        const dentist = this.dentists.find(
+          (d) => d.user_id === this.form.user_id,
+        );
+        if (!dentist) {
+          toast.warning("Please select a dentist.");
+          return;
+        }
+
+        // Determine morning and afternoon slots
+        const morningSlots = this.getSessionSlots(dentist, "morning");
+        const afternoonSlots = this.getSessionSlots(dentist, "afternoon");
+
+        // Determine session based on selected time
+        const selectedHour = parseInt(
+          this.form.appointment_time.split(":")[0],
+          10,
+        );
+        let session = selectedHour < 12 ? "morning" : "afternoon";
+
+        // If session is fully booked, show modal instead of submitting
+        if (
+          (session === "morning" && morningSlots <= 0) ||
+          (session === "afternoon" && afternoonSlots <= 0)
+        ) {
+          const fullyBookedAppointments = this.appointments
+            .filter(
+              (appt) =>
+                appt.user_id === dentist.user_id &&
+                dayjs(appt.scheduled_date).format("YYYY-MM-DD") ===
+                  formattedDate &&
+                ((session === "morning" &&
+                  parseInt(appt.appointment_time.split(":")[0]) < 12) ||
+                  (session === "afternoon" &&
+                    parseInt(appt.appointment_time.split(":")[0]) >= 12)),
+            )
+            .map((appt) => ({
+              appointment_id: appt.appointment_id,
+              patient_name: appt.patient
+                ? `${appt.patient.last_name}, ${appt.patient.first_name} ${
+                    appt.patient.middle_name || ""
+                  }`
+                : "Unknown",
+              appointment_time: appt.appointment_time,
+            }));
+
+          this.fullyBookedPatients = fullyBookedAppointments;
+          this.showFullyBookedModal = true;
+          return;
+        }
+
+        // Prepare payload matching backend DTO
+        const payload = {
+          patient_id: this.form.patient_id,
+          user_id: this.form.user_id, // dentist ID
+          price_procedure_id: this.form.price_procedure_id || null,
+          scheduled_date: formattedDate,
+          appointment_time: this.form.appointment_time,
+          appointment_status: this.form.appointment_status,
+          call_type:
+            this.form.appointment_status === "Call"
+              ? this.form.call_type
+              : null,
+          contact_number:
+            this.form.call_type === "Call" ? this.form.contact_number : null,
+          birthdate: this.form.call_type === "HMO" ? this.form.birthdate : null,
+          hmo_account_no:
+            this.form.call_type === "HMO" ? this.form.hmo_account_no : null,
+          valid_id: this.form.call_type === "HMO" ? this.form.valid_id : null,
+          medical_history: this.form.medical_history || null,
+          notif_status: this.form.notif_status || null,
+          notif_viewed_at: this.form.notif_viewed_at || null,
+        };
+
+        if (!this.isEditMode) {
+          await axios.post(
+            process.env.VUE_APP_API_BASE_URL + "/appointment/add-appointment",
+            payload,
+          );
+          toast.success("Appointment added successfully!");
+        } else {
+          await axios.patch(
+            process.env.VUE_APP_API_BASE_URL +
+              `/appointment/${this.editData.appointment_id}`,
+            payload,
+          );
+          toast.success("Appointment updated successfully!");
+        }
+
+        this.$emit("refresh");
+        this.$emit("close");
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to save appointment.");
       }
     },
   },
