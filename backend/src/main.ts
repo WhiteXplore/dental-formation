@@ -1,86 +1,39 @@
-import { NestApplication, NestFactory } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
-<<<<<<< HEAD
+import * as cookieParser from 'cookie-parser';
+import * as bodyParser from 'body-parser';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { join } from 'path';
 import * as fs from 'fs';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as path from 'path';
-import { json, urlencoded } from 'express';
-import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
-  var whitelist = [
+  const whitelist = [
     'https://toothformation.online:8080',
-    'https://toothformation.online'
-    
+    'https://toothformation.online',
   ];
 
   const httpsOptions = {
     key: fs.readFileSync(join(__dirname, '../key.pem')),
     cert: fs.readFileSync(join(__dirname, '../certificate.pem')),
   };
-=======
-import { NestExpressApplication } from '@nestjs/platform-express';
 
-import * as cookieParser from 'cookie-parser';
-import * as bodyParser from 'body-parser';
-import { join } from 'path';
-
-async function bootstrap() {
-  try {
-    const app = await NestFactory.create<NestExpressApplication>(AppModule);
-
-    // ✅ Increase payload size limit
-    app.use(bodyParser.json({ limit: '10mb' }));
-    app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
-
-    // ✅ Global validation
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
-    );
->>>>>>> bbd463a28b69b249ffd0931c24f832f182ef6749
-
-   const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    httpsOptions,
     cors: {
-      origin: function (origin, callback) {
-        let curdate = new Date();
-        if (!origin || whitelist.indexOf(origin) !== -1) {
-          // if (whitelist.indexOf(origin) !== -1) {
-
-<<<<<<< HEAD
-=======
-    // ✅ Serve static files from uploads folder
-    app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-      prefix: '/uploads/',
-    });
-
-    // ✅ CORS configuration
-    const whiteList = [
-      'http://localhost:8080',
-      'http://localhost:5173',
-      'http://192.168.1.16:8080',
-      'http://192.168.1.16:5173',
-    ];
-
-    app.enableCors({
       origin: (origin, callback) => {
-        const date = new Date().toLocaleString();
-        if (!origin || whiteList.includes(origin)) {
->>>>>>> bbd463a28b69b249ffd0931c24f832f182ef6749
+        const curdate = new Date();
+        if (!origin || whitelist.indexOf(origin) !== -1) {
           console.log(
-            'allowed cors for: ',
+            'Allowed CORS for:',
             origin + ' Date: ' + curdate.toString().substring(0, 24),
           );
           callback(null, true);
         } else {
           console.log(
-            'blocked cors for: ',
+            'Blocked CORS for:',
             origin + ' Date: ' + curdate.toString().substring(0, 24),
           );
           callback(new Error('Not allowed by CORS'));
@@ -91,20 +44,35 @@ async function bootstrap() {
       methods: 'GET,PUT,POST,PATCH,DELETE,UPDATE,OPTIONS',
       credentials: true,
     },
+  });
 
-<<<<<<< HEAD
-    httpsOptions,
-   });
-  const logger = new Logger(NestApplication.name);
+  const logger = new Logger('Bootstrap');
 
+  // Body parser to handle large payloads
+  app.use(bodyParser.json({ limit: '10mb' }));
+  app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
+
+  // Global validation
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  // Cookie parser
   app.use(cookieParser());
-  app.useGlobalPipes(new ValidationPipe());
 
-  app.use(json({ limit: '100mb' }));
-  app.use(urlencoded({ limit: '100mb', extended: true }));
+  // Serve static files
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
+
+  // Swagger setup
   const config = new DocumentBuilder()
     .setTitle('QCE Questions')
-    .setDescription('QCE quiestions API')
+    .setDescription('QCE questions API')
     .setVersion('1.0')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
     .build();
@@ -114,74 +82,10 @@ async function bootstrap() {
     swaggerOptions: { defaultModelsExpandDepth: -1 },
   });
 
-  const configService: ConfigService = app.get<ConfigService>(ConfigService);
+  const configService: ConfigService = app.get(ConfigService);
 
   await app.listen(8080);
   logger.log(`Application started and listening on ${8080}`);
-=======
-    // ✅ Listen on LAN and localhost
-    const port = process.env.PORT || 8000;
-    await app.listen(port, '0.0.0.0');
-
-    console.log(`🚀 Application running locally at: http://localhost:${port}`);
-    console.log(`🌐 Accessible on LAN at: http://192.168.1.16:${port}`);
-  } catch (error) {
-    console.error('❌ Error starting application:', error);
-    process.exit(1);
-  }
->>>>>>> bbd463a28b69b249ffd0931c24f832f182ef6749
 }
 
 bootstrap();
-  // try {
-  //   const app = await NestFactory.create(AppModule, {
-  //     httpsOptions: {
-  //       key: fs.readFileSync(join(__dirname, '../key.pem')),
-  //       cert: fs.readFileSync(join(__dirname, '../certificate.pem')),
-  //     },
-  //   } );
-
-  //   // ✅ Global validation
-  //   app.useGlobalPipes(new ValidationPipe());
-
-  //   // ✅ Cookie parser
-  //   app.use(cookieParser());
-
-  //   // ✅ CORS configuration
-  //   const whiteList = [
-  //     'https://toothformation.online:8080',
-  //     'http://localhost:5173',
-  //     'http://192.168.1.16:8080',
-  //     'http://192.168.1.16:5173',
-  //   ];
-
-  //   app.enableCors({
-  //     origin: (origin, callback) => {
-  //       const date = new Date().toLocaleString();
-  //       if (!origin || whiteList.includes(origin)) {
-  //         console.log(
-  //           `✅ Allowed CORS: ${origin || 'Postman/Server'} @ ${date}`,
-  //         );
-  //         callback(null, true);
-  //       } else {
-  //         console.warn(`🚫 Blocked CORS: ${origin} @ ${date}`);
-  //         callback(new Error('Not allowed by CORS'));
-  //       }
-  //     },
-      
-  //     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-  //     credentials: true,
-      
-  //   });
-
-  //   // ✅ Listen on all interfaces (LAN + public)
-  //   const port = process.env.PORT || 8000;
-  //   await app.listen(port, '0.0.0.0');
-
-  //   console.log(`🚀 HTTPS running at: https://toothformation.online:${port}`);
-  //   console.log(`🌐 LAN access: https://192.168.1.16:${port}`);
-  // } catch (error) {
-  //   console.error('❌ Error starting application:', error);
-  //   process.exit(1);
-  // }
-

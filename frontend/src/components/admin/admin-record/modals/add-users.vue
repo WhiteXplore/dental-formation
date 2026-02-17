@@ -308,10 +308,25 @@ export default {
       }
 
       try {
-        let payload = {
-          ...this.form,
-          schedules: this.form.role === "Dentist" ? this.schedules : [],
-        };
+     let payload = {
+  first_name: this.form.first_name,
+  middle_name: this.form.middle_name,
+  last_name: this.form.last_name,
+  license_no: this.form.license_no,
+  prc_type: this.form.prc_type,
+  email: this.form.email,
+  role: this.form.role,
+  status: this.form.status,
+  password: this.form.password,
+  schedules:
+    this.form.role === "Dentist"
+      ? this.schedules.map(s => ({
+          day: s.day,
+          start_time: s.start_time,
+          end_time: s.end_time
+        }))
+      : []
+};
 
         if (this.isEditMode && !payload.password) {
           delete payload.password;
@@ -345,12 +360,27 @@ export default {
   },
   mounted() {
     if (this.isEditMode) {
-      this.form = {
-        ...this.user,
-        password: "",
-      };
+  this.form = {
+  first_name: this.user.first_name,
+  middle_name: this.user.middle_name,
+  last_name: this.user.last_name,
+  license_no: this.user.license_no,
+  prc_type: this.user.prc_type,
+  email: this.user.email,
+  role: this.user.role,
+  status: this.user.status,
+  password: "",
+};
 
-      this.schedules = this.user.schedules ? [...this.user.schedules] : [];
+
+     this.schedules = this.user.schedules
+  ? this.user.schedules.map(s => ({
+      day: s.day,
+      start_time: s.start_time,
+      end_time: s.end_time
+    }))
+  : [];
+
     }
   },
 };

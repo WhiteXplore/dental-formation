@@ -73,7 +73,7 @@ export class DentalChart {
   procedure_date: Date;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  xray_image_name: string; // ✅ store only the file name
+  xray_image: string; // ✅ store only the file name
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   procedure_notes: string;

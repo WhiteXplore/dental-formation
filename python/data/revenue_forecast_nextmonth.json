@@ -2,11 +2,7 @@
   "model": "Naive Baseline Forecast",
   "methodology": "Last observed monthly revenue is used as the next month forecast",
   "forecast_months": 1,
-<<<<<<< HEAD
-  "generated_at": "2026-02-11T04:08:26.102614",
-=======
-  "generated_at": "2026-02-08T21:38:34.683388",
->>>>>>> bbd463a28b69b249ffd0931c24f832f182ef6749
+  "generated_at": "2026-02-16T05:19:59.667644",
   "forecast_confidence": {
     "level": "MEDIUM",
     "score": 0.5,
