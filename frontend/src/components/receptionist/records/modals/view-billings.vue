@@ -240,7 +240,7 @@
               :disabled="form.payment_status === 'Paid'"
               class="px-4 py-2 bg-green-600 text-white rounded-md disabled:bg-gray-400"
             >
-              Save Billing
+              Paid
             </button>
           </div>
         </div>

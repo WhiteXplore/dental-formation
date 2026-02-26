@@ -206,12 +206,14 @@
                   v-model="searchPatientQuery"
                   type="text"
                   placeholder="Search patient..."
+                   :disabled="isEditMode"  
+                   :readonly="isEditMode"
                   class="px-3 py-3 border w-full border-gray-600 rounded-md text-md text-gray-800"
                   @focus="showPatientDropdown = true"
                   @blur="hideDropdown('patient')"
                 />
                 <div
-                  v-if="showPatientDropdown"
+                  v-if="showPatientDropdown && !isEditMode"
                   class="absolute left-0 top-full w-full bg-white border border-gray-300 rounded-md max-h-40 overflow-y-auto z-10"
                 >
                   <div v-if="filteredPatients.length > 0">
@@ -321,12 +323,14 @@
               v-model="searchPatientQuery"
               type="text"
               placeholder="Search patient..."
+                :disabled="isEditMode"
+  :readonly="isEditMode"
               class="px-3 py-3 border w-full border-gray-600 rounded-md text-md text-gray-800"
               @focus="showPatientDropdown = true"
               @blur="hideDropdown('patient')"
             />
             <div
-              v-if="showPatientDropdown"
+ v-if="showPatientDropdown && !isEditMode"
               class="absolute left-0 top-full w-full bg-white border border-gray-300 rounded-md max-h-40 overflow-y-auto z-10"
             >
               <div v-if="filteredPatients.length > 0">
@@ -373,6 +377,8 @@
     v-if="showFullyBookedModal"
     :date="form.scheduled_date"
     :patients="fullyBookedPatients"
+    :session="modalSession"
+    :noSchedule="modalNoSchedule"
     @close="showFullyBookedModal = false"
   />
 </template>
@@ -389,9 +395,12 @@ import viewFullyBookModal from "./view-fully-book-modal.vue";
 export default {
   name: "AddAppointment",
   components: { icon, viewFullyBookModal },
-  props: {
-    editData: { type: Object, default: null },
+ props: {
+  editData: {
+    type: Object,
+    default: null,
   },
+},
 
   data() {
     return {
@@ -419,6 +428,8 @@ export default {
       showProcedureDropdown: false,
       showFullyBookedModal: false,
       fullyBookedPatients: [],
+      modalSession: null, // morning / afternoon
+      modalNoSchedule: false, // true if dentist has no schedule at all
     };
   },
   computed: {
@@ -440,31 +451,64 @@ export default {
           .includes(query),
       );
     },
-    filteredDentists() {
+     filteredDentists() {
       const query = this.searchDentistQuery.toLowerCase();
-
-      const selectedDay = this.form.scheduled_date
-        ? dayjs(this.form.scheduled_date).format("dddd")
-        : null;
-
       return this.dentists
         .filter((d) => d.role === "Dentist" && d.status === "Active")
         .filter((d) =>
           `${d.last_name}, ${d.first_name} ${d.middle_name || ""}`
             .toLowerCase()
-            .includes(query),
+            .includes(query)
         )
         .map((d) => {
-          const hasSchedule =
-            selectedDay &&
-            Array.isArray(d.schedules) &&
-            d.schedules.some((s) => s.day === selectedDay);
+          if (!this.form.scheduled_date || !this.form.appointment_time)
+            return { ...d, isAvailable: true };
 
-          return {
-            ...d,
-            isAvailable: !!hasSchedule,
-          };
+          const day = dayjs(this.form.scheduled_date).format("dddd");
+          const selectedTotal =
+            parseInt(this.form.appointment_time.split(":")[0]) * 60 +
+            parseInt(this.form.appointment_time.split(":")[1] || 0);
+          const schedulesForDay = (d.schedules || []).filter(
+            (s) => s.day === day
+          );
+          let isAvailable = false;
+          schedulesForDay.forEach((s) => {
+            const startTotal =
+              parseInt(s.start_time.split(":")[0]) * 60 +
+              parseInt(s.start_time.split(":")[1] || 0);
+            const endTotal =
+              parseInt(s.end_time.split(":")[0]) * 60 +
+              parseInt(s.end_time.split(":")[1] || 0);
+            if (selectedTotal >= startTotal && selectedTotal < endTotal)
+              isAvailable = true;
+          });
+          return { ...d, isAvailable };
         });
+    },
+    availableTimes() {
+      if (!this.form.user_id || !this.form.scheduled_date) return [];
+      const dentist = this.dentists.find((d) => d.user_id === this.form.user_id);
+      if (!dentist || !dentist.schedules) return [];
+
+      const day = dayjs(this.form.scheduled_date).format("dddd");
+      const schedules = dentist.schedules.filter((s) => s.day === day);
+
+      const times = [];
+      schedules.forEach((s) => {
+        let start =
+          parseInt(s.start_time.split(":")[0]) * 60 +
+          parseInt(s.start_time.split(":")[1] || 0);
+        const end =
+          parseInt(s.end_time.split(":")[0]) * 60 +
+          parseInt(s.end_time.split(":")[1] || 0);
+        while (start < end) {
+          const h = Math.floor(start / 60);
+          const m = start % 60;
+          times.push(`${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`);
+          start += 30; // 30-minute slots
+        }
+      });
+      return times;
     },
     filteredProcedures() {
       const query = this.searchProcedureQuery.toLowerCase();
@@ -473,14 +517,50 @@ export default {
         p.procedure_name.toLowerCase().includes(query),
       );
     },
-  },
+    },
+  
   methods: {
     ...mapActions(useFetchDataStore, [
       "fetchPatients",
       "fetchDentist",
       "fetchAppointments",
       "fetchPrices",
-    ]),
+    ]),  setEditForm() {
+    if (!this.editData) return;
+
+    this.form.patient_id = this.editData.patient_id || null;
+    this.form.user_id = this.editData.user_id || null;
+ this.form.scheduled_date = this.editData.scheduled_date
+  ? dayjs(this.editData.scheduled_date).format("YYYY-MM-DD")
+  : "";
+    this.form.appointment_time = this.editData.appointment_time || "";
+    this.form.appointment_status = this.editData.appointment_status || "";
+    this.form.call_type = this.editData.call_type || "";
+    this.form.contact_number = this.editData.contact_number || "";
+    this.form.price_procedure_id = this.editData.price_procedure_id || null;
+    this.form.birthdate = this.editData.birthdate || "";
+    this.form.hmo_account_no = this.editData.hmo_account_no || "";
+    this.form.valid_id = this.editData.valid_id || "";
+    this.form.medical_history = this.editData.medical_history || "";
+    this.form.notif_status = this.editData.notif_status || "";
+    this.form.notif_viewed_at = this.editData.notif_viewed_at || null;
+
+    // Set search queries for dropdown inputs
+    const patient = this.patients.find(p => p.patient_id === this.form.patient_id);
+    if (patient) {
+      this.searchPatientQuery = `${patient.last_name}, ${patient.first_name} ${patient.middle_name || ""}`;
+    }
+
+    const dentist = this.dentists.find(d => d.user_id === this.form.user_id);
+    if (dentist) {
+      this.searchDentistQuery = `Dr. ${dentist.last_name}, ${dentist.first_name}`;
+    }
+
+    const procedure = this.prices.find(p => p.price_procedure_id === this.form.price_procedure_id);
+    if (procedure) {
+      this.searchProcedureQuery = procedure.procedure_name;
+    }
+  },
     formatTime(time) {
       if (!time) return "";
 
@@ -578,21 +658,20 @@ export default {
       return maxSlots - count;
     },
     selectPatient(patient) {
+      if (this.isEditMode) return;
       this.form.patient_id = patient.patient_id;
       this.searchPatientQuery = `${patient.last_name}, ${patient.first_name} ${
         patient.middle_name || ""
       }`;
       this.showPatientDropdown = false;
     },
-    selectDentist(dentist) {
-      if (!dentist.isAvailable) {
-        toast.warning("This dentist has no schedule for the selected date.");
+    selectDentist(d) {
+      if (!d.isAvailable) {
+        toast.warning("Dentist not available at selected time!");
         return;
       }
-      this.form.user_id = dentist.user_id;
-      this.searchDentistQuery = `Dr. ${dentist.last_name}, ${
-        dentist.first_name
-      } ${dentist.middle_name || ""}`;
+      this.form.user_id = d.user_id;
+      this.searchDentistQuery = `Dr. ${d.last_name}, ${d.first_name}`;
       this.showDentistDropdown = false;
     },
     selectProcedure(proc) {
@@ -615,32 +694,43 @@ export default {
       }
 
       try {
-        // Format date
         const formattedDate = dayjs(this.form.scheduled_date).format(
           "YYYY-MM-DD",
         );
-
-        // Check dentist availability
         const dentist = this.dentists.find(
           (d) => d.user_id === this.form.user_id,
         );
+
         if (!dentist) {
           toast.warning("Please select a dentist.");
           return;
         }
 
-        // Determine morning and afternoon slots
+        const selectedDay = dayjs(this.form.scheduled_date).format("dddd");
+        const schedulesForDay = (dentist.schedules || []).filter(
+          (s) => s.day === selectedDay,
+        );
+
+        // Dentist has no schedule at all
+        if (!schedulesForDay.length) {
+          this.fullyBookedPatients = [];
+          this.modalSession = null;
+          this.modalNoSchedule = true;
+          this.showFullyBookedModal = true;
+          return;
+        }
+
+        // Determine morning / afternoon slots
         const morningSlots = this.getSessionSlots(dentist, "morning");
         const afternoonSlots = this.getSessionSlots(dentist, "afternoon");
 
-        // Determine session based on selected time
         const selectedHour = parseInt(
           this.form.appointment_time.split(":")[0],
           10,
         );
-        let session = selectedHour < 12 ? "morning" : "afternoon";
+        const session = selectedHour < 12 ? "morning" : "afternoon";
 
-        // If session is fully booked, show modal instead of submitting
+        // Session fully booked
         if (
           (session === "morning" && morningSlots <= 0) ||
           (session === "afternoon" && afternoonSlots <= 0)
@@ -667,14 +757,16 @@ export default {
             }));
 
           this.fullyBookedPatients = fullyBookedAppointments;
+          this.modalSession = session;
+          this.modalNoSchedule = false;
           this.showFullyBookedModal = true;
           return;
         }
 
-        // Prepare payload matching backend DTO
+        // Proceed to submit (unchanged)
         const payload = {
           patient_id: this.form.patient_id,
-          user_id: this.form.user_id, // dentist ID
+          user_id: this.form.user_id,
           price_procedure_id: this.form.price_procedure_id || null,
           scheduled_date: formattedDate,
           appointment_time: this.form.appointment_time,
@@ -696,14 +788,13 @@ export default {
 
         if (!this.isEditMode) {
           await axios.post(
-            process.env.VUE_APP_API_BASE_URL + "/appointment/add-appointment",
+            `${process.env.VUE_APP_API_BASE_URL}/appointment/add-appointment`,
             payload,
           );
           toast.success("Appointment added successfully!");
         } else {
           await axios.patch(
-            process.env.VUE_APP_API_BASE_URL +
-              `/appointment/${this.editData.appointment_id}`,
+            `${process.env.VUE_APP_API_BASE_URL}/appointment/${this.editData.appointment_id}`,
             payload,
           );
           toast.success("Appointment updated successfully!");

@@ -1,7 +1,7 @@
 <template>
-  <div class="p-4 bg-gray-50 h-[92vh] overflow-auto">
+  <div class="p-4 bg-gray-50 min-h-screen flex flex-col gap-6">
     <!-- Header -->
-    <div class="mb-4 text-left">
+    <div class="text-left">
       <h1 class="text-2xl font-semibold text-gray-800">
         Welcome, {{ user.first_name }} 👋
       </h1>
@@ -9,70 +9,67 @@
     </div>
 
     <!-- Summary Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div
+      class="flex flex-wrap grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 justify-center sm:justify-start"
+    >
       <div
-        class="bg-white rounded-2xl shadow p-5 flex flex-col justify-between min-h-[150px]"
+        class="flex-1 w-full bg-white rounded-2xl shadow p-5 flex flex-col justify-between"
       >
         <CardMonthCensus />
       </div>
       <div
-        class="bg-white rounded-2xl shadow p-5 flex flex-col justify-between min-h-[150px]"
+        class="flex-1 w-full bg-white rounded-2xl shadow p-5 flex flex-col justify-between"
       >
         <CardPatientVisit />
       </div>
       <div
-        class="bg-white rounded-2xl shadow p-5 flex flex-col justify-between min-h-[150px]"
+        class="flex-1 w-full bg-white rounded-2xl shadow p-5 flex flex-col justify-between"
       >
         <CardNoShowPatient />
       </div>
       <div
-        class="bg-white rounded-2xl shadow p-5 flex flex-col justify-between min-h-[150px]"
+        class="flex-1 w-full bg-white rounded-2xl shadow p-5 flex flex-col justify-between"
       >
         <CardTotalRevenue />
       </div>
     </div>
 
     <!-- Charts -->
-    <div class="flex flex-wrap gap-6">
-      <!-- Linear Regression Chart -->
-      <div
-        class="bg-white rounded-2xl p-5 border"
-        style="flex: 1 1 1200px; min-height: 680px"
-      >
-        <LinearRegression />
+    <div class="flex flex-col lg:flex-row gap-4 flex-1  max-h-[600px]">
+      <!-- Daily Revenue Chart -->
+      <div class="flex-1 min-h-[300px] bg-white rounded-2xl p-5 border flex flex-col">
+        <h1 class="text-lg font-semibold mb-4 text-gray-700">Daily Revenue Forecast</h1>
+        <DailyRevenueChart chartMode="historical-hybrid" class="flex-1" />
       </div>
 
-      <!-- Procedure Type Chart (Optional) -->
-      <!--
-  <div
-    class="bg-white rounded-2xl p-5 border"
-    style="flex: 1 1 700px; min-height: 680px"
-  >
-    <GraphProcedureType />
-  </div>
-  -->
+      <!-- Monthly Revenue Chart -->
+      <div class="flex-1 min-h-[300px] bg-white rounded-2xl p-5 border flex flex-col">
+        <h1 class="text-lg font-semibold mb-4 text-gray-700">Monthly Revenue Forecast</h1>
+        <MonthlyRevenueChart class="flex-1" />
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import axios from "axios";
-import LinearRegression from "./contents/linear-regression.vue";
+
+import DailyRevenueChart from "./contents/daily-revenue-chart.vue";
+import MonthlyRevenueChart from "./contents/monthly-revenue-chart.vue";
 import CardPatientVisit from "@/components/admin/admin-record/graphs/card-walk-in-patient.vue";
 import CardNoShowPatient from "@/components/admin/admin-record/graphs/card-no-show-patient.vue";
 import CardMonthCensus from "@/components/admin/admin-record/graphs/card-appointments.vue";
 import CardTotalRevenue from "@/components/admin/admin-record/graphs/card-total-revenue.vue";
-// import GraphProcedureType from "@/components/admin/admin-record/graphs/graph-procedure-type.vue";
 
 export default {
   name: "AdminDashboardPage",
   components: {
-    LinearRegression,
     CardNoShowPatient,
     CardPatientVisit,
     CardMonthCensus,
     CardTotalRevenue,
-    // GraphProcedureType,
+    DailyRevenueChart,
+    MonthlyRevenueChart,
   },
   data() {
     return {
@@ -87,9 +84,7 @@ export default {
       try {
         const response = await axios.get(
           process.env.VUE_APP_API_BASE_URL + "/auth/me",
-          {
-            withCredentials: true,
-          },
+          { withCredentials: true }
         );
         if (response.data) this.user = response.data;
       } catch (error) {
@@ -101,5 +96,5 @@ export default {
 </script>
 
 <style scoped>
-/* No custom styles needed here for now */
+/* Optional: make charts scale nicely */
 </style>
