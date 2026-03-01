@@ -2,231 +2,219 @@
   <div
     class="fixed inset-0 bg-gray-800 bg-opacity-40 flex justify-center items-center z-50"
   >
-    <div class="rounded-3xl shadow-lg justify-center bg-white p-2">
-      <!-- ===== Step Indicator ===== -->
-      <!-- <div class="flex items-center justify-center gap-4 p-2">
-        <div :class="stepClass(1)">1. Dental Chart</div>
-
-        <div :class="stepClass(2)">2. Prescription</div>
-      </div> -->
-
-      <div class="relative mb-12 px-0.5" v-if="currentStep === 1">
-        <form
-          @submit.prevent="submitData"
-          ref="dentalChartForm"
-          class="w-auto bg-white text-[13px] rounded-[15px] shadow-l border"
+    <div class="rounded-[15px] shadow-lg justify-center animate-fadeInUp">
+      <form
+        @submit.prevent="submitData"
+        ref="dentalChartForm"
+        class="w-auto bg-white text-[13px] rounded-[15px] shadow-l p-0.5"
+      >
+        <!-- Header -->
+        <div
+          class="w-full p-5 py-3 bg-[#34699A] text-white rounded-t-[15px] flex justify-between items-center border-b shadow"
         >
-          <!-- Header -->
-          <div
-            class="w-full p-5 py-3 bg-[#34699A] text-white rounded-t-[15px] flex justify-between items-center border-b shadow"
-          >
-            <div class="flex gap-1 items-center">
-              <icon :name="'add-students'" />
-              <h1 class="font-bold tracking-wide text-lg">
-                {{ editMode ? "Edit Dental Chart" : "Add Dental Chart" }}
-              </h1>
+          <div class="flex gap-1 items-center">
+            <icon :name="'add-students'" />
+            <h1 class="font-bold tracking-wide text-lg">
+              {{ editMode ? "Edit Dental Chart" : "Add Dental Chart" }}
+            </h1>
+          </div>
+          <icon
+            :name="'circle-close3'"
+            @click="$emit('close')"
+            class="cursor-pointer"
+          />
+        </div>
+
+        <!-- Body -->
+        <div class="p-5 flex flex-col lg:flex-row gap-6">
+          <!-- LEFT -->
+          <div class="flex-1 space-y-4 w-[30vw]">
+            <!-- Patient Search -->
+            <div class="w-full space-y-1.5 text-left relative">
+              <label for="patient_id" class="font-bold">Patient:</label>
+              <input
+                v-model="searchPatientQuery"
+                type="text"
+                placeholder="Search patient..."
+                class="px-3 py-3 border w-full border-gray-600 rounded-md text-md text-gray-800"
+                @focus="showPatientDropdown = true"
+                @blur="hideDropdown('patient')"
+              />
+              <div
+                v-if="showPatientDropdown"
+                class="absolute left-0 top-full w-full bg-white border border-gray-300 rounded-md max-h-40 overflow-y-auto z-10"
+              >
+                <div v-if="filteredPatients.length > 0">
+                  <div
+                    v-for="appointment in filteredPatients"
+                    :key="appointment.appointment_id"
+                    class="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                    @mousedown="selectPatient(appointment)"
+                  >
+                    {{ appointment.patient?.last_name }},
+                    {{ appointment.patient?.first_name }}
+                    {{ appointment.patient?.middle_name }} -
+                    {{ formatDate(appointment.scheduled_date) }}
+                  </div>
+                </div>
+                <div v-else class="px-3 py-2 text-gray-500 italic">
+                  No results found
+                </div>
+              </div>
             </div>
-            <icon
-              :name="'circle-close3'"
-              @click="$emit('close')"
-              class="cursor-pointer"
-            />
+            <!-- Procedure Selection -->
+            <div class="w-full space-y-1.5 text-left">
+              <label class="font-bold">Procedure:</label>
+
+              <select
+                v-model="form.price_procedure_id"
+                class="w-full px-3 py-3 border border-gray-600 rounded-md text-md text-gray-800 bg-white"
+              >
+                <option disabled value="">Select Procedure</option>
+                <option
+                  v-for="p in prices.filter((proc) => proc.is_active)"
+                  :key="p.price_procedure_id"
+                  :value="p.price_procedure_id"
+                >
+                  {{ p.procedure_name }}
+                </option>
+              </select>
+            </div>
+            <!-- Braces Position Selection -->
+            <div v-if="isBracesProcedure" class="w-full space-y-1.5 text-left">
+              <label class="font-bold">Braces Position:</label>
+              <select
+                v-model="form.bracesPosition"
+                class="w-full px-3 py-3 border border-gray-600 rounded-md text-md text-gray-800 bg-white"
+                @change="handleBracesSelection"
+              >
+                <option disabled value="">Select Position</option>
+                <option value="upper">Upper Teeth</option>
+                <option value="lower">Lower Teeth</option>
+                <option value="all">All Teeth</option>
+                <!-- NEW -->
+              </select>
+            </div>
+
+            <!-- Tooth Chart -->
+            <div class="space-y-1 mt-4">
+              <div class="flex justify-between items-center">
+                <label class="font-bold">Tooth Chart:</label>
+                <button
+                  type="button"
+                  class="ml-4 px-2 py-1 bg-red-500 text-white rounded-full hover:bg-red-600 text-xs"
+                  @click="clearToothSelection"
+                >
+                  Clear Teeth
+                </button>
+              </div>
+
+              <div
+                v-for="(row, index) in toothRows"
+                :key="index"
+                class="flex justify-center gap-[2px]"
+              >
+                <template v-for="tooth in row" :key="tooth">
+                  <div class="flex flex-col items-center gap-[1px]">
+                    <div
+                      class="w-8 h-8 border border-black flex items-center justify-center cursor-pointer"
+                      :class="[
+                        selectedTeeth.includes(tooth)
+                          ? statusColors[toothStatusMap[tooth]] || 'bg-blue-500'
+                          : 'bg-white',
+                      ]"
+                      @click="toggleTooth(tooth)"
+                    >
+                      <div
+                        class="w-4 h-4 border border-black rounded-full"
+                      ></div>
+                    </div>
+                    <div
+                      class="w-8 h-6 border border-black flex items-center justify-center text-[11px] font-medium cursor-pointer"
+                      :class="[
+                        selectedTeeth.includes(tooth)
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-white',
+                      ]"
+                      @click="toggleTooth(tooth)"
+                    >
+                      {{ tooth }}
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+            <p class="text-sm text-gray-700">
+              Total Selected Teeth:
+              <strong>{{ selectedTeeth.length }}</strong>
+            </p>
           </div>
 
-          <!-- Body -->
-          <div class="p-5 flex flex-col lg:flex-row gap-6">
-            <!-- LEFT -->
-            <div class="flex-1 space-y-4 w-[30vw]">
-              <!-- Patient Search -->
-              <div class="w-full space-y-1.5 text-left relative">
-                <label for="patient_id" class="font-bold">Patient:</label>
-                <input
-                  v-model="searchPatientQuery"
-                  type="text"
-                  placeholder="Search patient..."
-                  class="px-3 py-3 border w-full border-gray-600 rounded-md text-md text-gray-800"
-                  @focus="showPatientDropdown = true"
-                  @blur="hideDropdown('patient')"
-                />
+          <!-- RIGHT: X-RAY -->
+          <div class="w-[30vw] space-y-3 border p-2 rounded-md">
+            <!-- Status Table -->
+            <div class="space-y-1">
+              <label class="font-bold">Tooth Status Table:</label>
+
+              <!-- Legend (always visible, not part of scroll) -->
+              <div class="flex gap-4 text-[12px] flex-wrap">
                 <div
-                  v-if="showPatientDropdown"
-                  class="absolute left-0 top-full w-full bg-white border border-gray-300 rounded-md max-h-40 overflow-y-auto z-10"
+                  v-for="(color, status) in statusColors"
+                  :key="status"
+                  class="flex items-center gap-1"
                 >
-                  <div v-if="filteredPatients.length > 0">
-                    <div
-                      v-for="appointment in filteredPatients"
-                      :key="appointment.appointment_id"
-                      class="px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                      @mousedown="selectPatient(appointment)"
-                    >
-                      {{ appointment.patient?.last_name }},
-                      {{ appointment.patient?.first_name }}
-                      {{ appointment.patient?.middle_name }} -
-                      {{ formatDate(appointment.scheduled_date) }}
-                    </div>
-                  </div>
-                  <div v-else class="px-3 py-2 text-gray-500 italic">
-                    No results found
-                  </div>
+                  <span :class="['w-4 h-4 rounded-sm', color]"></span>
+                  {{ procedureNameMap[status] }}
                 </div>
               </div>
-              <!-- Procedure Selection -->
-              <div class="w-full space-y-1.5 text-left">
-                <label class="font-bold">Procedure:</label>
 
-                <select
-                  v-model="form.price_procedure_id"
-                  class="w-full px-3 py-3 border border-gray-600 rounded-md text-md text-gray-800 bg-white"
-                >
-                  <option disabled value="">Select Procedure</option>
-                  <option
-                    v-for="p in prices.filter((proc) => proc.is_active)"
-                    :key="p.price_procedure_id"
-                    :value="p.price_procedure_id"
-                  >
-                    {{ p.procedure_name }}
-                  </option>
-                </select>
-              </div>
-              <!-- Braces Position Selection -->
+              <!-- Scrollable table ONLY -->
               <div
-                v-if="isBracesProcedure"
-                class="w-full space-y-1.5 text-left"
+                class="h-[20vh] overflow-y-auto mt-2 border rounded-md shadow-sm"
               >
-                <label class="font-bold">Braces Position:</label>
-                <select
-                  v-model="form.bracesPosition"
-                  class="w-full px-3 py-3 border border-gray-600 rounded-md text-md text-gray-800 bg-white"
-                  @change="handleBracesSelection"
-                >
-                  <option disabled value="">Select Position</option>
-                  <option value="upper">Upper Teeth</option>
-                  <option value="lower">Lower Teeth</option>
-                  <option value="all">All Teeth</option>
-                  <!-- NEW -->
-                </select>
-              </div>
-
-              <!-- Tooth Chart -->
-              <div class="space-y-1 mt-4">
-                <div class="flex justify-between items-center">
-                  <label class="font-bold">Tooth Chart:</label>
-                  <button
-                    type="button"
-                    class="ml-4 px-2 py-1 bg-red-500 text-white rounded-full hover:bg-red-600 text-xs"
-                    @click="clearToothSelection"
+                <table class="w-full text-[13px] text-center">
+                  <thead
+                    class="bg-gray-100 text-gray-700 uppercase text-[10px] tracking-wide sticky top-0 z-10"
                   >
-                    Clear Teeth
-                  </button>
-                </div>
-
-                <div
-                  v-for="(row, index) in toothRows"
-                  :key="index"
-                  class="flex justify-center gap-[2px]"
-                >
-                  <template v-for="tooth in row" :key="tooth">
-                    <div class="flex flex-col items-center gap-[1px]">
-                      <div
-                        class="w-8 h-8 border border-black flex items-center justify-center cursor-pointer"
-                        :class="[
-                          selectedTeeth.includes(tooth)
-                            ? statusColors[toothStatusMap[tooth]] ||
-                              'bg-blue-500'
-                            : 'bg-white',
-                        ]"
-                        @click="toggleTooth(tooth)"
-                      >
-                        <div
-                          class="w-4 h-4 border border-black rounded-full"
-                        ></div>
-                      </div>
-                      <div
-                        class="w-8 h-6 border border-black flex items-center justify-center text-[11px] font-medium cursor-pointer"
-                        :class="[
-                          selectedTeeth.includes(tooth)
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-white',
-                        ]"
-                        @click="toggleTooth(tooth)"
-                      >
-                        {{ tooth }}
-                      </div>
-                    </div>
-                  </template>
-                </div>
-              </div>
-              <p class="text-sm text-gray-700">
-                Total Selected Teeth:
-                <strong>{{ selectedTeeth.length }}</strong>
-              </p>
-            </div>
-
-            <!-- RIGHT: X-RAY -->
-            <div class="w-[30vw] space-y-3 border p-2 rounded-md">
-              <!-- Status Table -->
-              <div class="space-y-1">
-                <label class="font-bold">Tooth Status Table:</label>
-
-                <!-- Legend (always visible, not part of scroll) -->
-                <div class="flex gap-4 text-[12px] flex-wrap">
-                  <div
-                    v-for="(color, status) in statusColors"
-                    :key="status"
-                    class="flex items-center gap-1"
-                  >
-                    <span :class="['w-4 h-4 rounded-sm', color]"></span>
-                    {{ procedureNameMap[status] }}
-                  </div>
-                </div>
-
-                <!-- Scrollable table ONLY -->
-                <div
-                  class="h-[20vh] overflow-y-auto mt-2 border rounded-md shadow-sm"
-                >
-                  <table class="w-full text-[13px] text-center">
-                    <thead
-                      class="bg-gray-100 text-gray-700 uppercase text-[10px] tracking-wide sticky top-0 z-10"
+                    <tr>
+                      <th class="p-3 border w-[15%]">Tooth #</th>
+                      <th class="p-3 border w-[50]">Status</th>
+                      <th class="p-3 border w-[20%]">Color</th>
+                      <!-- <th class="p-3 w-10 border">Action</th> -->
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="tooth in selectedTeeth"
+                      :key="tooth"
+                      class="border-t border-gray-200 hover:bg-gray-50 transition-all"
                     >
-                      <tr>
-                        <th class="p-3 border w-[15%]">Tooth #</th>
-                        <th class="p-3 border w-[50]">Status</th>
-                        <th class="p-3 border w-[20%]">Color</th>
-                        <!-- <th class="p-3 w-10 border">Action</th> -->
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr
-                        v-for="tooth in selectedTeeth"
-                        :key="tooth"
-                        class="border-t border-gray-200 hover:bg-gray-50 transition-all"
-                      >
-                        <td class="p-3 border">{{ tooth }}</td>
-                        <td class="p-3 border">
-                          <select
-                            v-model="toothStatusMap[tooth]"
-                            class="w-full bg-white border border-gray-300 rounded-md px-2 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-green1 focus:border-green1"
+                      <td class="p-3 border">{{ tooth }}</td>
+                      <td class="p-3 border">
+                        <select
+                          v-model="toothStatusMap[tooth]"
+                          class="w-full bg-white border border-gray-300 rounded-md px-2 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-green1 focus:border-green1"
+                        >
+                          <option value="" disabled>Select Status</option>
+                          <option
+                            v-for="proc in prices.filter((p) => p.is_active)"
+                            :key="proc.price_procedure_id"
+                            :value="proc.price_procedure_id"
                           >
-                            <option value="" disabled>Select Status</option>
-                            <option
-                              v-for="proc in prices.filter((p) => p.is_active)"
-                              :key="proc.price_procedure_id"
-                              :value="proc.price_procedure_id"
-                            >
-                              {{ proc.procedure_name }}
-                            </option>
-                          </select>
-                        </td>
-                        <td class="p-3 border">
-                          <div
-                            :class="[
-                              statusColors[toothStatusMap[tooth]] ||
-                                'bg-white border',
-                              'w-6 h-6 mx-auto rounded-full border border-gray-400 shadow-inner',
-                            ]"
-                          ></div>
-                        </td>
-                        <!-- <td class="p-2 mt-1 flex justify-center">
+                            {{ proc.procedure_name }}
+                          </option>
+                        </select>
+                      </td>
+                      <td class="p-3 border">
+                        <div
+                          :class="[
+                            statusColors[toothStatusMap[tooth]] ||
+                              'bg-white border',
+                            'w-6 h-6 mx-auto rounded-full border border-gray-400 shadow-inner',
+                          ]"
+                        ></div>
+                      </td>
+                      <!-- <td class="p-2 mt-1 flex justify-center">
                         <button
                           class="text-red-600 text-xs font-semibold flex items-center gap-1 px-2 py-1 rounded hover:text-white hover:bg-red-500 transition"
                           @click="toggleTooth(tooth)"
@@ -234,124 +222,124 @@
                           <icon :name="'delete'" /> Remove
                         </button>
                       </td> -->
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              <!-- X-Ray Input & Preview -->
-              <div class="space-y-2">
-                <label class="font-bold">X-Ray Image:</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  @change="handleImageUpload"
-                  class="block w-full text-sm text-gray-700 border border-gray-400 rounded-md cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+            </div>
+            <!-- X-Ray Input & Preview -->
+            <div class="space-y-2">
+              <label class="font-bold">X-Ray Image:</label>
+              <input
+                type="file"
+                accept="image/*"
+                @change="handleImageUpload"
+                class="block w-full text-sm text-gray-700 border border-gray-400 rounded-md cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+              />
+              <!-- Preview -->
+              <div v-if="xrayPreview" class="mt-2">
+                <img
+                  :src="xrayPreview"
+                  alt="X-Ray Preview"
+                  class="w-40 h-auto mx-auto rounded cursor-pointer border"
+                  @click="openXrayModal"
                 />
-                <!-- Preview -->
-                <div v-if="xrayPreview" class="mt-2">
-                  <img
-                    :src="xrayPreview"
-                    alt="X-Ray Preview"
-                    class="w-40 h-auto mx-auto rounded cursor-pointer border"
-                    @click="openXrayModal"
-                  />
-                </div>
               </div>
+            </div>
 
-              <div class="space-y-2">
-                <label class="font-bold">Procedure Notes:</label>
-                <textarea
-                  v-model="form.procedure_notes"
-                  rows="3"
-                  placeholder="Enter notes..."
-                  class="w-full border px-3 py-2 rounded-md text-sm border-gray-400"
-                ></textarea>
-              </div>
-              <div class="flex flex-col gap-2 relative">
-                <label class="font-bold"
-                  >Select Additional Inventory Items:</label
-                >
-                <input
-                  type="text"
-                  v-model="searchInventoryQuery"
-                  @focus="showInventoryDropdown = true"
-                  @blur="hideDropdown('inventory')"
-                  class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-                  placeholder="Search inventory..."
-                />
+            <div class="space-y-2">
+              <label class="font-bold">Procedure Notes:</label>
+              <textarea
+                v-model="form.procedure_notes"
+                rows="3"
+                placeholder="Enter notes..."
+                class="w-full border px-3 py-2 rounded-md text-sm border-gray-400"
+              ></textarea>
+            </div>
+            <div class="flex flex-col gap-2 relative">
+              <label class="font-bold"
+                >Select Additional Inventory Items:</label
+              >
+              <input
+                type="text"
+                v-model="searchInventoryQuery"
+                @focus="showInventoryDropdown = true"
+                @blur="hideDropdown('inventory')"
+                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+                placeholder="Search inventory..."
+              />
 
-                <!-- Dropdown -->
+              <!-- Dropdown -->
+              <div
+                v-if="showInventoryDropdown"
+                class="absolute left-0 top-full z-30 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto w-full mt-1"
+              >
                 <div
-                  v-if="showInventoryDropdown"
-                  class="absolute left-0 top-full z-30 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto w-full mt-1"
+                  v-for="item in filteredInventories"
+                  :key="item.inventory_id"
+                  class="p-3 hover:bg-blue-50 cursor-pointer flex justify-between items-center border-b"
+                  @mousedown.prevent="toggleInventory(item)"
                 >
-                  <div
-                    v-for="item in filteredInventories"
-                    :key="item.inventory_id"
-                    class="p-3 hover:bg-blue-50 cursor-pointer flex justify-between items-center border-b"
-                    @mousedown.prevent="toggleInventory(item)"
-                  >
-                    <div class="flex flex-col">
-                      <span class="font-semibold text-gray-800">{{
-                        item.name
-                      }}</span>
-                      <span class="text-xs text-gray-600 italic"
-                        >{{ item.type }} • {{ item.quantity }}
-                        {{ item.unit }}</span
-                      >
-                    </div>
-                  </div>
-                  <div
-                    v-if="filteredInventories.length === 0"
-                    class="p-3 text-gray-500 italic text-center text-sm"
-                  >
-                    No inventory found
-                  </div>
-                </div>
-
-                <!-- Selected Inventories -->
-                <div
-                  v-if="form.selected_inventories.length > 0"
-                  class="mt-2 space-y-2"
-                >
-                  <div
-                    v-for="(item, index) in form.selected_inventories"
-                    :key="item.inventory_id"
-                    class="flex justify-between items-center border border-green-300 bg-white shadow-sm rounded-lg px-4 py-2"
-                  >
-                    <div class="flex flex-col w-full text-sm">
-                      <div class="flex justify-between items-center">
-                        <span>
-                          {{ item.name }}
-                          <span class="text-xs text-gray-500"
-                            >({{ item.type }} • {{ item.quantity }}
-                            {{ item.unit }})</span
-                          >
-                        </span>
-
-                        <input
-                          type="number"
-                          min="1"
-                          class="border rounded px-2 py-1 w-[70px] text-sm"
-                          v-model.number="item.selected_quantity"
-                          placeholder="pcs"
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      @click="removeInventory(index)"
-                      class="ml-3 text-red-500 text-xs hover:underline"
+                  <div class="flex flex-col">
+                    <span class="font-semibold text-gray-800">{{
+                      item.name
+                    }}</span>
+                    <span class="text-xs text-gray-600 italic"
+                      >{{ item.type }} • {{ item.quantity }}
+                      {{ item.unit }}</span
                     >
-                      Remove
-                    </button>
                   </div>
+                </div>
+                <div
+                  v-if="filteredInventories.length === 0"
+                  class="p-3 text-gray-500 italic text-center text-sm"
+                >
+                  No inventory found
                 </div>
               </div>
 
-              <!-- <div class="tracking-wide flex justify-end gap-2 mt-4">
+              <!-- Selected Inventories -->
+              <div
+                v-if="form.selected_inventories.length > 0"
+                class="mt-2 space-y-2"
+              >
+                <div
+                  v-for="(item, index) in form.selected_inventories"
+                  :key="item.inventory_id"
+                  class="flex justify-between items-center border border-green-300 bg-white shadow-sm rounded-lg px-4 py-2"
+                >
+                  <div class="flex flex-col w-full text-sm">
+                    <div class="flex justify-between items-center">
+                      <span>
+                        {{ item.name }}
+                        <span class="text-xs text-gray-500"
+                          >({{ item.type }} • {{ item.quantity }}
+                          {{ item.unit }})</span
+                        >
+                      </span>
+
+                      <input
+                        type="number"
+                        min="1"
+                        class="border rounded px-2 py-1 w-[70px] text-sm"
+                        v-model.number="item.selected_quantity"
+                        placeholder="pcs"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    @click="removeInventory(index)"
+                    class="ml-3 text-red-500 text-xs hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="tracking-wide flex justify-end gap-2 mt-4">
               <button
                 type="button"
                 class="bg-red-600 p-2 px-3 rounded-lg text-white hover:bg-white border hover:border-red-800 hover:text-red-800 hover:shadow-md"
@@ -367,47 +355,41 @@
                 <span v-if="isSubmitting">Submitting...</span>
                 <span v-else>Submit</span>
               </button>
-            </div> -->
             </div>
           </div>
-        </form>
-        <!-- Step 1 Buttons -->
-        <div class="absolute -bottom-11 right-0 px-2">
-          <button
-            type="button"
-            class="bg-green-700 px-4 py-2 rounded-lg text-white hover:opacity-90 text-sm"
-            @click="handleNextStep"
-          >
-            Next
-          </button>
         </div>
-      </div>
-      <div class="relative" v-if="currentStep === 2">
-        <!-- Step 2 Buttons -->
-        <button
-          type="button"
-          class="bg-gray-700 px-4 py-2 rounded-lg text-white text-sm absolute bottom-3 left-2 hover:opacity-90"
-          @click="currentStep = 1"
-        >
-          Back
-        </button>
-        <div>
-          <AddPrescription
-            :patient-id="form.patient_id"
-            :dental-id="form.dental_id"
-            :edit-mode="editMode"
-            @close="$emit('close')"
-            @prescription-added="handlePrescriptionAdded"
-          />
-        </div>
-      </div>
+      </form>
+    </div>
+  </div>
+  <div
+    v-if="showXrayModal"
+    class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4"
+    @click.self="closeXrayModal"
+  >
+    <div
+      class="relative w-full max-w-[90vw] max-h-[90vh] flex justify-center items-center overflow-hidden"
+    >
+      <!-- Close Button -->
+      <button
+        class="absolute top-2 right-2 text-white text-2xl font-bold z-20"
+        @click="closeXrayModal"
+      >
+        &times;
+      </button>
+
+      <!-- X-Ray Image -->
+      <img
+        :src="xrayModalSrc"
+        alt="X-Ray Large View"
+        class="max-w-full max-h-full rounded shadow-lg object-contain"
+        style="max-height: calc(100vh - 2rem)"
+      />
     </div>
   </div>
 </template>
 
 <script>
 import icon from "@/assets/icon.vue";
-import AddPrescription from "@/components/dentist/doctor-record/modals/add-prescription.vue";
 import { toast } from "vue3-toastify";
 import axios from "axios";
 import { useFetchDataStore } from "@/store/fetch-data-store";
@@ -416,7 +398,7 @@ import dayjs from "dayjs";
 
 export default {
   name: "AddDentalChart",
-  components: { icon, AddPrescription },
+  components: { icon },
   props: {
     editMode: {
       type: Boolean,
@@ -430,7 +412,6 @@ export default {
 
   data() {
     return {
-      currentStep: 1,
       user: null,
       form: {
         dental_id: null,
@@ -707,19 +688,7 @@ export default {
       "fetchDentalChart",
       "fetchInventories",
     ]),
-    stepClass(step) {
-      return [
-        "px-4 py-2 rounded-full text-sm font-medium",
-        this.currentStep === step
-          ? "bg-[#34699A] text-white"
-          : "bg-gray-200 text-gray-600",
-      ];
-    },
 
-    goToPrescription() {
-      // Add validation if needed
-      this.currentStep = 2;
-    },
     formatDate(date) {
       if (!date) return "";
 
@@ -956,100 +925,131 @@ export default {
 
       await this.fetchInventories();
     },
-    async handleNextStep() {
-      // 1️⃣ Save dental chart first
-      const saved = await this.saveDentalChart();
-
-      if (saved) {
-        // 2️⃣ Log the dental_id to check
-        console.log("Dental Chart saved with ID:", this.form.dental_id);
-
-        // 3️⃣ Move to prescription step
-        this.currentStep = 2;
-
-        // 4️⃣ Optional: If you want to emit or do something with the ID
-        // For example, pass it to AddPrescription
-        // this.$refs.addPrescriptionComponent.setDentalId(this.form.dental_id)
-      } else {
-        console.warn("Dental chart not saved. Cannot proceed to prescription.");
-      }
-    },
-    async saveDentalChart() {
-      if (!this.form.patient_id || this.selectedTeeth.length === 0) {
-        toast.warning("Please select a patient and at least one tooth.");
-        return false;
-      }
-
-      const formData = new FormData();
-
-      const allowedFields = [
-        "patient_id",
-        "user_id",
-        "price_procedure_id",
-        "procedure_notes",
-        "procedure_date",
-      ];
-
-      allowedFields.forEach((key) => {
-        const value = this.form[key];
-        if (value !== null && value !== undefined && value !== "") {
-          if (
-            key === "patient_id" ||
-            key === "user_id" ||
-            key === "price_procedure_id"
-          ) {
-            formData.append(key, Number(value));
-          } else {
-            formData.append(key, value);
-          }
-        }
-      });
-
-      formData.append(
-        "selected_teeth",
-        JSON.stringify(this.selectedTeeth.map(Number)),
-      );
-      formData.append(
-        "tooth_status_map",
-        JSON.stringify(this.toothStatusMap || {}),
-      );
-      formData.append(
-        "additional_items",
-        JSON.stringify(
-          (this.form.selected_inventories || []).map((item) => ({
-            inventory_id: Number(item.inventory_id),
-            pcs: Number(item.selected_quantity) || 1,
-          })),
-        ),
-      );
-
-      if (this.xrayFile instanceof File) {
-        formData.append("xray_image", this.xrayFile);
-      }
+    async submitData() {
+      // 🛑 Prevent double submit FIRST
+      if (this.isSubmitting) return;
+      this.isSubmitting = true;
 
       try {
+        // 1️⃣ Validate required fields
+        if (!this.form.patient_id || this.selectedTeeth.length === 0) {
+          toast.warning("Please select a patient and at least one tooth.");
+          return;
+        }
+
+        // 2️⃣ Duplicate check
+        const hasDuplicate = this.dentalCharts.some((dc) => {
+          if (this.editMode && dc.dental_id === this.form.dental_id)
+            return false;
+
+          return (
+            dc.patient?.patient_id === Number(this.form.patient_id) &&
+            dayjs(dc.procedure_date).isSame(
+              dayjs(this.form.procedure_date),
+              "day",
+            ) &&
+            dc.priceProcedure?.price_procedure_id ===
+              Number(this.form.price_procedure_id)
+          );
+        });
+
+        if (hasDuplicate) {
+          toast.error(
+            "This procedure is already recorded for this patient on the same date.",
+          );
+          return;
+        }
+
+        // 3️⃣ Build FormData
+        const formData = new FormData();
+
+        const allowedFields = [
+          "patient_id",
+          "user_id",
+          "price_procedure_id",
+          "procedure_notes",
+          "procedure_date",
+          "payment_amount",
+        ];
+
+        allowedFields.forEach((key) => {
+          const value = this.form[key];
+
+          if (value !== null && value !== undefined && value !== "") {
+            if (
+              key === "patient_id" ||
+              key === "user_id" ||
+              key === "price_procedure_id"
+            ) {
+              formData.append(key, Number(value));
+            } else {
+              formData.append(key, value);
+            }
+          }
+        });
+
+        formData.append(
+          "selected_teeth",
+          JSON.stringify(this.selectedTeeth.map(Number)),
+        );
+
+        formData.append(
+          "tooth_status_map",
+          JSON.stringify(this.toothStatusMap || {}),
+        );
+
+        formData.append(
+          "additional_items",
+          JSON.stringify(
+            (this.form.selected_inventories || []).map((item) => ({
+              inventory_id: Number(item.inventory_id),
+              pcs: Number(item.selected_quantity) || 1,
+            })),
+          ),
+        );
+
+        if (this.xrayFile instanceof File) {
+          formData.append("xray_image", this.xrayFile);
+        }
+
+        // ===========================
+        // UPDATE
+        // ===========================
         if (this.editMode) {
           await axios.patch(
             `${process.env.VUE_APP_API_BASE_URL}/dental-chart/update/${this.form.dental_id}`,
             formData,
             { headers: { "Content-Type": "multipart/form-data" } },
           );
-        } else {
-          const res = await axios.post(
+
+          toast.success("Dental chart updated successfully!");
+        }
+
+        // ===========================
+        // CREATE
+        // ===========================
+        else {
+          await axios.post(
             `${process.env.VUE_APP_API_BASE_URL}/dental-chart/add-dental-chart`,
             formData,
             { headers: { "Content-Type": "multipart/form-data" } },
           );
 
-          // Save returned dental_id for step 2
-          this.form.dental_id = res.data.dental_id;
+          toast.success("Dental chart added successfully!");
         }
 
-        return true;
+        this.$emit("refresh");
+        this.$emit("close");
       } catch (err) {
         console.error(err);
-        toast.error("Failed to save dental chart.");
-        return false;
+        toast.error(
+          this.editMode
+            ? "Failed to update dental chart."
+            : "Failed to add dental chart.",
+        );
+      } finally {
+        // ✅ ALWAYS release lock
+        this.isSubmitting = false;
       }
     },
   },

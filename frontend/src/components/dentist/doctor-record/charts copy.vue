@@ -4,7 +4,6 @@
     <div class="flex justify-between items-start">
       <h1 class="font-semibold tracking-wide text-md">Dental Records</h1>
     </div>
-    ss
 
     <!-- Tabs -->
     <div class="mt-4 border-b border-gray-300">

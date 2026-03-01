@@ -759,14 +759,43 @@ export default {
     },
 
     async saveItem() {
-      const formData = new FormData();
-      formData.append("name", this.form.name);
-      formData.append("quantity", this.form.quantity);
-      formData.append("unit", this.form.unit);
-      formData.append("type", "Dental Tool");
-      if (this.form.file) formData.append("image", this.form.file);
-
       try {
+        // 🔎 Always refresh latest inventory list before checking
+        const res = await axios.get(
+          `${process.env.VUE_APP_API_BASE_URL}/inventory/get-inventory`,
+        );
+
+        const inventories = res.data || [];
+
+        const newName = this.form.name.trim().toLowerCase();
+
+        // 🚨 Check duplicate
+        const duplicate = inventories.find((item) => {
+          const existingName = item.name.trim().toLowerCase();
+
+          // If editing, allow same record
+          if (this.editIndex !== null) {
+            const currentId = this.inventories[this.editIndex].id;
+            return existingName === newName && item.inventory_id !== currentId;
+          }
+
+          // If adding new
+          return existingName === newName;
+        });
+
+        if (duplicate) {
+          toast.error("Inventory item already exists!");
+          return; // ❌ STOP SUBMIT
+        }
+
+        // ✅ Continue if no duplicate
+        const formData = new FormData();
+        formData.append("name", this.form.name);
+        formData.append("quantity", this.form.quantity);
+        formData.append("unit", this.form.unit);
+        formData.append("type", "Dental Tool");
+        if (this.form.file) formData.append("image", this.form.file);
+
         if (this.editIndex === null) {
           await axios.post(
             `${process.env.VUE_APP_API_BASE_URL}/inventory/add-inventory`,
@@ -781,9 +810,11 @@ export default {
           );
           toast.success("Record updated successfully");
         }
+
         await this.fetchInventories();
         this.closeModal();
-      } catch {
+      } catch (error) {
+        console.error(error);
         toast.error("Failed to save item.");
       }
     },

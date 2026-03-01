@@ -374,22 +374,53 @@ export default {
       }
     },
     async submitData() {
-      const payload = {
-        procedure_name: this.form.procedure_name,
-        price: parseFloat(this.form.price),
-        procedure_scope: this.form.procedure_scope,
-        pricing_scope: this.form.pricing_scope,
-        inventory_ids: this.form.selected_inventories.map((i) => ({
-          inventory_id: i.inventory_id,
-          quantity: i.selected_quantity,
-        })),
-        is_active:
-          this.form.is_active === true || this.form.is_active === "true",
-        status_color: this.form.status_color,
-        procedure_type: this.form.procedure_type,
-      };
-
       try {
+        // 🔍 1. Get all existing procedures
+        const response = await axios.get(
+          process.env.VUE_APP_API_BASE_URL +
+            "/price-procedure/get-price-procedure",
+        );
+
+        const existingProcedures = response.data || [];
+
+        // 🔍 2. Check duplicate (case insensitive + trimmed)
+        const isDuplicate = existingProcedures.some((proc) => {
+          const sameName =
+            proc.procedure_name?.trim().toLowerCase() ===
+            this.form.procedure_name.trim().toLowerCase();
+
+          // If editing, ignore itself
+          if (this.isEdit) {
+            return (
+              sameName &&
+              proc.price_procedure_id !== this.procedure.price_procedure_id
+            );
+          }
+
+          return sameName;
+        });
+
+        if (isDuplicate) {
+          toast.error("Procedure name already exists!");
+          return; // ❌ STOP submission
+        }
+
+        // ✅ If no duplicate, continue saving
+        const payload = {
+          procedure_name: this.form.procedure_name,
+          price: parseFloat(this.form.price),
+          procedure_scope: this.form.procedure_scope,
+          pricing_scope: this.form.pricing_scope,
+          inventory_ids: this.form.selected_inventories.map((i) => ({
+            inventory_id: i.inventory_id,
+            quantity: i.selected_quantity,
+          })),
+          is_active:
+            this.form.is_active === true || this.form.is_active === "true",
+          status_color: this.form.status_color,
+          procedure_type: this.form.procedure_type,
+        };
+
         if (this.isEdit) {
           await axios.patch(
             process.env.VUE_APP_API_BASE_URL +
@@ -405,11 +436,12 @@ export default {
           );
           toast.success("Procedure added successfully!");
         }
+
         new Audio(require("@/assets/add.mp3")).play();
         this.$emit("refresh");
         this.$emit("close");
       } catch (err) {
-        toast.error(err.response?.data?.message || "Failed to save procedure.");
+        toast.error("Failed to validate or save procedure.");
       }
     },
   },

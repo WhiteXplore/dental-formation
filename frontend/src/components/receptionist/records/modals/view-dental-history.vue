@@ -224,7 +224,8 @@
                     <th class="border p-2 w-[15%]">Notes</th>
                     <th class="border p-2 w-[12%]">Procedure</th>
                     <th class="border p-2">X-Ray</th>
-                    <th class="border p-2 w-[40%]">Teeth</th>
+                    <th class="border p-2 max-w-[40%]">Teeth</th>
+                    <th class="border p-2 w-[40%]">Medication</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -260,6 +261,25 @@
                           {{ tooth }}
                         </div>
                       </div>
+                    </td>
+                    <td class="border p-2 align-top">
+                      <div v-if="record.prescribe && record.prescribe.length">
+                        <ul class="list-disc pl-4 space-y-1">
+                          <li
+                            v-for="(med, i) in record.prescribe"
+                            :key="med.prescribe_medication_id || i"
+                            class="text-sm"
+                          >
+                            <span class="font-medium">{{ med.name }}</span>
+                            ({{ med.dosage }}) – {{ med.pcs }} pcs •
+                            {{ med.duration }} days • {{ med.frequencies }}x/day
+                            •
+                            {{ med.preparation }}
+                          </li>
+                        </ul>
+                      </div>
+
+                      <span v-else class="italic text-gray-400">None</span>
                     </td>
                   </tr>
                 </tbody>
@@ -319,92 +339,98 @@ export default {
 
   methods: {
     async updateDentalChart(id, formData) {
-      await axios.patch(
-        `${process.env.VUE_APP_API_BASE_URL}/dental-chart/update/${id}`,
-        formData,
-        { withCredentials: true },
-      );
+      await axios.patch(`${this.apiUrl}/dental-chart/update/${id}`, formData, {
+        withCredentials: true,
+      });
 
-      // Refresh only the updated record
       const recordGroup = this.groupedHistory.find((g) =>
         g.records.some((r) => r.dental_id === id),
       );
+
       if (recordGroup) {
         const dentalRecord = recordGroup.records.find(
           (r) => r.dental_id === id,
         );
-        dentalRecord.xray = true; // mark X-ray exists
-        dentalRecord.xrayUpdatedAt = Date.now(); // trigger cache-busting
+        dentalRecord.xrayUpdatedAt = Date.now();
       }
     },
+
     async fetchHistory() {
       if (!this.user) return;
 
       const res = await axios.get(
-        `${process.env.VUE_APP_API_BASE_URL}/dental-chart/history/${this.patientId}`,
+        `${this.apiUrl}/prescription/patient/${this.patientId}`,
         { withCredentials: true },
       );
 
       const mapByDate = {};
 
-      res.data.forEach((entry) => {
-        // 🔒 Role-based filtering
-        if (
-          this.user.role === "Dentist" &&
-          entry.user_accounts?.user_id !== this.user.sub
-        ) {
-          return;
-        }
-        // Receptionist / Admin → NO FILTER (see all)
+      res.data.forEach((prescription) => {
+        const chart = prescription.dentalChart;
+        if (!chart || !chart.patient) return;
 
-        const date = entry.procedure_date;
+        const patient = chart.patient;
+        const dentist = chart.user_accounts;
+
+        // ✅ Use actual procedure date (better grouping)
+        const date = chart.procedure_date
+          ? dayjs(chart.procedure_date).format("YYYY-MM-DD")
+          : prescription.issued_date;
 
         if (!mapByDate[date]) {
           mapByDate[date] = {
             date,
-            patient: `${entry.patient.last_name}, ${entry.patient.first_name}`,
-            patientDetails: entry.patient,
+            patient: `${patient.last_name}, ${patient.first_name}`,
+            patientDetails: patient,
             records: [],
           };
         }
 
-        // Map teeth
+        // ✅ FIXED TEETH MAPPING (your API structure)
         const teeth = {};
-        (entry.teeth || []).forEach((t) => {
-          teeth[t.tooth_number] = t.priceProcedure?.procedure_name || "Unknown";
+        (chart.teeth || []).forEach((t) => {
+          teeth[t.tooth_number] =
+            chart.priceProcedure?.procedure_name || "Unknown";
         });
 
+        // ✅ FIXED MEDICATIONS (KEEP AS ARRAY)
+        const medications = prescription.prescribedMedications || [];
+
         mapByDate[date].records.push({
-          dental_id: entry.dental_id,
-          dentist: `${entry.user_accounts.last_name}, ${entry.user_accounts.first_name}`,
-          notes: entry.procedure_notes,
-          xray_image_name: entry.xray_image_name,
-          procedure_type: entry.priceProcedure || {
-            procedure_name: "Unknown",
+          prescription_id: prescription.prescription_id,
+          dental_id: chart.dental_id,
+          dentist: dentist
+            ? `${dentist.last_name}, ${dentist.first_name}`
+            : "Unknown",
+          notes: chart.procedure_notes,
+          procedure_type: {
+            procedure_name: chart.priceProcedure?.procedure_name || "Unknown",
           },
+          xray_image_name: chart.xray_image,
           teeth,
+          prescribe: medications, // 🔥 KEEP ARRAY
+          payment_status: prescription.payment_status,
+          instruction: prescription.instruction,
+          is_discharged: prescription.is_discharged,
         });
       });
 
-      // 📅 Sort latest first
+      // ✅ Sort newest first
       this.allGrouped = Object.values(mapByDate).sort(
         (a, b) => new Date(b.date) - new Date(a.date),
       );
 
       this.groupedHistory = [...this.allGrouped];
       this.availableDates = this.allGrouped.map((g) => g.date);
-
-      // Pagination init
       this.currentPage = this.groupedHistory.map(() => 1);
 
-      // Default to latest date
       this.selectedDate = this.availableDates[0] || "";
       this.applyDateFilter();
     },
 
     async fetchProcedureColors() {
       const res = await axios.get(
-        `${process.env.VUE_APP_API_BASE_URL}/price-procedure/get-price-procedure`,
+        `${this.apiUrl}/price-procedure/get-price-procedure`,
       );
 
       res.data
@@ -412,6 +438,7 @@ export default {
         .forEach((p) => {
           this.statusColors[p.procedure_name] = p.status_color;
         });
+
       this.statusColors["Unknown"] = "bg-gray-300";
     },
 
@@ -419,7 +446,7 @@ export default {
       this.groupedHistory = this.selectedDate
         ? this.allGrouped.filter((g) => g.date === this.selectedDate)
         : [...this.allGrouped];
-      // Reset pagination
+
       this.currentPage = this.groupedHistory.map(() => 1);
     },
 
@@ -430,14 +457,15 @@ export default {
     nextPage(i) {
       this.currentPage.splice(i, 1, 2);
     },
+
     prevPage(i) {
       this.currentPage.splice(i, 1, 1);
     },
+
     async fetchUser() {
-      const res = await axios.get(
-        `${process.env.VUE_APP_API_BASE_URL}/auth/me`,
-        { withCredentials: true },
-      );
+      const res = await axios.get(`${this.apiUrl}/auth/me`, {
+        withCredentials: true,
+      });
 
       this.user = res.data;
     },

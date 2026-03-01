@@ -14,9 +14,7 @@
         >
           <div class="flex gap-1 items-center">
             <icon :name="'add-students'" />
-            <h1 class="font-bold tracking-wide text-lg">
-              {{ isEdit ? "Edit Prescription" : "Add Prescription" }}
-            </h1>
+            <h1 class="font-bold tracking-wide text-lg">Add Prescription</h1>
           </div>
           <icon
             :name="'circle-close3'"
@@ -83,9 +81,6 @@
                 >
                   <div class="text-sm text-gray-800 font-medium">
                     {{ getPatientName(id) }}
-                    <!-- <div class="text-xs text-gray-500 whitespace-pre-line">
-                    {{ getToothInfo(id) }}
-                  </div> -->
                   </div>
                   <button
                     type="button"
@@ -251,8 +246,7 @@
               placeholder="Enter instruction here..."
               class="w-full border px-3 py-2 border-gray-400 rounded-md text-sm resize-none min-h-[100px]"
               required
-            >
-            </textarea>
+            ></textarea>
           </div>
 
           <!-- Divider -->
@@ -270,9 +264,8 @@
             <button
               class="bg-[#34699A] p-2 px-3 rounded-lg text-white hover:bg-white border hover:border-green-800 hover:text-green-800 hover:shadow-md"
               type="submit"
-              :disabled="isLoading"
             >
-              {{ isLoading ? "Saving..." : "Submit" }}
+              Submit
             </button>
           </div>
         </div>
@@ -292,22 +285,8 @@ import dayjs from "dayjs";
 export default {
   name: "AddAppointment",
   components: { icon },
-  props: {
-    isEdit: {
-      type: Boolean,
-      default: false,
-    },
-    prescription: {
-      type: Object,
-      default: null,
-    },
-    dentalId: { type: Number, required: true },
-    patientId: { type: Number, default: null },
-    editMode: { type: Boolean, default: false },
-  },
   data() {
     return {
-      isSubmitting: false,
       form: {
         user_id: [],
         patient_id: "",
@@ -318,7 +297,7 @@ export default {
         prescribe_medications: [],
         instruction: "",
       },
-      user: null, // holds authenticated user
+      user: null,
       searchPatientQuery: "",
       showPatientDropdown: false,
       searchMedicationQuery: "",
@@ -390,27 +369,19 @@ export default {
           contact_number: patient.contact_number || "",
           address: patient.address || "",
           allergies: patient.allergies || "",
-          // add any other patient field you want
         };
       });
     },
-
     filteredPatients() {
       const query = this.searchPatientQuery.toLowerCase();
       const userId = this.user?.sub || null;
-
-      // Filter charts for this user and valid dental_id
       const charts = this.dentalCharts.filter(
         (chart) =>
           chart.user_accounts?.user_id === userId && chart.dental_id != null,
       );
-
-      // Get latest chart per patient
       const latestPerPatient = charts.reduce((acc, chart) => {
         const patientId = chart.patient?.patient_id;
         if (!patientId) return acc;
-
-        // If no chart yet for this patient or this chart is newer, set it
         if (
           !acc[patientId] ||
           dayjs(chart.procedure_date).isAfter(acc[patientId].procedure_date)
@@ -419,8 +390,6 @@ export default {
         }
         return acc;
       }, {});
-
-      // Convert object to array and map to simplified patient object
       const simplifiedPatients = Object.values(latestPerPatient).map(
         (chart) => {
           const patient = chart.patient || {};
@@ -436,12 +405,10 @@ export default {
             contact_number: patient.contact_number || "",
             address: patient.address || "",
             allergies: patient.allergies || "",
-            procedure_date: chart.procedure_date || "", // Added here
+            procedure_date: chart.procedure_date || "",
           };
         },
       );
-
-      // Filter by search query (full name)
       return simplifiedPatients.filter((patient) => {
         if (!query) return true;
         const fullName = `${patient.last_name}, ${patient.first_name} ${
@@ -450,134 +417,36 @@ export default {
         return fullName.includes(query);
       });
     },
-    filteredMedications() {
-      const query = this.searchMedicationQuery.toLowerCase();
-      const today = dayjs().startOf("day");
-
-      return this.inventories
-        .filter((inv) => inv.type === "Medication")
-        .map((inv) => ({
-          ...inv,
-          isExpired: inv.expiration && dayjs(inv.expiration).isBefore(today),
-        }))
-        .filter((inv) => inv.name.toLowerCase().includes(query));
-    },
   },
-
-  watch: {
-    prescription: {
-      immediate: true,
-      handler(pres) {
-        if (!pres) {
-          // New prescription mode
-          this.form.issued_date = dayjs().format("YYYY-MM-DD");
-          this.form.user_id = [];
-          this.form.prescribe_medications = [];
-          this.form.instruction = "";
-          this.searchPatientQuery = "";
-          return;
-        }
-
-        // Edit mode: populate form from existing prescription
-        const { dentalChart, prescribedMedications, instruction } = pres;
-
-        this.form.issued_date = dentalChart?.procedure_date
-          ? dayjs(dentalChart.procedure_date).format("YYYY-MM-DD")
-          : dayjs().format("YYYY-MM-DD"); // fallback today
-
-        this.form.user_id = dentalChart?.dental_id
-          ? [dentalChart.dental_id]
-          : [];
-
-        this.form.prescribe_medications = (prescribedMedications || []).map(
-          (med) => {
-            // Find preparation options from global list
-            const globalMed = this.medicationOptions.find(
-              (m) => m.name === med.name,
-            );
-
-            return {
-              prescribe_medication_id: med.prescribe_medication_id, // for edit tracking
-              pcs: med.pcs || 1,
-              name: med.name || "",
-              type: med.type || "N/A",
-              dosage: med.dosage || "N/A",
-              duration: med.duration || "",
-              frequencies: med.frequencies || "",
-              preparation: med.preparation || "", // selected value
-              preparationOptions: globalMed?.preparationOptions || [
-                "Tablet",
-                "Capsule",
-              ], // fallback options
-            };
-          },
-        );
-
-        this.form.instruction = instruction || "";
-
-        this.searchPatientQuery = dentalChart?.patient
-          ? `${dentalChart.patient.first_name} ${dentalChart.patient.last_name}`
-          : "";
-      },
-    },
-  },
-
   methods: {
     ...mapActions(useFetchDataStore, ["fetchDentalChart", "fetchInventories"]),
     toggleManualMedication(med) {
       const exists = this.form.prescribe_medications.some(
         (item) => item.name === med.name,
       );
-
       if (!exists) {
-        const globalMed = this.medicationOptions.find(
-          (m) => m.name === med.name,
-        );
         this.form.prescribe_medications.push({
-          name: med.name,
-          type: med.type,
-          dosage: med.dosage,
+          ...med,
           pcs: 1,
-          duration: med.duration || "",
-          frequencies: med.frequencies || "",
-          preparation: "", // empty by default
-          preparationOptions: globalMed?.preparationOptions || [
-            "Tablet",
-            "Capsule",
-          ],
+          duration: 1,
+          frequencies: 1,
+          preparation: med.preparationOptions[0] || "",
         });
       } else {
         toast.info(`${med.name} already selected`);
       }
     },
-
     removeManualMedication(index) {
       this.form.prescribe_medications.splice(index, 1);
     },
-
     formatDate(date) {
-      return dayjs(date).format("MMMM D, YYYY ");
+      return dayjs(date).format("MMMM D, YYYY");
     },
     getPatientName(id) {
       const chart = this.dentalCharts.find((c) => c.dental_id === id);
       if (!chart || !chart.patient) return "";
       const { last_name, first_name, middle_name } = chart.patient;
       return `${last_name}, ${first_name} ${middle_name || ""}`;
-    },
-    // getToothInfo(id) {
-    //   const chart = this.dentalCharts.find((c) => c.dental_id === id);
-    //   if (!chart || !Array.isArray(chart.teeth)) return "No tooth info";
-    //   return chart.teeth
-    //     .map((tooth) => `Tooth ${tooth.tooth_number} - ${tooth.status}`)
-    //     .join(", ");
-    // },
-    isExpired(date) {
-      if (!date) return false;
-      return dayjs(date).isBefore(dayjs().startOf("day"));
-    },
-
-    formatDateDisplay(date) {
-      return dayjs(date).format("MMM D, YYYY");
     },
     removeDentalSelection(id) {
       const index = this.form.user_id.indexOf(id);
@@ -590,183 +459,91 @@ export default {
         ? this.form.user_id.push(id)
         : this.form.user_id.splice(index, 1);
     },
-    toggleMedicationSelection(name) {
-      const inventory = this.inventories.find((inv) => inv.name === name);
-      if (!inventory) return;
-
-      const exists = this.form.prescribe_medications.some(
-        (med) => med.inventory_id === inventory.inventory_id,
-      );
-
-      if (!exists) {
-        this.form.prescribe_medications.push({
-          name,
-          pcs: 1,
-          inventory_id: inventory.inventory_id,
-          unit: inventory.unit || "",
-        });
-      } else {
-        toast.info(`${name} is already selected`);
-      }
-    },
-    removeMedicationSelection(index) {
-      this.form.prescribe_medications.splice(index, 1);
-    },
-    selectMedication(name) {
-      this.form.prescribe_medication = name;
-      this.searchMedicationQuery = name;
-      this.showMedicationDropdown = false;
-    },
     hideDropdown(type) {
       setTimeout(() => {
         if (type === "patient") this.showPatientDropdown = false;
         if (type === "medication") this.showMedicationDropdown = false;
       }, 150);
     },
-    formatMedication(med) {
-      const unitInfo = med.unit ? ` - ${med.unit}` : "";
-      return `${med.name} (${med.pcs} pcs${unitInfo})`;
-    },
-
     async submitData() {
-      const formEl = this.$refs.patientForm;
-      if (!formEl.checkValidity()) {
-        formEl.reportValidity();
+      const form = this.$refs.patientForm;
+      if (!form.checkValidity()) {
+        form.reportValidity();
         return;
       }
-
-      if (this.isSubmitting) return;
-      this.isSubmitting = true;
-
+      if (!this.form.user_id.length) {
+        toast.warning("Please select at least one dental chart.");
+        return;
+      }
+      if (!this.form.prescribe_medications.length) {
+        toast.warning("Please add at least one medication.");
+        return;
+      }
+      for (const med of this.form.prescribe_medications) {
+        med.pcs = med.duration || 1;
+        med.frequencies = med.frequencies || 1;
+        med.preparation = med.preparation || med.preparationOptions[0] || "N/A";
+        if (!med.pcs || med.pcs <= 0) {
+          toast.warning(`Please enter a valid quantity for ${med.name}`);
+          return;
+        }
+      }
+      const trimmedInstruction = this.form.instruction.trim();
+      if (!trimmedInstruction) {
+        toast.warning("Please provide prescription instruction.");
+        return;
+      }
+      const payloads = this.form.user_id.map((dental_id) => {
+        const chart = this.dentalCharts.find((c) => c.dental_id === dental_id);
+        const issuedDate = chart?.procedure_date
+          ? dayjs(chart.procedure_date).format("YYYY-MM-DD")
+          : this.form.issued_date;
+        return {
+          dental_chart_id: Number(dental_id),
+          payment_status: this.form.payment_status,
+          issued_date: issuedDate,
+          instruction: this.form.instruction,
+          medications: this.form.prescribe_medications.map((med) => ({
+            name: med.name,
+            type: med.type,
+            dosage: med.dosage,
+            duration: med.duration,
+            frequencies: med.frequencies,
+            preparation: med.preparation,
+            pcs: Number(med.pcs),
+          })),
+        };
+      });
       try {
-        // ================= VALIDATIONS =================
-        const { prescribe_medications, instruction } = this.form;
-
-        if (
-          !Array.isArray(prescribe_medications) ||
-          prescribe_medications.length === 0
-        ) {
-          toast.warning("Please add at least one medication.");
-          return;
-        }
-
-        if (!instruction?.trim()) {
-          toast.warning("Please provide prescription instruction.");
-          return;
-        }
-
-        for (const med of prescribe_medications) {
-          if (!med.name || !Number(med.pcs) || Number(med.pcs) <= 0) {
-            toast.warning(
-              `Please enter a valid quantity for ${med.name || "medication"}`,
-            );
-            return;
-          }
-        }
-
-        const prescriptionId = this.prescription?.prescription_id;
-        const dentalId = this.prescription?.dentalChart?.dental_id;
-
-        if (!prescriptionId || !dentalId) {
-          toast.warning("Invalid prescription or dental chart data.");
-          return;
-        }
-
-        // ================= FETCH EXISTING MEDICATIONS =================
-        const backendMeds = await axios
-          .get(
-            `${process.env.VUE_APP_API_BASE_URL}/prescribe-medication/prescription/${prescriptionId}`,
-          )
-          .then((res) => res.data || []);
-
-        const medsToUpdate = prescribe_medications.filter(
-          (m) => m.prescribe_medication_id,
-        );
-        const medsToAdd = prescribe_medications.filter(
-          (m) => !m.prescribe_medication_id,
-        );
-        const medsToDelete = backendMeds.filter(
-          (bm) =>
-            !prescribe_medications.some(
-              (fm) => fm.prescribe_medication_id === bm.prescribe_medication_id,
-            ),
-        );
-
-        // ================= UPDATE EXISTING MEDICATIONS =================
-        for (const med of medsToUpdate) {
-          await axios.patch(
-            `${process.env.VUE_APP_API_BASE_URL}/prescribe-medication/${med.prescribe_medication_id}`,
-            {
-              name: med.name || "",
-              type: med.type || "",
-              dosage: med.dosage || "",
-              duration: med.duration || "",
-              frequencies: med.frequencies || "",
-              preparation: med.preparation || "",
-              pcs: Number(med.pcs) || 1,
-              issued_date: this.form.issued_date, // YYYY-MM-DD
-              dental_chart: dentalId, // number
-              prescription: prescriptionId, // number
-            },
-          );
-        }
-
-        // ================= ADD NEW MEDICATIONS =================
-        for (const med of medsToAdd) {
+        for (const payload of payloads) {
           await axios.post(
-            `${process.env.VUE_APP_API_BASE_URL}/prescribe-medication`,
-            {
-              name: med.name || "",
-              type: med.type || "",
-              dosage: med.dosage || "",
-              duration: med.duration || "",
-              frequencies: med.frequencies || "",
-              preparation: med.preparation || "",
-              pcs: Number(med.pcs) || 1,
-              issued_date: this.form.issued_date,
-              dental_chart: dentalId,
-              prescription: prescriptionId,
-            },
+            process.env.VUE_APP_API_BASE_URL + "/prescription/add-prescription",
+            payload,
           );
         }
-
-        // ================= DELETE REMOVED MEDICATIONS =================
-        for (const med of medsToDelete) {
-          await axios.delete(
-            `${process.env.VUE_APP_API_BASE_URL}/prescribe-medication/${med.prescribe_medication_id}`,
-          );
-        }
-
-        toast.success("Prescription updated successfully!");
-        new Audio(require("@/assets/add.mp3")).play();
-
-        // Refresh parent and close modal
+        toast.success("Prescription(s) added successfully!");
+        const audio = new Audio(require("@/assets/add.mp3"));
+        audio.play();
         this.$emit("refresh");
         this.$emit("close");
       } catch (error) {
         console.error(
-          "Prescription update error:",
+          "Prescription submit error:",
           error.response?.data || error.message,
         );
         toast.error(
-          error.response?.data?.message || "Failed to update prescription.",
+          error.response?.data?.message || "Failed to add prescription.",
         );
-      } finally {
-        this.isSubmitting = false;
       }
     },
     async fetchUser() {
       try {
         const response = await axios.get(
           process.env.VUE_APP_API_BASE_URL + "/auth/me",
-          {
-            withCredentials: true,
-          },
+          { withCredentials: true },
         );
-
         if (response.data) {
           this.user = response.data;
-          console.log("Authenticated User:", this.user);
         } else {
           this.$router.push("/");
           location.reload();
@@ -776,41 +553,11 @@ export default {
         this.$router.push("/");
       }
     },
-    async fetchPrescriptionForDental(dentalId) {
-      try {
-        const res = await axios.get(
-          process.env.VUE_APP_API_BASE_URL +
-            `/prescription/by-dental/${dentalId}`,
-        );
-        if (res.data && res.data.length > 0) {
-          const prescription = res.data[0];
-          this.form.prescribe_medications = prescription.medications || [];
-          this.form.instruction = prescription.instruction || "";
-          this.form.issued_date =
-            prescription.issued_date || dayjs().format("YYYY-MM-DD");
-        }
-      } catch (err) {
-        console.error("Failed to fetch prescription:", err);
-      }
-    },
   },
   async mounted() {
     await this.fetchDentalChart();
     await this.fetchInventories();
     await this.fetchUser();
-    if (this.dentalId) {
-      this.form.user_id = [this.dentalId];
-
-      if (this.editMode) {
-        await this.fetchPrescriptionForDental(this.dentalId);
-      }
-    }
-    console.log(
-      "Matching Records for Logged-in User:",
-      this.dentalCharts.filter(
-        (item) => item.user_accounts?.user_id === this.user?.sub,
-      ),
-    );
   },
 };
 </script>

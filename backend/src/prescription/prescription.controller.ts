@@ -26,9 +26,18 @@ export class PrescriptionController {
     return this.prescriptionService.findAll();
   }
 
+  @Get('patient/:patient_id')
+  findByPatient(@Param('patient_id') patient_id: string) {
+    return this.prescriptionService.findAllByPatientId(+patient_id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.prescriptionService.findOne(+id);
+  }
+  @Get('by-dental/:dental_chart_id')
+  async findByDentalChart(@Param('dental_chart_id') dental_chart_id: string) {
+    return this.prescriptionService.findByChartId(+dental_chart_id);
   }
 
   @Patch('update/:id')

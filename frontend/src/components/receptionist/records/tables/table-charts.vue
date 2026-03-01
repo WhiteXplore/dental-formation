@@ -304,34 +304,34 @@ export default {
       this.isEdit = false;
       this.editData = null;
     },
-   editDentalChart(patientId) {
-  const records = this.dentalCharts.filter(
-    (item) => item.patient?.patient_id === patientId,
-  );
+    editDentalChart(patientId) {
+      const records = this.dentalCharts.filter(
+        (item) => item.patient?.patient_id === patientId,
+      );
 
-  const proceduresByDate = {};
-  records.forEach((item) => {
-    const date = item.procedure_date;
-    if (!proceduresByDate[date]) proceduresByDate[date] = [];
-    proceduresByDate[date].push(item);
-  });
+      const proceduresByDate = {};
+      records.forEach((item) => {
+        const date = item.procedure_date;
+        if (!proceduresByDate[date]) proceduresByDate[date] = [];
+        proceduresByDate[date].push(item);
+      });
 
-  const multipleProcedures = Object.values(proceduresByDate).filter(
-    (arr) => arr.length > 1,
-  );
+      const multipleProcedures = Object.values(proceduresByDate).filter(
+        (arr) => arr.length > 1,
+      );
 
-  if (multipleProcedures.length > 0) {
-    this.proceduresToSelect = multipleProcedures.flat();
-    this.isSelectProcedure = true;
-  } else {
-    const editableRecord = JSON.parse(JSON.stringify(records[0]));
-    editableRecord.inventoryDeducted = false;
+      if (multipleProcedures.length > 0) {
+        this.proceduresToSelect = multipleProcedures.flat();
+        this.isSelectProcedure = true;
+      } else {
+        const editableRecord = JSON.parse(JSON.stringify(records[0]));
+        editableRecord.inventoryDeducted = false;
 
-    this.editData = editableRecord;
-    this.isEdit = true;
-    this.isAdd = true;
-  }
-},
+        this.editData = editableRecord;
+        this.isEdit = true;
+        this.isAdd = true;
+      }
+    },
     // async deleteDentalChart(patientId) {
     //   const confirmed = confirm(
     //     "Are you sure you want to delete all dental chart records for this patient?"

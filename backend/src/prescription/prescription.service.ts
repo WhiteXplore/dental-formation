@@ -125,13 +125,53 @@ export class PrescriptionService {
     return prescription;
   }
 
-  async findByChartId(dental_chart_id: number) {
-    return this.prescriptionRepo.findOne({
-      where: { dentalChart: { dental_id: dental_chart_id } },
-      relations: ['dentalChart'],
+  async findAllByPatientId(patient_id: number) {
+    const prescriptions = await this.prescriptionRepo.find({
+      where: {
+        dentalChart: {
+          patient: {
+            patient_id: patient_id,
+          },
+        },
+      },
+      relations: [
+        'dentalChart',
+        'dentalChart.patient',
+        'prescribedMedications',
+        'payments',
+        'hmoGuarantor',
+      ],
+      order: { issued_date: 'DESC' },
     });
+
+    if (!prescriptions.length) {
+      throw new NotFoundException(
+        `No prescriptions found for patient ID ${patient_id}.`,
+      );
+    }
+
+    return prescriptions;
   }
 
+  async findByChartId(dental_chart_id: number) {
+    const prescription = await this.prescriptionRepo.findOne({
+      where: { dentalChart: { dental_id: dental_chart_id } },
+      relations: [
+        'dentalChart',
+        'dentalChart.patient',
+        'prescribedMedications',
+        'payments',
+        'hmoGuarantor',
+      ],
+      order: { issued_date: 'DESC' },
+    });
+
+    if (!prescription) {
+      return null; // important: do NOT throw here
+    }
+
+    return prescription;
+  }
   async update(prescription_id: number, updateDto: UpdatePrescriptionDto) {
     try {
       const prescription = await this.prescriptionRepo.findOne({

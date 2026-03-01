@@ -6,31 +6,36 @@ import * as cookieParser from 'cookie-parser';
 import * as bodyParser from 'body-parser';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { join } from 'path';
+import * as fs from 'fs';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const logger = new Logger('Bootstrap');
-
-  // Whitelist for CORS
   const whitelist = [
-    'http://localhost:8080',
-    'http://localhost:3000',
-    'http://192.168.1.56:8080', // ✅ add this
-    // 'https://toothformation.online:8080',
-    // 'https://toothformation.online',
+    // 'http://localhost:8080',
+    'https://toothformation.online:8080',
+    'https://toothformation.online',
   ];
 
+  const httpsOptions = {
+    key: fs.readFileSync(join(__dirname, '../key.pem')),
+    cert: fs.readFileSync(join(__dirname, '../certificate.pem')),
+  };
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    httpsOptions,
     cors: {
       origin: (origin, callback) => {
         const curdate = new Date();
-        if (!origin || whitelist.includes(origin)) {
+        if (!origin || whitelist.indexOf(origin) !== -1) {
           console.log(
-            `Allowed CORS for: ${origin} | Date: ${curdate.toISOString()}`,
+            'Allowed CORS for:',
+            origin + ' Date: ' + curdate.toString().substring(0, 24),
           );
           callback(null, true);
         } else {
           console.log(
-            `Blocked CORS for: ${origin} | Date: ${curdate.toISOString()}`,
+            'Blocked CORS for:',
+            origin + ' Date: ' + curdate.toString().substring(0, 24),
           );
           callback(new Error('Not allowed by CORS'));
         }
@@ -42,11 +47,13 @@ async function bootstrap() {
     },
   });
 
+  const logger = new Logger('Bootstrap');
+
   // Body parser to handle large payloads
   app.use(bodyParser.json({ limit: '10mb' }));
   app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
-  // Global validation pipe
+  // Global validation
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -63,13 +70,23 @@ async function bootstrap() {
     prefix: '/uploads/',
   });
 
-  // Optional: get ConfigService if needed
+  // Swagger setup
+  const config = new DocumentBuilder()
+    .setTitle('QCE Questions')
+    .setDescription('QCE questions API')
+    .setVersion('1.0')
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document, {
+    swaggerOptions: { defaultModelsExpandDepth: -1 },
+  });
+
   const configService: ConfigService = app.get(ConfigService);
 
-  // Start server
-  const port = 3000;
-  await app.listen(port);
-  logger.log(`Application started and listening on http://localhost:${port}`);
+  await app.listen(3000);
+  logger.log(`Application started and listening on ${3000}`);
 }
 
 bootstrap();

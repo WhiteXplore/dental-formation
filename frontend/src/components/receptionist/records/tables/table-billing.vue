@@ -143,12 +143,12 @@
                         <icon name="printer" /> Print Medication
                       </button>
 
-                      <button
+                      <!-- <button
                         class="px-2 py-1 border border-red-300 hover:bg-red-200 text-red-800 rounded-lg flex items-center gap-1"
                         @click="deletePrescription(item)"
                       >
                         <icon name="delete" /> Delete
-                      </button>
+                      </button> -->
                     </td>
                   </tr>
                 </template>

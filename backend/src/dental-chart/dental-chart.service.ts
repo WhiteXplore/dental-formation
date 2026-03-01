@@ -135,8 +135,7 @@ export class DentalChartService {
       payment_amount !== undefined
         ? Number(payment_amount)
         : existingChart.payment_amount;
-    existingChart.xray_image =
-      xray_image ?? existingChart.xray_image;
+    existingChart.xray_image = xray_image ?? existingChart.xray_image;
 
     if (patient_id)
       existingChart.patient = { patient_id: Number(patient_id) } as Patient;
