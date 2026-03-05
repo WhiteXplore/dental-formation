@@ -291,7 +291,7 @@ export default {
       if (!rows || rows.length === 0) return false;
       const firstDate = this.formatScheduledDate(rows[0].procedure_date);
       return rows.some(
-        (r) => this.formatScheduledDate(r.procedure_date) !== firstDate
+        (r) => this.formatScheduledDate(r.procedure_date) !== firstDate,
       );
     },
     viewHistory(patientId) {
@@ -338,7 +338,7 @@ export default {
           process.env.VUE_APP_API_BASE_URL + "/auth/me",
           {
             withCredentials: true,
-          }
+          },
         );
 
         if (response.data) {
@@ -361,8 +361,8 @@ export default {
     console.log(
       "Matching Records for Logged-in User:",
       this.dentalCharts.filter(
-        (item) => item.user_accounts?.user_id === this.user?.sub
-      )
+        (item) => item.user_accounts?.user_id === this.user?.sub,
+      ),
     );
   },
 };

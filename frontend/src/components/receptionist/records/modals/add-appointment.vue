@@ -206,8 +206,8 @@
                   v-model="searchPatientQuery"
                   type="text"
                   placeholder="Search patient..."
-                   :disabled="isEditMode"  
-                   :readonly="isEditMode"
+                  :disabled="isEditMode"
+                  :readonly="isEditMode"
                   class="px-3 py-3 border w-full border-gray-600 rounded-md text-md text-gray-800"
                   @focus="showPatientDropdown = true"
                   @blur="hideDropdown('patient')"
@@ -323,14 +323,14 @@
               v-model="searchPatientQuery"
               type="text"
               placeholder="Search patient..."
-                :disabled="isEditMode"
-  :readonly="isEditMode"
+              :disabled="isEditMode"
+              :readonly="isEditMode"
               class="px-3 py-3 border w-full border-gray-600 rounded-md text-md text-gray-800"
               @focus="showPatientDropdown = true"
               @blur="hideDropdown('patient')"
             />
             <div
- v-if="showPatientDropdown && !isEditMode"
+              v-if="showPatientDropdown && !isEditMode"
               class="absolute left-0 top-full w-full bg-white border border-gray-300 rounded-md max-h-40 overflow-y-auto z-10"
             >
               <div v-if="filteredPatients.length > 0">
@@ -395,12 +395,12 @@ import viewFullyBookModal from "./view-fully-book-modal.vue";
 export default {
   name: "AddAppointment",
   components: { icon, viewFullyBookModal },
- props: {
-  editData: {
-    type: Object,
-    default: null,
+  props: {
+    editData: {
+      type: Object,
+      default: null,
+    },
   },
-},
 
   data() {
     return {
@@ -451,14 +451,14 @@ export default {
           .includes(query),
       );
     },
-     filteredDentists() {
+    filteredDentists() {
       const query = this.searchDentistQuery.toLowerCase();
       return this.dentists
         .filter((d) => d.role === "Dentist" && d.status === "Active")
         .filter((d) =>
           `${d.last_name}, ${d.first_name} ${d.middle_name || ""}`
             .toLowerCase()
-            .includes(query)
+            .includes(query),
         )
         .map((d) => {
           if (!this.form.scheduled_date || !this.form.appointment_time)
@@ -469,7 +469,7 @@ export default {
             parseInt(this.form.appointment_time.split(":")[0]) * 60 +
             parseInt(this.form.appointment_time.split(":")[1] || 0);
           const schedulesForDay = (d.schedules || []).filter(
-            (s) => s.day === day
+            (s) => s.day === day,
           );
           let isAvailable = false;
           schedulesForDay.forEach((s) => {
@@ -487,7 +487,9 @@ export default {
     },
     availableTimes() {
       if (!this.form.user_id || !this.form.scheduled_date) return [];
-      const dentist = this.dentists.find((d) => d.user_id === this.form.user_id);
+      const dentist = this.dentists.find(
+        (d) => d.user_id === this.form.user_id,
+      );
       if (!dentist || !dentist.schedules) return [];
 
       const day = dayjs(this.form.scheduled_date).format("dddd");
@@ -504,7 +506,9 @@ export default {
         while (start < end) {
           const h = Math.floor(start / 60);
           const m = start % 60;
-          times.push(`${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`);
+          times.push(
+            `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`,
+          );
           start += 30; // 30-minute slots
         }
       });
@@ -517,50 +521,59 @@ export default {
         p.procedure_name.toLowerCase().includes(query),
       );
     },
-    },
-  
+  },
+
   methods: {
     ...mapActions(useFetchDataStore, [
       "fetchPatients",
       "fetchDentist",
       "fetchAppointments",
       "fetchPrices",
-    ]),  setEditForm() {
-    if (!this.editData) return;
+    ]),
+    setEditForm() {
+      if (!this.editData) return;
 
-    this.form.patient_id = this.editData.patient_id || null;
-    this.form.user_id = this.editData.user_id || null;
- this.form.scheduled_date = this.editData.scheduled_date
-  ? dayjs(this.editData.scheduled_date).format("YYYY-MM-DD")
-  : "";
-    this.form.appointment_time = this.editData.appointment_time || "";
-    this.form.appointment_status = this.editData.appointment_status || "";
-    this.form.call_type = this.editData.call_type || "";
-    this.form.contact_number = this.editData.contact_number || "";
-    this.form.price_procedure_id = this.editData.price_procedure_id || null;
-    this.form.birthdate = this.editData.birthdate || "";
-    this.form.hmo_account_no = this.editData.hmo_account_no || "";
-    this.form.valid_id = this.editData.valid_id || "";
-    this.form.medical_history = this.editData.medical_history || "";
-    this.form.notif_status = this.editData.notif_status || "";
-    this.form.notif_viewed_at = this.editData.notif_viewed_at || null;
+      this.form.patient_id = this.editData.patient_id || null;
+      this.form.user_id = this.editData.user_id || null;
+      this.form.scheduled_date = this.editData.scheduled_date
+        ? dayjs(this.editData.scheduled_date).format("YYYY-MM-DD")
+        : "";
+      this.form.appointment_time = this.editData.appointment_time || "";
+      this.form.appointment_status = this.editData.appointment_status || "";
+      this.form.call_type = this.editData.call_type || "";
+      this.form.contact_number = this.editData.contact_number || "";
+      this.form.price_procedure_id = this.editData.price_procedure_id || null;
+      this.form.birthdate = this.editData.birthdate || "";
+      this.form.hmo_account_no = this.editData.hmo_account_no || "";
+      this.form.valid_id = this.editData.valid_id || "";
+      this.form.medical_history = this.editData.medical_history || "";
+      this.form.notif_status = this.editData.notif_status || "";
+      this.form.notif_viewed_at = this.editData.notif_viewed_at || null;
 
-    // Set search queries for dropdown inputs
-    const patient = this.patients.find(p => p.patient_id === this.form.patient_id);
-    if (patient) {
-      this.searchPatientQuery = `${patient.last_name}, ${patient.first_name} ${patient.middle_name || ""}`;
-    }
+      // Set search queries for dropdown inputs
+      const patient = this.patients.find(
+        (p) => p.patient_id === this.form.patient_id,
+      );
+      if (patient) {
+        this.searchPatientQuery = `${patient.last_name}, ${
+          patient.first_name
+        } ${patient.middle_name || ""}`;
+      }
 
-    const dentist = this.dentists.find(d => d.user_id === this.form.user_id);
-    if (dentist) {
-      this.searchDentistQuery = `Dr. ${dentist.last_name}, ${dentist.first_name}`;
-    }
+      const dentist = this.dentists.find(
+        (d) => d.user_id === this.form.user_id,
+      );
+      if (dentist) {
+        this.searchDentistQuery = `Dr. ${dentist.last_name}, ${dentist.first_name}`;
+      }
 
-    const procedure = this.prices.find(p => p.price_procedure_id === this.form.price_procedure_id);
-    if (procedure) {
-      this.searchProcedureQuery = procedure.procedure_name;
-    }
-  },
+      const procedure = this.prices.find(
+        (p) => p.price_procedure_id === this.form.price_procedure_id,
+      );
+      if (procedure) {
+        this.searchProcedureQuery = procedure.procedure_name;
+      }
+    },
     formatTime(time) {
       if (!time) return "";
 
