@@ -9,9 +9,6 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-/* -----------------------------------
- * Dentist Schedule DTO
- * ----------------------------------- */
 export class CreateDentistScheduleDto {
   @IsNotEmpty()
   @IsString()
@@ -28,16 +25,13 @@ export class CreateDentistScheduleDto {
 
   @IsNotEmpty()
   @IsString()
-  start_time: string; // "09:00"
+  start_time: string;
 
   @IsNotEmpty()
   @IsString()
-  end_time: string; // "17:00"
+  end_time: string;
 }
 
-/* -----------------------------------
- * User DTO
- * ----------------------------------- */
 export class CreateUserDto {
   @IsOptional()
   @IsString()
@@ -76,7 +70,15 @@ export class CreateUserDto {
   @IsIn(['Active', 'Not Active'])
   status?: string;
 
-  /* 🟦 Dentist schedules (NEW & CORRECT) */
+  @IsOptional()
+  @IsString()
+  signature?: string;
+
+  // ⭐ NEW (for removing signature)
+  @IsOptional()
+  @IsString()
+  removeSignature?: string;
+
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })

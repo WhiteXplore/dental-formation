@@ -330,7 +330,7 @@ export default {
           a.patient.middle_name || ""
         }`
           .toLowerCase()
-          .includes(query)
+          .includes(query),
       );
     },
     statusColors() {
@@ -396,7 +396,7 @@ export default {
           process.env.VUE_APP_API_BASE_URL + "/auth/me",
           {
             withCredentials: true,
-          }
+          },
         );
         if (response.data) {
           this.user = response.data;
@@ -438,11 +438,11 @@ export default {
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
-          }
+          },
         );
 
         const patient = this.filteredPatients.find(
-          (a) => a.patient?.patient_id === this.form.patient_id
+          (a) => a.patient?.patient_id === this.form.patient_id,
         )?.patient;
 
         const mergedData = {
@@ -450,7 +450,7 @@ export default {
           Statuses: this.selectedTeeth
             .map(
               (tooth) =>
-                this.procedureNameMap[this.toothStatusMap[tooth]] || "N/A"
+                this.procedureNameMap[this.toothStatusMap[tooth]] || "N/A",
             )
             .join(", "),
           "Procedure Date": new Date().toLocaleDateString("en-US", {

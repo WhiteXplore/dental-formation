@@ -12,24 +12,35 @@ export class UserService {
   constructor(
     @InjectRepository(User_Accounts)
     private readonly userRepository: Repository<User_Accounts>,
+
     @InjectRepository(DentistSchedule)
     private readonly scheduleRepository: Repository<DentistSchedule>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User_Accounts> {
-    const saltRounds = 10;
+    const { schedules, password, ...userData } = createUserDto;
 
-    const hashedPassword = await bcrypt.hash(
-      createUserDto.password,
-      saltRounds,
-    );
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = this.userRepository.create({
-      ...createUserDto,
+      ...userData,
       password: hashedPassword,
     });
 
-    return this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
+
+    if (Array.isArray(schedules) && schedules.length > 0) {
+      const scheduleEntities = schedules.map((s) =>
+        this.scheduleRepository.create({
+          ...s,
+          user_id: savedUser.user_id,
+        }),
+      );
+
+      await this.scheduleRepository.save(scheduleEntities);
+    }
+
+    return this.findOne(savedUser.user_id);
   }
 
   async findAll(): Promise<User_Accounts[]> {
@@ -58,14 +69,19 @@ export class UserService {
     user_id: number,
     updateUserDto: UpdateUserDto,
   ): Promise<User_Accounts> {
-    const { schedules, password, ...userData } = updateUserDto;
+    const { schedules, password, removeSignature, ...userData } = updateUserDto;
 
     if (password) {
       userData['password'] = await bcrypt.hash(password, 10);
     }
 
+    // ⭐ remove signature
+    if (removeSignature === 'true') {
+      await this.userRepository.update(user_id, { signature: null });
+    }
     await this.userRepository.update(user_id, userData);
 
+    // ⭐ update schedules
     if (Array.isArray(schedules)) {
       await this.scheduleRepository.delete({ user_id });
 
@@ -84,6 +100,7 @@ export class UserService {
 
   async remove(user_id: number): Promise<void> {
     const result = await this.userRepository.delete(user_id);
+
     if (result.affected === 0) {
       throw new NotFoundException(`User with ID ${user_id} not found`);
     }

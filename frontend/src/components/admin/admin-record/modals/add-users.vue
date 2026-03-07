@@ -18,6 +18,7 @@
               {{ isEditMode ? "Edit User Account" : "Add User Account" }}
             </h1>
           </div>
+
           <icon
             :name="'circle-close3'"
             @click="$emit('close')"
@@ -26,51 +27,47 @@
         </div>
 
         <div class="p-5 w-[30vw] space-y-3">
-          <!-- Row 1: Names -->
-          <div class="flex gap-2">
-            <div class="w-full space-y-1.5 text-left flex flex-col">
-              <label for="first_name" class="font-bold">First Name:</label>
-              <input
-                v-model="form.first_name"
-                type="text"
-                id="first_name"
-                required
-                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-                placeholder="Enter first name"
-              />
-            </div>
-            <div class="w-full space-y-1.5 text-left flex flex-col">
-              <label for="middle_name" class="font-bold">Middle Name:</label>
-              <input
-                v-model="form.middle_name"
-                type="text"
-                id="middle_name"
-                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-                placeholder="Enter middle name"
-              />
-            </div>
-            <div class="w-full space-y-1.5 text-left flex flex-col">
-              <label for="last_name" class="font-bold">Last Name:</label>
-              <input
-                v-model="form.last_name"
-                type="text"
-                id="last_name"
-                required
-                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-                placeholder="Enter last name"
-              />
-            </div>
-          </div>
+          <!-- STEP 1 -->
+          <div v-if="step === 1" class="space-y-3">
+            <!-- Names -->
+            <div class="flex gap-2">
+              <div class="w-full flex flex-col space-y-1">
+                <label class="font-bold">First Name</label>
+                <input
+                  v-model="form.first_name"
+                  required
+                  type="text"
+                  class="border px-3 py-3 rounded-md border-gray-600"
+                />
+              </div>
 
-          <!-- Role -->
-          <div class="flex gap-2">
-            <div class="w-full space-y-1.5 text-left flex flex-col">
-              <label for="role" class="font-bold">Role:</label>
+              <div class="w-full flex flex-col space-y-1">
+                <label class="font-bold">Middle Name</label>
+                <input
+                  v-model="form.middle_name"
+                  type="text"
+                  class="border px-3 py-3 rounded-md border-gray-600"
+                />
+              </div>
+
+              <div class="w-full flex flex-col space-y-1">
+                <label class="font-bold">Last Name</label>
+                <input
+                  v-model="form.last_name"
+                  required
+                  type="text"
+                  class="border px-3 py-3 rounded-md border-gray-600"
+                />
+              </div>
+            </div>
+
+            <!-- Role -->
+            <div class="flex flex-col space-y-1">
+              <label class="font-bold">Role</label>
               <select
                 v-model="form.role"
-                id="role"
                 required
-                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+                class="border px-3 py-3 rounded-md border-gray-600"
               >
                 <option disabled value="">Select Role</option>
                 <option value="Admin">Admin</option>
@@ -78,137 +75,155 @@
                 <option value="Dentist">Dentist</option>
               </select>
             </div>
-          </div>
 
-          <!-- Dentist-only fields -->
-          <div v-if="form.role === 'Dentist'" class="space-y-4">
-            <div class="flex gap-2">
-              <div class="w-full space-y-1.5 flex flex-col">
-                <label class="font-bold">License No:</label>
-                <input
-                  v-model="form.license_no"
-                  type="text"
-                  class="w-full border px-3 py-3 border-gray-600 rounded-md"
-                  required
-                />
+            <!-- Dentist fields -->
+            <div v-if="form.role === 'Dentist'" class="space-y-3">
+              <div class="flex gap-2">
+                <div class="w-full flex flex-col">
+                  <label class="font-bold">License No</label>
+                  <input
+                    v-model="form.license_no"
+                    required
+                    type="text"
+                    class="border px-3 py-3 rounded-md border-gray-600"
+                  />
+                </div>
+
+                <div class="w-full flex flex-col">
+                  <label class="font-bold">PRC Type</label>
+                  <input
+                    v-model="form.prc_type"
+                    required
+                    type="text"
+                    class="border px-3 py-3 rounded-md border-gray-600"
+                  />
+                </div>
               </div>
 
-              <div class="w-full space-y-1.5 flex flex-col">
-                <label class="font-bold">PRC Type:</label>
-                <input
-                  v-model="form.prc_type"
-                  type="text"
-                  class="w-full border px-3 py-3 border-gray-600 rounded-md"
-                  required
-                />
-              </div>
-            </div>
+              <!-- Schedule -->
+              <div class="space-y-2">
+                <label class="font-bold">Dentist Schedule</label>
 
-            <!-- 🟦 Dentist Schedules -->
-            <div class="space-y-2">
-              <label class="font-bold">Dentist Schedule</label>
-
-              <div
-                v-for="(s, index) in schedules"
-                :key="index"
-                class="flex gap-2 items-center"
-              >
-                <select
-                  v-model="s.day"
-                  class="border px-2 py-2 rounded-md w-[120px]"
-                  required
+                <div
+                  v-for="(s, index) in schedules"
+                  :key="index"
+                  class="flex gap-2 items-center"
                 >
-                  <option disabled value="">Day</option>
-                  <option v-for="d in days" :key="d">{{ d }}</option>
-                </select>
+                  <select
+                    v-model="s.day"
+                    class="border px-2 py-2 rounded-md w-full"
+                  >
+                    <option disabled value="">Day</option>
+                    <option v-for="d in days" :key="d">{{ d }}</option>
+                  </select>
 
-                <input
-                  type="time"
-                  v-model="s.start_time"
-                  class="border px-2 py-2 rounded-md"
-                  required
-                />
+                  <input
+                    type="time"
+                    v-model="s.start_time"
+                    class="border px-2 py-2 rounded-md w-full"
+                  />
 
-                <input
-                  type="time"
-                  v-model="s.end_time"
-                  class="border px-2 py-2 rounded-md"
-                  required
-                />
+                  <input
+                    type="time"
+                    v-model="s.end_time"
+                    class="border px-2 py-2 rounded-md w-full"
+                  />
+
+                  <button
+                    type="button"
+                    @click="removeSchedule(index)"
+                    class="text-red-600 font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
 
                 <button
                   type="button"
-                  class="text-red-600 font-bold"
-                  @click="removeSchedule(index)"
+                  @click="addSchedule"
+                  class="bg-green-600 text-white px-3 py-1 rounded-md"
                 >
-                  ✕
+                  + Add Schedule
                 </button>
               </div>
-
-              <button
-                type="button"
-                class="bg-green-600 text-white px-3 py-1 rounded-md"
-                @click="addSchedule"
-              >
-                + Add Schedule
-              </button>
             </div>
           </div>
 
-          <!-- Email & Password -->
-          <div class="flex gap-2">
-            <div class="w-full space-y-1.5 text-left flex flex-col">
-              <label for="email" class="font-bold">Email:</label>
+          <!-- STEP 2 -->
+          <div v-if="step === 2" class="space-y-3">
+            <!-- Email -->
+            <div class="flex flex-col space-y-1">
+              <label class="font-bold">Email</label>
               <input
                 v-model="form.email"
                 type="email"
-                id="email"
                 required
-                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-                placeholder="Enter email"
+                class="border px-3 py-3 rounded-md border-gray-600"
               />
             </div>
 
-            <div class="w-full space-y-1.5 text-left flex flex-col">
-              <label class="font-bold">Password:</label>
+            <!-- Password -->
+            <div class="flex flex-col space-y-1">
+              <label class="font-bold">Password</label>
 
-              <!-- Edit mode: show change password button -->
               <div v-if="isEditMode && !showPasswordInput">
                 <button
                   type="button"
-                  class="w-full bg-yellow-400 text-black px-3 py-3 rounded-md hover:bg-yellow-300"
                   @click="showPasswordInput = true"
+                  class="bg-yellow-400 px-3 py-3 rounded-md w-full"
                 >
                   Change Password
                 </button>
               </div>
 
-              <!-- Password input -->
               <div v-else>
                 <input
                   v-model="form.password"
                   type="password"
-                  id="password"
                   :required="!isEditMode || showPasswordInput"
-                  class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-                  placeholder="Enter password"
+                  class="border px-3 py-3 rounded-md border-gray-600"
                 />
-                <small v-if="isEditMode" class="text-gray-500 text-xs">
-                  Leave blank to keep current password
-                </small>
               </div>
             </div>
-          </div>
 
-          <!-- Status -->
-          <div class="flex gap-2">
-            <div class="w-full space-y-1.5 text-left flex flex-col">
-              <label for="status" class="font-bold">Status:</label>
+            <!-- Signature -->
+            <div class="space-y-2">
+              <label class="font-bold">E-Signature</label>
+
+              <input
+                type="file"
+                accept="image/*"
+                @change="handleSignatureUpload"
+                class="border px-3 py-2 rounded-md border-gray-600 w-full"
+              />
+
+              <div v-if="form.signature">
+                <p class="text-xs text-gray-500">Signature Preview</p>
+
+                <div class="flex items-center gap-2">
+                  <img
+                    :src="signaturePreview"
+                    class="h-[80px] border rounded bg-white p-1"
+                  />
+
+                  <button
+                    type="button"
+                    @click="removeSignature"
+                    class="text-red-600 text-sm"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Status -->
+            <div class="flex flex-col space-y-1">
+              <label class="font-bold">Status</label>
               <select
                 v-model="form.status"
-                id="status"
                 required
-                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+                class="border px-3 py-3 rounded-md border-gray-600"
               >
                 <option disabled value="">Select Status</option>
                 <option>Active</option>
@@ -217,23 +232,46 @@
             </div>
           </div>
 
-          <div class="w-full h-[1px] bg-gray-200 mt-4"></div>
+          <!-- Divider -->
+          <div class="w-full h-[1px] bg-gray-200"></div>
 
           <!-- Buttons -->
-          <div class="tracking-wide flex justify-end gap-2 mt-4">
+          <div class="flex justify-between">
             <button
+              v-if="step === 2"
               type="button"
-              class="bg-red-600 p-2 px-3 rounded-lg text-white hover:bg-white hover:border-red-800 hover:text-red-800 hover:shadow-md"
-              @click="$emit('close')"
+              @click="step--"
+              class="bg-gray-500 text-white px-3 py-2 rounded-lg"
             >
-              Cancel
+              Back
             </button>
-            <button
-              class="bg-[#34699A] p-2 px-3 rounded-lg text-white hover:bg-white hover:border-green-800 hover:text-green-800 hover:shadow-md"
-              type="submit"
-            >
-              {{ isEditMode ? "Update" : "Submit" }}
-            </button>
+
+            <div class="ml-auto flex gap-2">
+              <button
+                type="button"
+                @click="$emit('close')"
+                class="bg-red-600 text-white px-3 py-2 rounded-lg"
+              >
+                Cancel
+              </button>
+
+              <button
+                v-if="step === 1"
+                type="button"
+                @click="step = 2"
+                class="bg-blue-600 text-white px-3 py-2 rounded-lg"
+              >
+                Next
+              </button>
+
+              <button
+                v-if="step === 2"
+                type="submit"
+                class="bg-[#34699A] text-white px-3 py-2 rounded-lg"
+              >
+                {{ isEditMode ? "Update" : "Submit" }}
+              </button>
+            </div>
           </div>
         </div>
       </form>
@@ -243,21 +281,22 @@
 
 <script>
 import icon from "@/assets/icon.vue";
-import { toast } from "vue3-toastify";
 import axios from "axios";
+import { toast } from "vue3-toastify";
 
 export default {
-  name: "UserModal",
   components: { icon },
+
   props: {
-    user: {
-      type: Object,
-      default: null,
-    },
+    user: { type: Object, default: null },
   },
+
   data() {
     return {
+      step: 1,
       showPasswordInput: false,
+      signatureFile: null,
+      removeSignatureFlag: false,
       days: [
         "Monday",
         "Tuesday",
@@ -266,6 +305,7 @@ export default {
         "Friday",
         "Saturday",
       ],
+
       form: {
         first_name: "",
         middle_name: "",
@@ -276,7 +316,9 @@ export default {
         password: "",
         role: "",
         status: "",
+        signature: "",
       },
+
       schedules: [],
     };
   },
@@ -285,102 +327,111 @@ export default {
     isEditMode() {
       return !!this.user;
     },
+
+    signaturePreview() {
+      if (!this.form.signature) return "";
+
+      // preview for newly uploaded file
+      if (this.form.signature.startsWith("blob:")) {
+        return this.form.signature;
+      }
+
+      // existing file from backend
+      return `${process.env.VUE_APP_API_BASE_URL}/uploads/signatures/${this.form.signature}`;
+    },
   },
 
   methods: {
-    addSchedule() {
-      this.schedules.push({
-        day: "",
-        start_time: "",
-        end_time: "",
-      });
+    handleSignatureUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      this.signatureFile = file;
+      this.form.signature = URL.createObjectURL(file);
     },
 
-    removeSchedule(index) {
-      this.schedules.splice(index, 1);
+    removeSignature() {
+      this.signatureFile = null;
+      this.form.signature = "";
+      this.removeSignatureFlag = true; // ⭐ tell backend to delete
+    },
+
+    addSchedule() {
+      this.schedules.push({ day: "", start_time: "", end_time: "" });
+    },
+
+    removeSchedule(i) {
+      this.schedules.splice(i, 1);
     },
 
     async submitData() {
-      const formEl = this.$refs.userForm;
-      if (!formEl.checkValidity()) {
-        formEl.reportValidity();
-        return;
+      const formData = new FormData();
+
+      Object.keys(this.form).forEach((key) => {
+        if (this.form[key] !== undefined && this.form[key] !== null) {
+          formData.append(key, this.form[key]);
+        }
+      });
+
+      if (this.signatureFile) {
+        formData.append("signature", this.signatureFile);
+      }
+
+      if (this.removeSignatureFlag) {
+        formData.append("removeSignature", "true");
+      }
+
+      if (this.form.role === "Dentist") {
+        formData.append("schedules", JSON.stringify(this.schedules));
       }
 
       try {
-     let payload = {
-  first_name: this.form.first_name,
-  middle_name: this.form.middle_name,
-  last_name: this.form.last_name,
-  license_no: this.form.license_no,
-  prc_type: this.form.prc_type,
-  email: this.form.email,
-  role: this.form.role,
-  status: this.form.status,
-  password: this.form.password,
-  schedules:
-    this.form.role === "Dentist"
-      ? this.schedules.map(s => ({
-          day: s.day,
-          start_time: s.start_time,
-          end_time: s.end_time
-        }))
-      : []
-};
-
-        if (this.isEditMode && !payload.password) {
-          delete payload.password;
-        }
-
         if (this.isEditMode) {
           await axios.patch(
             `${process.env.VUE_APP_API_BASE_URL}/user/update/${this.user.user_id}`,
-            payload
+            formData,
           );
-          toast.success("User updated successfully!");
+
+          toast.success("User updated successfully");
         } else {
           await axios.post(
             `${process.env.VUE_APP_API_BASE_URL}/user/add-user`,
-            payload
+            formData,
           );
-          toast.success("User added successfully!");
-        }
 
-        const audio = new Audio(require("@/assets/add.mp3"));
-        audio.play();
+          toast.success("User added successfully");
+        }
 
         this.$emit("refresh");
         this.$emit("close");
-      } catch (error) {
-        toast.error(
-          this.isEditMode ? "Failed to update user." : "Failed to add user."
-        );
+      } catch {
+        toast.error("Error saving user");
       }
     },
   },
+
   mounted() {
     if (this.isEditMode) {
-  this.form = {
-  first_name: this.user.first_name,
-  middle_name: this.user.middle_name,
-  last_name: this.user.last_name,
-  license_no: this.user.license_no,
-  prc_type: this.user.prc_type,
-  email: this.user.email,
-  role: this.user.role,
-  status: this.user.status,
-  password: "",
-};
+      this.form = {
+        first_name: this.user.first_name,
+        middle_name: this.user.middle_name,
+        last_name: this.user.last_name,
+        license_no: this.user.license_no,
+        prc_type: this.user.prc_type,
+        email: this.user.email,
+        role: this.user.role,
+        status: this.user.status,
+        password: "",
+        signature: this.user.signature || "",
+      };
 
-
-     this.schedules = this.user.schedules
-  ? this.user.schedules.map(s => ({
-      day: s.day,
-      start_time: s.start_time,
-      end_time: s.end_time
-    }))
-  : [];
-
+      this.schedules = this.user.schedules
+        ? this.user.schedules.map((s) => ({
+            day: s.day,
+            start_time: s.start_time,
+            end_time: s.end_time,
+          }))
+        : [];
     }
   },
 };

@@ -491,7 +491,7 @@ export default {
       ];
 
       return [...this.selectedUser.schedules].sort(
-        (a, b) => weekOrder.indexOf(a.day) - weekOrder.indexOf(b.day)
+        (a, b) => weekOrder.indexOf(a.day) - weekOrder.indexOf(b.day),
       );
     },
     filteredData() {
@@ -548,7 +548,7 @@ export default {
       ];
 
       return [...schedules].sort(
-        (a, b) => weekOrder.indexOf(a.day) - weekOrder.indexOf(b.day)
+        (a, b) => weekOrder.indexOf(a.day) - weekOrder.indexOf(b.day),
       );
     },
     checkAvailability(user) {
@@ -564,12 +564,12 @@ export default {
 
         const start = dayjs(
           `${now.format("YYYY-MM-DD")} ${sched.start_time}`,
-          "YYYY-MM-DD HH:mm:ss"
+          "YYYY-MM-DD HH:mm:ss",
         );
 
         const end = dayjs(
           `${now.format("YYYY-MM-DD")} ${sched.end_time}`,
-          "YYYY-MM-DD HH:mm:ss"
+          "YYYY-MM-DD HH:mm:ss",
         );
 
         return now.isAfter(start) && now.isBefore(end);
@@ -619,7 +619,7 @@ export default {
       axios
         .delete(
           process.env.VUE_APP_API_BASE_URL +
-            `/user/${this.recordToDelete.user_id}`
+            `/user/${this.recordToDelete.user_id}`,
         )
         .then(() => {
           new Audio(require("@/assets/delete.mp3")).play();

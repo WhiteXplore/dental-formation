@@ -2,6 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { Appointment } from 'src/appointment/entities/appointment.entity';
 import { DentalChart } from 'src/dental-chart/entities/dental-chart.entity';
 import { DentistSchedule } from './dentist.entity';
+
 @Entity('user_accounts')
 export class User_Accounts {
   @PrimaryGeneratedColumn('increment')
@@ -25,7 +26,7 @@ export class User_Accounts {
   @Column({ type: 'varchar', length: 255, nullable: false, unique: true })
   email: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: false })
+  @Column({ type: 'varchar', length: 100 })
   password: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
@@ -33,6 +34,10 @@ export class User_Accounts {
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   status: string;
+
+  // ⭐ FIX HERE
+  @Column({ type: 'varchar', nullable: true })
+  signature: string | null;
 
   @OneToMany(() => DentistSchedule, (s) => s.user, { cascade: true })
   schedules: DentistSchedule[];

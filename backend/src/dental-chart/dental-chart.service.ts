@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DentalChart } from './entities/dental-chart.entity';
 import { ToothChart } from './entities/tooth.entity';
@@ -33,6 +33,7 @@ export class DentalChartService {
       price_procedure_id,
       selected_teeth,
       tooth_status_map,
+      tooth_condition_map,
       procedure_notes,
       procedure_date,
       payment_amount,
@@ -44,50 +45,52 @@ export class DentalChartService {
       procedure_notes: procedure_notes ?? '',
       procedure_date: procedure_date ? new Date(procedure_date) : new Date(),
       payment_amount: Number(payment_amount) || 0,
-      xray_image: xray_image ?? undefined,
-      patient: { patient_id: Number(patient_id) } as Patient,
-      user_accounts: { user_id: Number(user_id) } as User_Accounts,
+      xray_image: xray_image ?? null,
+
+      patient: { patient_id } as Patient,
+      user_accounts: { user_id } as User_Accounts,
+
       priceProcedure: price_procedure_id
-        ? ({ price_procedure_id: Number(price_procedure_id) } as any)
+        ? ({ price_procedure_id } as any)
         : undefined,
     });
 
     const savedChart = await this.dentalChartRepo.save(dentalChart);
 
-    // TEETH
-    if (selected_teeth && selected_teeth.length > 0) {
-      const toothEntities = selected_teeth.map((toothNum) =>
+    /** TEETH */
+    if (selected_teeth?.length) {
+      const teeth = selected_teeth.map((tooth) =>
         this.toothChartRepo.create({
-          tooth_number: toothNum,
-          status: tooth_status_map[toothNum] ?? undefined,
-          priceProcedure: tooth_status_map[toothNum]
-            ? ({
-                price_procedure_id: Number(tooth_status_map[toothNum]),
-              } as any)
+          tooth_number: tooth,
+          tooth_condition: tooth_condition_map?.[tooth],
+          priceProcedure: tooth_status_map?.[tooth]
+            ? ({ price_procedure_id: tooth_status_map[tooth] } as any)
             : undefined,
           dentalChart: savedChart,
         }),
       );
-      await this.toothChartRepo.save(toothEntities);
+
+      await this.toothChartRepo.save(teeth);
     }
 
-    // ADDITIONAL ITEMS
-    if (additional_items && additional_items.length > 0) {
-      const addItemsEntities = additional_items.map((item: AdditionalItemDto) =>
+    /** ADDITIONAL ITEMS */
+    if (additional_items?.length) {
+      const addItems = additional_items.map((item: AdditionalItemDto) =>
         this.additionalItemsRepo.create({
           inventory_id: item.inventory_id,
           pcs: item.pcs,
           dentalChart: savedChart,
         }),
       );
-      await this.additionalItemsRepo.save(addItemsEntities);
+
+      await this.additionalItemsRepo.save(addItems);
     }
 
     return this.findOne(savedChart.dental_id);
   }
 
   /** FIND ONE */
-  findOne(dental_id: number) {
+  async findOne(dental_id: number) {
     return this.dentalChartRepo.findOne({
       where: { dental_id },
       relations: [
@@ -112,6 +115,7 @@ export class DentalChartService {
       price_procedure_id,
       selected_teeth,
       tooth_status_map,
+      tooth_condition_map,
       procedure_notes,
       procedure_date,
       payment_amount,
@@ -119,75 +123,71 @@ export class DentalChartService {
       xray_image,
     } = dto;
 
-    const existingChart = await this.dentalChartRepo.findOne({
+    const chart = await this.dentalChartRepo.findOne({
       where: { dental_id: id },
       relations: ['teeth', 'addItems'],
     });
 
-    if (!existingChart) throw new Error('Dental chart not found');
+    if (!chart) throw new NotFoundException('Dental chart not found');
 
-    // MAIN FIELDS
-    existingChart.procedure_notes =
-      procedure_notes ?? existingChart.procedure_notes;
-    existingChart.procedure_date =
-      procedure_date ?? existingChart.procedure_date;
-    existingChart.payment_amount =
+    /** MAIN DATA */
+    chart.procedure_notes = procedure_notes ?? chart.procedure_notes;
+    chart.procedure_date = procedure_date ?? chart.procedure_date;
+    chart.payment_amount =
       payment_amount !== undefined
         ? Number(payment_amount)
-        : existingChart.payment_amount;
-    existingChart.xray_image = xray_image ?? existingChart.xray_image;
+        : chart.payment_amount;
 
-    if (patient_id)
-      existingChart.patient = { patient_id: Number(patient_id) } as Patient;
-    if (user_id)
-      existingChart.user_accounts = {
-        user_id: Number(user_id),
-      } as User_Accounts;
+    chart.xray_image = xray_image ?? chart.xray_image;
+
+    if (patient_id) chart.patient = { patient_id } as Patient;
+
+    if (user_id) chart.user_accounts = { user_id } as User_Accounts;
+
     if (price_procedure_id)
-      existingChart.priceProcedure = {
-        price_procedure_id: Number(price_procedure_id),
-      } as any;
+      chart.priceProcedure = { price_procedure_id } as any;
 
-    await this.dentalChartRepo.save(existingChart);
+    await this.dentalChartRepo.save(chart);
 
-    // TEETH
+    /** TEETH UPDATE */
     if (Array.isArray(selected_teeth)) {
-      await this.toothChartRepo.delete({ dentalChart: { dental_id: id } });
+      await this.toothChartRepo.delete({ dental_id: id });
 
-      const newToothEntities = selected_teeth.map((toothNum) =>
+      const teeth = selected_teeth.map((tooth) =>
         this.toothChartRepo.create({
-          tooth_number: toothNum,
-          status: tooth_status_map?.[toothNum] ?? undefined,
-          priceProcedure: tooth_status_map?.[toothNum]
-            ? ({
-                price_procedure_id: Number(tooth_status_map[toothNum]),
-              } as any)
+          tooth_number: tooth,
+          tooth_condition: tooth_condition_map?.[tooth],
+          priceProcedure: tooth_status_map?.[tooth]
+            ? ({ price_procedure_id: tooth_status_map[tooth] } as any)
             : undefined,
-          dentalChart: existingChart,
+          dentalChart: chart,
         }),
       );
-      await this.toothChartRepo.save(newToothEntities);
+
+      await this.toothChartRepo.save(teeth);
     }
 
-    // ADDITIONAL ITEMS
+    /** ADDITIONAL ITEMS UPDATE */
     if (Array.isArray(additional_items)) {
       await this.additionalItemsRepo.delete({ dentalChart: { dental_id: id } });
 
-      const addItemsEntities = additional_items.map((item) =>
+      const addItems = additional_items.map((item) =>
         this.additionalItemsRepo.create({
           inventory_id: item.inventory_id,
           pcs: item.pcs,
-          dentalChart: existingChart,
+          dentalChart: chart,
         }),
       );
-      await this.additionalItemsRepo.save(addItemsEntities);
+
+      await this.additionalItemsRepo.save(addItems);
     }
 
     return this.findOne(id);
   }
 
+  /** FIND ALL */
   async findAll() {
-    const charts = await this.dentalChartRepo.find({
+    return this.dentalChartRepo.find({
       relations: [
         'patient',
         'user_accounts',
@@ -200,30 +200,45 @@ export class DentalChartService {
       ],
       order: { created_at: 'DESC' },
     });
-
-    return charts;
   }
 
+  /** DELETE */
   async remove(id: number) {
     await this.dentalChartRepo.delete(id);
     return { message: 'Deleted successfully' };
   }
 
+  /** PATIENT HISTORY */
   async getHistoryByPatientId(patientId: number) {
     return this.dentalChartRepo.find({
       where: { patient: { patient_id: patientId } },
-      relations: ['patient', 'user_accounts', 'teeth', 'teeth.priceProcedure'],
+      relations: [
+        'patient',
+        'user_accounts',
+
+        'teeth',
+        'teeth.priceProcedure',
+
+        'teeth.priceProcedure.procedureInventories',
+        'teeth.priceProcedure.procedureInventories.inventory',
+
+        'addItems',
+        'addItems.additionalInventory',
+      ],
       order: { created_at: 'DESC' },
     });
   }
 
+  /** MARK INVENTORY */
   async markInventoryDeducted(dentalId: number) {
     const chart = await this.dentalChartRepo.findOne({
       where: { dental_id: dentalId },
     });
-    if (!chart) throw new Error('Dental chart not found');
+
+    if (!chart) throw new NotFoundException('Dental chart not found');
 
     chart.inventoryDeducted = true;
+
     await this.dentalChartRepo.save(chart);
 
     return {

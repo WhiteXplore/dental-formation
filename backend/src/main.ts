@@ -1,6 +1,5 @@
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import * as bodyParser from 'body-parser';
@@ -10,43 +9,22 @@ import { join } from 'path';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
-  // Whitelist for CORS
-  const whitelist = [
-    'http://localhost:8080',
-    'http://localhost:3000',
-    'http://192.168.1.56:8080', // ✅ add this
-    // 'https://toothformation.online:8080',
-    // 'https://toothformation.online',
-  ];
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    cors: {
-      origin: (origin, callback) => {
-        const curdate = new Date();
-        if (!origin || whitelist.includes(origin)) {
-          console.log(
-            `Allowed CORS for: ${origin} | Date: ${curdate.toISOString()}`,
-          );
-          callback(null, true);
-        } else {
-          console.log(
-            `Blocked CORS for: ${origin} | Date: ${curdate.toISOString()}`,
-          );
-          callback(new Error('Not allowed by CORS'));
-        }
-      },
-      allowedHeaders:
-        'Origin, Authorization, X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept, Observe',
-      methods: 'GET,PUT,POST,PATCH,DELETE,UPDATE,OPTIONS',
-      credentials: true,
-    },
+  // ✅ Enable CORS globally
+  app.enableCors({
+    origin: [
+      'http://localhost:8080',
+      'http://localhost:3000',
+      'http://192.168.1.56:8080',
+    ],
+    methods: 'GET,PUT,POST,PATCH,DELETE,OPTIONS',
+    credentials: true,
   });
 
-  // Body parser to handle large payloads
   app.use(bodyParser.json({ limit: '10mb' }));
   app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
-  // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -55,21 +33,17 @@ async function bootstrap() {
     }),
   );
 
-  // Cookie parser
   app.use(cookieParser());
 
-  // Serve static files
+  // ✅ Static uploads
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
   });
 
-  // Optional: get ConfigService if needed
-  const configService: ConfigService = app.get(ConfigService);
-
-  // Start server
   const port = 3000;
   await app.listen(port);
-  logger.log(`Application started and listening on http://localhost:${port}`);
+
+  logger.log(`Application started at http://localhost:${port}`);
 }
 
 bootstrap();

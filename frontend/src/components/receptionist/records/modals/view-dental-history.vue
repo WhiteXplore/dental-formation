@@ -237,7 +237,9 @@
                     </td>
 
                     <td class="border p-2">
-                      {{ record.procedure_type.procedure_name }}
+                      <div v-for="(status, tooth) in record.teeth" :key="tooth">
+                        {{ status }}
+                      </div>
                     </td>
                     <td class="border p-2">
                       <img
@@ -386,11 +388,9 @@ export default {
           };
         }
 
-        // ✅ FIXED TEETH MAPPING (your API structure)
         const teeth = {};
         (chart.teeth || []).forEach((t) => {
-          teeth[t.tooth_number] =
-            chart.priceProcedure?.procedure_name || "Unknown";
+          teeth[t.tooth_number] = t.priceProcedure?.procedure_name || "Unknown";
         });
 
         // ✅ FIXED MEDICATIONS (KEEP AS ARRAY)

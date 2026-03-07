@@ -413,15 +413,22 @@ export default {
       const typeStr = type === "procedure" ? "Procedure" : "Medication";
       return `${name.replace(/\s+/g, "_")}_${typeStr}_${date}.pdf`;
     },
-
     async toBase64(imgPath) {
-      const response = await fetch(imgPath);
-      const blob = await response.blob();
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsDataURL(blob);
-      });
+      try {
+        const response = await axios.get(imgPath, {
+          responseType: "blob",
+          withCredentials: false,
+        });
+
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(response.data);
+        });
+      } catch (error) {
+        console.error("Image load failed:", imgPath, error);
+        return null;
+      }
     },
 
     formatScheduledDate(date) {
@@ -438,32 +445,73 @@ export default {
       const row = rows[0];
       const patient = row.dentalChart?.patient;
       const base64Logo = await this.toBase64(logoImage);
+      // ===========================
+      // LOAD SIGNATURE
+      // ===========================
 
+      let signatureBase64 = null;
+
+      const dentist =
+        type === "procedure"
+          ? this.user
+          : row?.dentalChart?.user_accounts || this.user;
+
+      if (dentist?.signature) {
+        try {
+          const signatureUrl = `${process.env.VUE_APP_API_BASE_URL}/uploads/signatures/${dentist.signature}`;
+
+          signatureBase64 = await this.toBase64(signatureUrl);
+          console.log("Signature File:", dentist.signature);
+          console.log("Signature URL:", signatureUrl);
+          console.log("Signature Base64:", signatureBase64);
+        } catch (err) {
+          console.warn("Signature failed to load", err);
+        }
+      }
       // ===========================
       // PDF HEADER (FIXED)
       // ===========================
       const header = [
-        { image: base64Logo, width: 200, alignment: "center" },
-        { text: "TOOTH FORMATION DENTAL CLINIC", style: "clinicHeader" },
+        { image: base64Logo, width: 120, alignment: "center" },
+        { text: "TOOTHFORMATIONS DENTAL CLINIC", style: "clinicHeader" },
         {
-          text: "PANABO POLYMEDIC HOSPITAL, INC. - GROUP FLOOR",
+          text: "PANABO POLYMEDIC HOSPITAL, INC. - GROUND FLOOR",
           style: "subTitle",
         },
         {
-          columns: [
+          stack: [
             {
-              text: "Contact #: 0985-104-6429",
-              style: "receiptTitle",
-              alignment: "center",
+              table: {
+                widths: ["*", "auto", "auto", "*"],
+                body: [
+                  [
+                    { text: "", border: [false, false, false, false] },
+                    {
+                      text: "Contact#: 0985-104-6429",
+                      style: "receiptTitle",
+                      border: [false, false, false, false],
+                    },
+                    {
+                      text: "Telephone#: 0985-104-6429",
+                      style: "receiptTitle",
+                      margin: [20, 0, 0, 0],
+                      border: [false, false, false, false],
+                    },
+                    { text: "", border: [false, false, false, false] },
+                  ],
+                ],
+              },
+              layout: "noBorders",
             },
+
             {
-              text: "FB :TOOTH FORMATION DENTAL CLINIC",
+              text: "FB: TOOTHFORMATIONS DENTAL CLINIC",
               style: "receiptTitle",
               alignment: "center",
+              margin: [0, 2, 0, 0],
             },
           ],
-          columnGap: 1,
-          margin: [120, 10, 120, 10],
+          margin: [0, 6, 0, 10],
         },
         {
           margin: [0, 8, 0, 8],
@@ -743,174 +791,185 @@ export default {
       // MEDICATION PDF
       // ===========================
       else if (type === "medication") {
-        const instructionText = row.instruction || "N/A";
-
         const meds = (row.prescribedMedications || []).map((med) => {
-          let dosage = med.dosage ? `${med.dosage}` : "";
-          dosage = dosage.replace(/\bpcs\b/gi, "").trim();
           const cleanName = (med.name || "Unnamed")
             .replace(/\bpcs\b/gi, "")
             .trim();
+
+          const dosage = med.dosage ? med.dosage : "";
+
           return {
-            name: `${cleanName}${dosage ? " - " + dosage : ""}`,
+            name: `${cleanName} ${dosage}`.trim(),
             qty: med.pcs || 0,
-            duration: med.duration || null,
-            frequencies: med.frequencies || null,
-            preparation: med.preparation || null,
+            instruction: med.med_instruction || "N/A",
           };
         });
 
-        content.push({ text: "Prescribed Medications", style: "sectionTitle" });
+        // RX symbol
         content.push({
-          style: "tableStyle",
-          table: {
-            headerRows: 1,
-            widths: ["*", "auto", "auto", "auto", "auto"],
-            body: [
-              [
-                { text: "Medicine", style: "tableHeader", alignment: "left" },
-                { text: "Qty", style: "tableHeader", alignment: "center" },
-                { text: "Duration", style: "tableHeader", alignment: "center" },
-                {
-                  text: "Frequencies",
-                  style: "tableHeader",
-                  alignment: "center",
-                },
-                {
-                  text: "Preparation",
-                  style: "tableHeader",
-                  alignment: "center",
-                },
-              ],
-              ...meds.map((m) => [
-                { text: m.name, alignment: "left" },
-                { text: String(m.qty), alignment: "center" },
-                {
-                  text: m.duration ? `${m.duration} days` : "N/A",
-                  alignment: "center",
-                },
-                { text: m.frequencies || "N/A", alignment: "center" },
-                { text: m.preparation || "N/A", alignment: "center" },
-              ]),
-            ],
-          },
-          layout: "lightHorizontalLines",
+          text: "Rx",
+          fontSize: 20,
+          bold: true,
+          margin: [0, 10, 0, 10],
         });
 
-        // Instruction
-        content.push({
-          style: "tableStyle",
-          table: {
-            headerRows: 1,
-            widths: ["*"],
-            body: [
-              [
-                {
-                  text: "Instruction",
-                  style: "tableHeader",
-                  alignment: "left",
-                },
-              ],
-              [{ text: instructionText, alignment: "left" }],
-            ],
-          },
-          layout: "lightHorizontalLines",
-        });
-      }
-
-      // ===========================
-      // FOOTER
-      // ===========================
-      const footerName =
-        type === "procedure"
-          ? this.user?.first_name && this.user?.last_name
-            ? `${this.user.last_name}, ${this.user.first_name}`
-            : "N/A"
-          : row.dentalChart?.user_accounts
-          ? `${row.dentalChart.user_accounts.first_name} ${row.dentalChart.user_accounts.middle_name} ${row.dentalChart.user_accounts.last_name}, ${row.dentalChart.user_accounts.prc_type}`
-          : "N/A";
-
-      const footerLicense =
-        type === "medication"
-          ? row.dentalChart?.user_accounts?.license_no || "N/A"
-          : "";
-      const footerRole = type === "procedure" ? this.user?.role || "N/A" : "";
-
-      content.push({
-        margin: [0, 20, 0, 0],
-        columns: [
-          { width: "*", text: "" },
-          {
-            width: "auto",
+        meds.forEach((med, index) => {
+          content.push({
+            margin: [0, 6, 0, 8],
             stack: [
+              // Medication name
               {
-                text: footerName,
-                bold: true,
-                decoration: "underline",
-                alignment: "left",
-                margin: [0, 0, 0, 5],
+                columns: [
+                  {
+                    width: "*",
+                    text: `${index + 1}: ${med.name}`,
+                    fontSize: 12,
+                    bold: true,
+                  },
+                  {
+                    width: "auto",
+                    text: `#${med.qty}`,
+                    fontSize: 12,
+                    bold: true,
+                    alignment: "right",
+                  },
+                ],
               },
-              ...(footerRole
-                ? [
-                    {
-                      text: footerRole,
-                      fontSize: 10,
-                      color: "#555",
-                      alignment: "center",
-                      margin: [0, 0, 0, 2],
-                    },
-                  ]
-                : []),
-              ...(footerLicense
-                ? [
-                    {
-                      text: `License No: ${footerLicense}`,
-                      fontSize: 10,
-                      color: "#555",
-                      alignment: "center",
-                      margin: [0, 0, 0, 2],
-                    },
-                  ]
-                : []),
+
+              // Instruction
+              {
+                text: `Sig: ${med.instruction}`,
+                fontSize: 11,
+                margin: [20, 2, 0, 0],
+              },
             ],
-          },
-        ],
-      });
+          });
+        });
+      } // ===========================
+      // SIGNATURE BLOCK
+      // ===========================
 
       const docDefinition = {
-        pageSize: "LETTER",
-        pageMargins: [40, 20, 40, 40],
+        pageSize: "A5",
+        pageOrientation: "portrait",
+        pageMargins: [25, 25, 25, 40],
+
         content,
+        footer: () => {
+          const dentistName = dentist
+            ? `${dentist.last_name}, ${dentist.first_name}`
+            : "N/A";
+
+          const dentistLicense = dentist?.license_no || "N/A";
+          const dentistRole = dentist?.role || "";
+
+          return {
+            margin: [40, 0, 20, 0],
+            columns: [
+              { width: "*", text: "" },
+
+              {
+                width: "auto",
+                alignment: "right",
+                stack: [
+                  ...(signatureBase64
+                    ? [
+                        {
+                          image: signatureBase64,
+                          width: 100,
+                          margin: [0, -100, 0, -20], // overlay signature
+                          alignment: "center",
+                        },
+                      ]
+                    : []),
+
+                  {
+                    text: "________________________",
+                    alignment: "center",
+                  },
+
+                  {
+                    text: dentistName,
+                    bold: true,
+                    alignment: "center",
+                    fontSize: 11,
+                  },
+
+                  ...(dentistRole
+                    ? [
+                        {
+                          text: dentistRole,
+                          fontSize: 10,
+                          alignment: "center",
+                        },
+                      ]
+                    : []),
+
+                  {
+                    text: `License No: ${dentistLicense}`,
+                    fontSize: 10,
+                    alignment: "center",
+                  },
+                ],
+              },
+            ],
+          };
+        },
         styles: {
           clinicHeader: {
-            fontSize: 20,
+            fontSize: 16,
             alignment: "center",
             color: "#2E7D32",
             bold: true,
           },
-          subTitle: { fontSize: 12, alignment: "center", color: "#555" },
-          receiptTitle: { fontSize: 7, alignment: "center", color: "#555" },
-          label: { fontSize: 10, color: "#888" },
-          value: { fontSize: 10, bold: true },
+
+          subTitle: {
+            fontSize: 10,
+            alignment: "center",
+            color: "#555",
+          },
+
+          receiptTitle: {
+            fontSize: 8,
+            alignment: "center",
+            color: "#555",
+          },
+
+          label: {
+            fontSize: 9,
+            color: "#777",
+          },
+
+          value: {
+            fontSize: 10,
+            bold: true,
+          },
+
           sectionTitle: {
-            fontSize: 12,
+            fontSize: 11,
             bold: true,
             color: "#1B5E20",
-            margin: [0, 10, 0, 5],
+            margin: [0, 8, 0, 4],
           },
-          tableStyle: { margin: [0, 5, 0, 10], fontSize: 10 },
+
+          tableStyle: {
+            margin: [0, 4, 0, 8],
+            fontSize: 9,
+          },
+
           tableHeader: {
             fillColor: "#C8E6C9",
             bold: true,
             color: "#1B5E20",
             alignment: "center",
           },
+
           grandTotalText: {
             alignment: "right",
             bold: true,
-            fontSize: 12,
+            fontSize: 11,
             color: "#2E7D32",
-            margin: [0, 8, 0, 14],
+            margin: [0, 6, 0, 10],
           },
         },
       };

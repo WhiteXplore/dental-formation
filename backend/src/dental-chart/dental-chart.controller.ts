@@ -44,31 +44,52 @@ export class DentalChartController {
       storage: diskStorage({
         destination: (req, file, cb) => {
           const uploadPath = join(__dirname, '..', '..', 'uploads');
-          if (!existsSync(uploadPath)) mkdirSync(uploadPath, { recursive: true });
+          if (!existsSync(uploadPath))
+            mkdirSync(uploadPath, { recursive: true });
           cb(null, uploadPath);
         },
         filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const filename = uniqueSuffix + '-' + file.originalname;
-          console.log('Uploading file:', filename);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const filename = `${uniqueSuffix}-${file.originalname}`;
           cb(null, filename);
         },
       }),
-      limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+      limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
   async create(@UploadedFile() file: Express.Multer.File, @Body() body: any) {
     try {
+      const parseJSON = (value: any, fallback: any) => {
+        if (!value) return fallback;
+        if (typeof value === 'object') return value;
+        return JSON.parse(value);
+      };
+
       const dto: CreateDentalChartDto & { xray_image?: string } = {
         patient_id: Number(body.patient_id),
         user_id: Number(body.user_id),
-        price_procedure_id: Number(body.price_procedure_id),
+        price_procedure_id: body.price_procedure_id
+          ? Number(body.price_procedure_id)
+          : undefined,
+
         procedure_notes: body.procedure_notes ?? '',
-        procedure_date: body.procedure_date ? new Date(body.procedure_date) : new Date(),
-        payment_amount: body.payment_amount ? parseFloat(body.payment_amount) : 0,
-        selected_teeth: JSON.parse(body.selected_teeth || '[]'),
-        tooth_status_map: JSON.parse(body.tooth_status_map || '{}'),
-        additional_items: body.additional_items ? JSON.parse(body.additional_items) : [],
+        procedure_date: body.procedure_date
+          ? new Date(body.procedure_date)
+          : new Date(),
+
+        payment_amount: body.payment_amount
+          ? parseFloat(body.payment_amount)
+          : 0,
+
+        selected_teeth: parseJSON(body.selected_teeth, []),
+
+        tooth_status_map: parseJSON(body.tooth_status_map, {}),
+
+        tooth_condition_map: parseJSON(body.tooth_condition_map, {}),
+
+        additional_items: parseJSON(body.additional_items, []),
+
         xray_image: file?.filename ?? undefined,
       };
 
@@ -78,82 +99,74 @@ export class DentalChartController {
       throw new BadRequestException('Invalid input data.');
     }
   }
-@Patch('update/:id')
-@UseInterceptors(
-  FileInterceptor('xray_image', {
-    storage: diskStorage({
-      destination: (req, file, cb) => {
-        const uploadPath = join(__dirname, '..', '..', 'uploads');
-        if (!existsSync(uploadPath)) {
-          mkdirSync(uploadPath, { recursive: true });
-        }
-        cb(null, uploadPath);
-      },
-      filename: (req, file, cb) => {
-        const uniqueSuffix =
-          Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, `${uniqueSuffix}-${file.originalname}`);
-      },
+  @Patch('update/:id')
+  @UseInterceptors(
+    FileInterceptor('xray_image', {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          const uploadPath = join(__dirname, '..', '..', 'uploads');
+          if (!existsSync(uploadPath))
+            mkdirSync(uploadPath, { recursive: true });
+          cb(null, uploadPath);
+        },
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `${uniqueSuffix}-${file.originalname}`);
+        },
+      }),
     }),
-  }),
-)
-async update(
-  @Param('id') id: string,
-  @UploadedFile() file: Express.Multer.File,
-  @Body() body: any,
-) {
-  try {
-    console.log('📦 Incoming update body:', body);
-
-    const parseJSON = (value: any) => {
-      if (!value) return undefined;
-      if (typeof value === 'object') return value;
-      if (typeof value === 'string' && value.trim() !== '') {
+  )
+  async update(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: any,
+  ) {
+    try {
+      const parseJSON = (value: any) => {
+        if (!value) return undefined;
+        if (typeof value === 'object') return value;
         return JSON.parse(value);
-      }
-      return undefined;
-    };
+      };
 
-    const updateDto: UpdateDentalChartDto & { xray_image?: string } = {
-      patient_id: body.patient_id
-        ? Number(body.patient_id)
-        : undefined,
+      const updateDto: UpdateDentalChartDto & { xray_image?: string } = {
+        patient_id: body.patient_id ? Number(body.patient_id) : undefined,
 
-      user_id: body.user_id
-        ? Number(body.user_id)
-        : undefined,
+        user_id: body.user_id ? Number(body.user_id) : undefined,
 
-      price_procedure_id: body.price_procedure_id
-        ? Number(body.price_procedure_id)
-        : undefined,
-
-      procedure_notes: body.procedure_notes ?? undefined,
-
-      procedure_date:
-        body.procedure_date && body.procedure_date !== ''
-          ? new Date(body.procedure_date)
+        price_procedure_id: body.price_procedure_id
+          ? Number(body.price_procedure_id)
           : undefined,
 
-      payment_amount:
-        body.payment_amount && body.payment_amount !== ''
-          ? parseFloat(body.payment_amount)
-          : undefined,
+        procedure_notes: body.procedure_notes ?? undefined,
 
-      selected_teeth: parseJSON(body.selected_teeth),
-      tooth_status_map: parseJSON(body.tooth_status_map),
-      additional_items: parseJSON(body.additional_items),
+        procedure_date:
+          body.procedure_date && body.procedure_date !== ''
+            ? new Date(body.procedure_date)
+            : undefined,
 
-      xray_image: file?.filename ?? undefined,
-    };
+        payment_amount:
+          body.payment_amount && body.payment_amount !== ''
+            ? parseFloat(body.payment_amount)
+            : undefined,
 
-    console.log('✅ Parsed DTO:', updateDto);
+        selected_teeth: parseJSON(body.selected_teeth),
 
-    return await this.dentalChartService.update(+id, updateDto);
-  } catch (err) {
-    console.error('❌ REAL ERROR:', err);
-    throw new BadRequestException(err.message);
+        tooth_status_map: parseJSON(body.tooth_status_map),
+
+        tooth_condition_map: parseJSON(body.tooth_condition_map),
+
+        additional_items: parseJSON(body.additional_items),
+
+        xray_image: file?.filename ?? undefined,
+      };
+
+      return await this.dentalChartService.update(+id, updateDto);
+    } catch (err) {
+      console.error('❌ REAL ERROR:', err);
+      throw new BadRequestException(err.message);
+    }
   }
-}
 
   @Get('get-dental-chart')
   findAll() {

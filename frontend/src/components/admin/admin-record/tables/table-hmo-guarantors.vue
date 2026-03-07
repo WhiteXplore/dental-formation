@@ -93,12 +93,12 @@
                       >
                         <icon name="edit" /> Edit
                       </button>
-                      <button
+                      <!-- <button
                         @click="toggleDelete(guarantor)"
                         class="px-3 py-1 h-8 border border-red-300 hover:bg-red-200 text-red-800 rounded-lg flex items-center gap-1"
                       >
                         <icon name="trash" /> Delete
-                      </button>
+                      </button> -->
                     </div>
                   </td>
                 </tr>
@@ -237,7 +237,7 @@ export default {
       return this.hmoGuarantors.filter(
         (item) =>
           item.full_name.toLowerCase().includes(query) ||
-          item.company.toLowerCase().includes(query)
+          item.company.toLowerCase().includes(query),
       );
     },
     totalPages() {
@@ -297,7 +297,7 @@ export default {
 
       try {
         await axios.delete(
-          `${process.env.VUE_APP_API_BASE_URL}/hmo-guarantors/${id}`
+          `${process.env.VUE_APP_API_BASE_URL}/hmo-guarantors/${id}`,
         );
 
         this.recordToDelete = null;

@@ -240,8 +240,7 @@
                     <th class="p-3 border border-gray-200">Medication</th>
                     <th class="p-3 border border-gray-200">Dosage</th>
                     <th class="p-3 border border-gray-200">Quantity</th>
-                    <!-- <th class="p-3 border border-gray-200">Price/Unit</th>
-                      <th class="p-3 border border-gray-200">Expiration</th> -->
+                    <th class="p-3 border border-gray-200">Instruction</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -250,29 +249,26 @@
                     :key="med.prescribe_medication_id"
                     class="hover:bg-gray-50 transition"
                   >
-                    <td class="p-3 border border-gray-200">
+                    <td class="p-3 border border-gray-200 font-medium">
                       {{ med.name || "N/A" }}
                     </td>
+
                     <td class="p-3 border border-gray-200">
                       {{ med.dosage || "N/A" }}
                     </td>
+
                     <td class="p-3 border border-gray-200">
-                      {{ med.pcs || 0 }} {{ med.inventory?.unit || "" }}
+                      {{ med.pcs || 0 }}
                     </td>
-                    <!-- Optional: If you want price/expiration, keep them null-safe too -->
-                    <!--
-    <td class="p-3 border border-gray-200">
-      ₱{{ formatCurrency(med.inventory?.price_per_unit || 0) }}
-    </td>
-    <td class="p-3 border border-gray-200">
-      {{ formatDate(med.inventory?.expiration) }}
-    </td>
-    -->
+
+                    <td class="p-3 border border-gray-200 text-gray-600">
+                      {{ med.med_instruction || "No instruction" }}
+                    </td>
                   </tr>
 
                   <tr v-if="!selectedReport?.prescribedMedications?.length">
                     <td
-                      colspan="3"
+                      colspan="4"
                       class="text-center py-8 text-gray-400 bg-white border border-gray-200 rounded-md shadow-sm"
                     >
                       No prescribed medications
@@ -281,18 +277,6 @@
                 </tbody>
               </table>
             </div>
-          </div>
-
-          <!-- Instructions -->
-          <div>
-            <h2 class="font-semibold text-gray-700 text-lg border-b pb-1 mb-2">
-              Instruction
-            </h2>
-            <p
-              class="text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-4"
-            >
-              {{ selectedReport.instruction }}
-            </p>
           </div>
 
           <div class="border-t pt-4 text-right text-gray-500 text-sm mt-6">

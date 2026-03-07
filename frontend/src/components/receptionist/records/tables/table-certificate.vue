@@ -137,21 +137,45 @@
         </button>
 
         <!-- ===== Clinic Header ===== -->
-        <div class="text-center space-y-1 mb-4">
-          <h2 class="text-2xl font-bold text-green-700">
-            TOOTH FORMATION DENTAL CLINIC
-          </h2>
-          <div class="text-sm text-gray-600">
-            PANABO POLYMEDIC HOSPITAL, INC. – GROUP FLOOR
-          </div>
-          <div class="text-sm text-gray-600">Contact #: 0985-104-6429</div>
-          <div class="text-sm text-gray-600">
-            FB: TOOTH FORMATION DENTAL CLINIC
+        <div class="mb-6 border-b pb-4">
+          <div class="flex items-center justify-center gap-4">
+            <!-- Logo -->
+            <img
+              src="@/assets/img/clinic-logo.png"
+              class="w-[70px] h-[70px] object-contain"
+            />
+
+            <!-- Clinic Info -->
+            <div class="text-center">
+              <h2 class="text-[22px] font-bold text-green-700 tracking-wide">
+                TOOTHFORMATIONS DENTAL CLINIC
+              </h2>
+
+              <div class="text-sm text-gray-600">
+                PANABO POLYMEDIC HOSPITAL, INC. – GROUND FLOOR
+              </div>
+
+              <!-- Contact Row -->
+              <div class="flex justify-center gap-6 text-sm text-gray-600 mt-1">
+                <span>Contact #: 0985-104-6429</span>
+                <span>Telephone #: 0985-104-6429</span>
+              </div>
+
+              <!-- Facebook -->
+              <div class="text-sm text-gray-600 mt-1">
+                FB: TOOTH FORMATION DENTAL CLINIC
+              </div>
+            </div>
           </div>
 
-          <div class="mt-3 font-semibold text-gray-700">DENTAL CERTIFICATE</div>
-
-          <hr class="my-3 border-gray-300" />
+          <!-- Certificate Title -->
+          <div class="text-center mt-4">
+            <div
+              class="font-semibold text-gray-700 tracking-widest text-[15px]"
+            >
+              DENTAL CERTIFICATE
+            </div>
+          </div>
         </div>
 
         <!-- ===== Patient Information (PDF-like) ===== -->
@@ -479,49 +503,75 @@ export default {
       );
 
       const toothNumbers = teeth.map((t) => t.tooth_number).join(", ");
-
+      const signaturePath = `${process.env.VUE_APP_API_BASE_URL}/uploads/signatures/${dentist.signature}`;
+      const signatureBase64 = dentist.signature
+        ? await this.toBase64(signaturePath)
+        : null;
       const docDefinition = {
         pageSize: "LETTER",
-
-        // Space reserved for header & footer
         pageMargins: [40, 160, 40, 80],
 
-        /* =========================
-       FIXED HEADER
-    ========================= */
         header: {
           margin: [40, 15, 40, 0],
           stack: [
             {
               image: logoBase64,
-              width: 150, // ⬅ slightly smaller
+              width: 150,
               alignment: "center",
               margin: [0, 0, 0, 6],
             },
+
             {
-              text: "TOOTH FORMATION DENTAL CLINIC",
+              text: "TOOTHFORMATIONS DENTAL CLINIC",
               style: "clinicHeader",
             },
+
             {
-              text: "PANABO POLYMEDIC HOSPITAL, INC. - GROUP FLOOR",
+              text: "PANABO POLYMEDIC HOSPITAL, INC. - GROUND FLOOR",
               style: "subTitle",
             },
+
             {
-              columns: [
-                { text: "Contact #: 0985-104-6429", style: "receiptTitle" },
-                {
-                  text: "FB : TOOTH FORMATION DENTAL CLINIC",
-                  style: "receiptTitle",
-                },
-              ],
-              margin: [40, 6, 40, 6],
+              table: {
+                widths: ["*", "auto", "auto", "*"],
+                body: [
+                  [
+                    { text: "", border: [false, false, false, false] },
+
+                    {
+                      text: "Contact#: 0985-104-6429",
+                      style: "receiptTitle",
+                      border: [false, false, false, false],
+                    },
+
+                    {
+                      text: "Telephone#: 0985-104-6429",
+                      style: "receiptTitle",
+                      margin: [20, 0, 0, 0],
+                      border: [false, false, false, false],
+                    },
+
+                    { text: "", border: [false, false, false, false] },
+                  ],
+                ],
+              },
+              layout: "noBorders",
+              margin: [0, 2, 0, 2],
             },
+
+            {
+              text: "FB: TOOTH FORMATION DENTAL CLINIC",
+              alignment: "center",
+              style: "receiptTitle",
+              margin: [0, 2, 0, 6],
+            },
+
             {
               text: "Dental Certificate",
-              style: "subTitle",
               bold: true,
               fontSize: 15,
-              margin: [0, 20, 0, 0],
+              alignment: "center",
+              margin: [0, 10, 0, 0],
             },
           ],
         },
@@ -540,6 +590,7 @@ export default {
                 ],
                 margin: [0, 0, 0, 12],
               },
+
               {
                 columns: [
                   {
@@ -562,7 +613,7 @@ export default {
                         text: `${patient.age || "N/A"}`,
                         decoration: "underline",
                       },
-                      "    ",
+                      "   ",
                       { text: "Sex: ", bold: true },
                       {
                         text: `${patient.gender || "N/A"}`,
@@ -601,9 +652,6 @@ export default {
             ],
           },
 
-          /* =========================
-     LETTER BODY
-  ========================= */
           {
             text: [
               "This is to certify that ",
@@ -612,7 +660,7 @@ export default {
                 bold: true,
                 decoration: "underline",
               },
-              "has been examined to ",
+              "has been examined at ",
               {
                 text: "TOOTH FORMATION DENTAL CLINIC – PANABO POLYMEDIC HOSPITAL, INC. ",
                 bold: true,
@@ -624,23 +672,23 @@ export default {
               "The patient underwent the dental procedure ",
               { text: `${procedure.procedure_name || "N/A"} `, bold: true },
               "involving tooth/teeth number(s) ",
-              { text: `${toothNumbers || "N/A"}.`, bold: true },
-              {
-                text: "with a diagnosis of ",
-              },
+              { text: `${toothNumbers || "N/A"}. `, bold: true },
+              "with a diagnosis of ",
               {
                 text: (this.diagnosis || "N/A").toUpperCase(),
                 bold: true,
                 decoration: "underline",
               },
+              ".",
             ],
             alignment: "justify",
             lineHeight: 1.6,
             margin: [0, 20, 0, 20],
           },
+
           {
             text: [
-              "Recommendation ",
+              "Recommendation: ",
               {
                 text: (this.recommendation || "N/A").toUpperCase(),
                 bold: true,
@@ -651,32 +699,39 @@ export default {
             lineHeight: 1.6,
             margin: [0, 20, 0, 20],
           },
+
           {
             text: [
-              "This certificate is being issued upon the request of  ",
+              "This certificate is issued upon the request of ",
               {
-                text: `${patient.last_name}, ${patient.first_name} ,`.toUpperCase(),
+                text: `${patient.last_name}, ${patient.first_name}`.toUpperCase(),
                 bold: true,
                 decoration: "underline",
               },
-              "for whatever purpose it may serve (excluding legal matters).",
+              " for whatever purpose it may serve (excluding legal matters).",
             ],
             alignment: "justify",
             lineHeight: 1.6,
-            margin: [0, 20, 0, 20],
           },
         ],
 
-        /* =========================
-       FOOTER
-    ========================= */
         footer: {
           margin: [40, 0, 40, 30],
           columns: [
             { width: "*", text: "" },
+
             {
               width: "auto",
               stack: [
+                signatureBase64
+                  ? {
+                      image: signatureBase64,
+                      width: 120,
+                      alignment: "center",
+                      margin: [0, -100, 0, -20],
+                    }
+                  : {},
+
                 {
                   text: `${dentist.last_name || ""}, ${
                     dentist.first_name || ""
@@ -687,23 +742,10 @@ export default {
                 },
 
                 {
-                  columns: [
-                    {
-                      text: "License No.",
-                      fontSize: 9,
-                      color: "#555",
-                      alignment: "right",
-                      margin: [0, 5, 5, 0],
-                    },
-                    {
-                      text: `${dentist.license_no || "N/A"}`,
-                      bold: true,
-                      fontSize: 9,
-                      color: "#555",
-                      alignment: "left",
-                      margin: [0, 5, 0, 0],
-                    },
-                  ],
+                  text: `License No. ${dentist.license_no || "N/A"}`,
+                  fontSize: 9,
+                  alignment: "center",
+                  margin: [0, 5, 0, 0],
                 },
               ],
             },

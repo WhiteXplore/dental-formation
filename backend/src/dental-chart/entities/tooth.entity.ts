@@ -13,28 +13,35 @@ export class ToothChart {
   @PrimaryGeneratedColumn()
   tooth_id: number;
 
-  @Column()
+  @Column({ type: 'int' })
   tooth_number: number;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  status: string;
+  // RF / OB / NR
+  @Column({
+    type: 'varchar',
+    length: 10,
+    nullable: true,
+  })
+  tooth_condition: string;
 
-  @Column({ type: 'int' })
-  dental_id: number;
-
+  /** Dental Chart Relation */
   @ManyToOne(() => DentalChart, (chart) => chart.teeth, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'dental_id' })
   dentalChart: DentalChart;
 
-  @ManyToOne(() => PriceProcedure, { eager: false })
+  @Column()
+  dental_id: number;
+
+  /** Procedure Relation */
+  @ManyToOne(() => PriceProcedure, {
+    eager: false,
+    nullable: true,
+  })
   @JoinColumn({ name: 'price_procedure_id' })
   priceProcedure: PriceProcedure;
 
-  @Column({ nullable: true })
-  price_procedure_id?: number;
-
-  // @Column({ type: 'varchar', length: 50, nullable: true })
-  // tooth_inventory_status: string | null;
+  @Column({ type: 'int', nullable: true })
+  price_procedure_id: number;
 }

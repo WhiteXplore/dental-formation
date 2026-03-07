@@ -23,7 +23,7 @@
             <div class="flex gap-1 items-center">
               <icon :name="'add-students'" />
               <h1 class="font-bold tracking-wide text-lg">
-                {{ editMode ? "Edit Dental Chart" : "Add Dental Chart" }}
+                {{ editMode ? "Edit Dental Chart" : "Addss Dental Chart" }}
               </h1>
             </div>
             <icon
@@ -71,22 +71,50 @@
                 </div>
               </div>
               <!-- Procedure Selection -->
+              <!-- Procedure Selection -->
               <div class="w-full space-y-1.5 text-left">
                 <label class="font-bold">Procedure:</label>
 
+                <!-- Dropdown -->
                 <select
-                  v-model="form.price_procedure_id"
+                  v-model="selectedProcedureToAdd"
+                  @change="addProcedure"
                   class="w-full px-3 py-3 border border-gray-600 rounded-md text-md text-gray-800 bg-white"
                 >
                   <option disabled value="">Select Procedure</option>
+
                   <option
                     v-for="p in prices.filter((proc) => proc.is_active)"
                     :key="p.price_procedure_id"
                     :value="p.price_procedure_id"
+                    :disabled="
+                      form.selected_procedures.includes(p.price_procedure_id)
+                    "
                   >
                     {{ p.procedure_name }}
                   </option>
                 </select>
+
+                <!-- Selected Procedure Badges -->
+                <div
+                  v-if="form.selected_procedures.length"
+                  class="flex flex-wrap gap-2 mt-2"
+                >
+                  <label
+                    v-for="procId in form.selected_procedures"
+                    :key="procId"
+                    class="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs border border-blue-300 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked
+                      @change="removeProcedure(procId)"
+                      class="cursor-pointer"
+                    />
+
+                    {{ procedureNameMap[procId] }}
+                  </label>
+                </div>
               </div>
               <!-- Braces Position Selection -->
               <div
@@ -126,7 +154,12 @@
                   class="flex justify-center gap-[2px]"
                 >
                   <template v-for="tooth in row" :key="tooth">
-                    <div class="flex flex-col items-center gap-[1px]">
+                    <div
+                      class="flex flex-col items-center gap-[1px] relative"
+                      @mouseenter="hoveredTooth = tooth"
+                      @mouseleave="hoveredTooth = null"
+                    >
+                      <!-- Tooth -->
                       <div
                         class="w-8 h-8 border border-black flex items-center justify-center cursor-pointer"
                         :class="[
@@ -141,6 +174,8 @@
                           class="w-4 h-4 border border-black rounded-full"
                         ></div>
                       </div>
+
+                      <!-- Tooth Number -->
                       <div
                         class="w-8 h-6 border border-black flex items-center justify-center text-[11px] font-medium cursor-pointer"
                         :class="[
@@ -151,6 +186,48 @@
                         @click="toggleTooth(tooth)"
                       >
                         {{ tooth }}
+                      </div>
+
+                      <!-- ✅ Hover Modal -->
+                      <div
+                        v-if="
+                          hoveredTooth === tooth &&
+                          selectedTeeth.includes(tooth)
+                        "
+                        class="absolute top-10 left-1/2 -translate-x-1/2 z-50 bg-white border rounded-lg shadow-lg p-3 w-44 text-xs"
+                      >
+                        <div class="font-semibold mb-2 text-gray-700">
+                          Tooth {{ tooth }}
+                        </div>
+
+                        <!-- Procedure -->
+                        <label class="text-[11px] text-gray-600"
+                          >Procedure</label
+                        >
+                        <select
+                          v-model="toothStatusMap[tooth]"
+                          class="w-full border rounded px-2 py-1 text-xs mb-2"
+                        >
+                          <option
+                            v-for="procId in form.selected_procedures"
+                            :key="procId"
+                            :value="procId"
+                          >
+                            {{ procedureNameMap[procId] }}
+                          </option>
+                        </select>
+
+                        <!-- Condition -->
+                        <label class="text-[11px] text-gray-600">Status</label>
+                        <select
+                          v-model="toothConditionMap[tooth]"
+                          class="w-full border rounded px-2 py-1 text-xs"
+                        >
+                          <option disabled value="">Select Status</option>
+                          <option value="RF">RF</option>
+                          <option value="OB">OB</option>
+                          <option value="NR">NR</option>
+                        </select>
                       </div>
                     </div>
                   </template>
@@ -190,6 +267,7 @@
                     >
                       <tr>
                         <th class="p-3 border w-[15%]">Tooth #</th>
+                        <th class="p-3 border w-[50]">Procedure</th>
                         <th class="p-3 border w-[50]">Status</th>
                         <th class="p-3 border w-[20%]">Color</th>
                         <!-- <th class="p-3 w-10 border">Action</th> -->
@@ -201,15 +279,19 @@
                         :key="tooth"
                         class="border-t border-gray-200 hover:bg-gray-50 transition-all"
                       >
+                        <!-- Tooth Number -->
                         <td class="p-3 border">{{ tooth }}</td>
+
+                        <!-- Procedure -->
                         <td class="p-3 border">
                           <select
                             v-model="toothStatusMap[tooth]"
                             class="w-full bg-white border border-gray-300 rounded-md px-2 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-green1 focus:border-green1"
                           >
-                            <option value="" disabled>Select Status</option>
+                            <option disabled value="">Select Procedure</option>
+
                             <option
-                              v-for="proc in prices.filter((p) => p.is_active)"
+                              v-for="proc in selectedProceduresList"
                               :key="proc.price_procedure_id"
                               :value="proc.price_procedure_id"
                             >
@@ -217,6 +299,21 @@
                             </option>
                           </select>
                         </td>
+
+                        <!-- Tooth Condition -->
+                        <td class="p-3 border">
+                          <select
+                            v-model="toothConditionMap[tooth]"
+                            class="w-full bg-white border border-gray-300 rounded-md px-2 py-2 text-sm"
+                          >
+                            <option disabled value="">Select Status</option>
+                            <option value="RF">RF</option>
+                            <option value="OB">OB</option>
+                            <option value="NR">NR</option>
+                          </select>
+                        </td>
+
+                        <!-- Color -->
                         <td class="p-3 border">
                           <div
                             :class="[
@@ -226,14 +323,6 @@
                             ]"
                           ></div>
                         </td>
-                        <!-- <td class="p-2 mt-1 flex justify-center">
-                        <button
-                          class="text-red-600 text-xs font-semibold flex items-center gap-1 px-2 py-1 rounded hover:text-white hover:bg-red-500 transition"
-                          @click="toggleTooth(tooth)"
-                        >
-                          <icon :name="'delete'" /> Remove
-                        </button>
-                      </td> -->
                       </tr>
                     </tbody>
                   </table>
@@ -430,6 +519,9 @@ export default {
 
   data() {
     return {
+      toothConditionMap: {},
+      hoveredTooth: null,
+      selectedProcedureToAdd: "",
       currentStep: 1,
       user: null,
       form: {
@@ -444,6 +536,7 @@ export default {
         procedure_notes: "",
         procedure_date: "",
         selected_teeth: [],
+        selected_procedures: [],
         bracesPosition: "",
         selected_inventories: [],
         patientAge: null,
@@ -478,46 +571,6 @@ export default {
     };
   },
   watch: {
-    "form.price_procedure_id"(newVal) {
-      if (!newVal || this.editMode) return;
-
-      const procedure = this.selectedProcedure;
-      if (!procedure) return;
-
-      // 🛑 Patient must be selected first
-      if (!this.patientAge) {
-        toast.warning("Please select a patient first.");
-        this.form.price_procedure_id = "";
-        return;
-      }
-
-      /* ===============================
-       * 🔹 ALL_TEETH → AUTO SELECT
-       * =============================== */
-      if (procedure.procedure_scope === "ALL_TEETH") {
-        const teeth =
-          this.patientAge <= 12
-            ? this.toothAgeMap.child
-            : this.toothAgeMap.adult;
-
-        this.selectedTeeth = [...teeth];
-        this.toothStatusMap = {};
-        this.form.bracesPosition = "";
-
-        teeth.forEach((tooth) => {
-          this.toothStatusMap[tooth] = newVal;
-        });
-      }
-
-      /* ===============================
-       * 🔹 PER_TOOTH → MANUAL SELECT
-       * =============================== */
-      if (procedure.procedure_scope === "PER_TOOTH") {
-        this.selectedTeeth = [];
-        this.toothStatusMap = {};
-        this.form.bracesPosition = ""; // 🔥 important reset
-      }
-    },
     existingData: {
       immediate: true,
       handler(data) {
@@ -547,15 +600,33 @@ export default {
          * =========================== */
         this.selectedTeeth = [];
         this.toothStatusMap = {};
+        this.toothConditionMap = {};
+        this.form.selected_procedures = [];
 
         if (Array.isArray(data.teeth) && data.teeth.length > 0) {
+          const procedureSet = new Set();
+
           this.selectedTeeth = data.teeth.map((t) => t.tooth_number);
 
           data.teeth.forEach((t) => {
-            this.toothStatusMap[t.tooth_number] =
+            const toothNumber = t.tooth_number;
+
+            const procId =
               t.priceProcedure?.price_procedure_id ||
-              this.form.price_procedure_id;
+              this.form.price_procedure_id ||
+              null;
+
+            // procedure per tooth
+            this.toothStatusMap[toothNumber] = procId;
+
+            // RF / OB / NR
+            this.toothConditionMap[toothNumber] = t.tooth_condition ?? "NR";
+
+            if (procId) procedureSet.add(procId);
           });
+
+          // load procedures in edit mode
+          this.form.selected_procedures = [...procedureSet];
         }
         /* ===========================
          * 🧰 DISPLAY ADDITIONAL INVENTORIES (EDIT MODE)
@@ -600,6 +671,13 @@ export default {
       "dentalCharts",
       "inventories",
     ]),
+    selectedProceduresList() {
+      return this.prices.filter(
+        (p) =>
+          p.is_active &&
+          this.form.selected_procedures.includes(p.price_procedure_id),
+      );
+    },
     filteredPatients() {
       if (!this.appointments || this.appointments.length === 0 || !this.user)
         return [];
@@ -691,13 +769,15 @@ export default {
       return this.selectedProcedure?.procedure_scope === "PER_TOOTH";
     },
     isBracesProcedure() {
-      if (!this.selectedProcedure) return false;
+      if (!this.form.selected_procedures.length) return false;
 
-      // 🔥 braces only allowed when ALL_TEETH
-      if (this.selectedProcedure.procedure_scope !== "ALL_TEETH") return false;
+      const bracesProc = this.prices.find(
+        (p) =>
+          this.form.selected_procedures.includes(p.price_procedure_id) &&
+          p.procedure_name.toLowerCase().includes("brace"),
+      );
 
-      const name = this.selectedProcedure.procedure_name.toLowerCase();
-      return ["braces", "brace"].some((word) => name.includes(word));
+      return !!bracesProc;
     },
   },
   methods: {
@@ -715,7 +795,23 @@ export default {
           : "bg-gray-200 text-gray-600",
       ];
     },
+    addProcedure() {
+      if (!this.selectedProcedureToAdd) return;
 
+      const id = Number(this.selectedProcedureToAdd);
+
+      if (!this.form.selected_procedures.includes(id)) {
+        this.form.selected_procedures.push(id);
+      }
+
+      this.selectedProcedureToAdd = "";
+    },
+
+    removeProcedure(procId) {
+      this.form.selected_procedures = this.form.selected_procedures.filter(
+        (p) => p !== procId,
+      );
+    },
     goToPrescription() {
       // Add validation if needed
       this.currentStep = 2;
@@ -759,28 +855,39 @@ export default {
         teeth = [
           18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
         ];
-      } else if (this.form.bracesPosition === "lower") {
+      }
+
+      if (this.form.bracesPosition === "lower") {
         teeth = [
           48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38,
         ];
-      } else if (this.form.bracesPosition === "all") {
-        // Combine both upper and lower teeth
+      }
+
+      if (this.form.bracesPosition === "all") {
         teeth = [
           18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28, 48,
           47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38,
         ];
       }
 
+      const bracesProc = this.prices.find(
+        (p) =>
+          this.form.selected_procedures.includes(p.price_procedure_id) &&
+          p.procedure_name.toLowerCase().includes("brace"),
+      );
+
+      if (!bracesProc) return;
+
       this.selectedTeeth = [...teeth];
 
-      // Assign the selected procedure as the status for all selected teeth
       teeth.forEach((t) => {
-        this.toothStatusMap[t] = this.form.price_procedure_id;
+        this.toothStatusMap[t] = bracesProc.price_procedure_id;
       });
     },
     clearToothSelection() {
       this.selectedTeeth = [];
       this.toothStatusMap = {};
+      this.toothConditionMap = {};
     },
     selectPatient(appointment) {
       this.form.patient_id = appointment.patient.patient_id;
@@ -797,28 +904,32 @@ export default {
       this.showPatientDropdown = false;
     },
     toggleTooth(tooth) {
-      // // 🚫 Disable clicking when ALL_TEETH
-      // if (this.isAllTeethScope) return;
-
-      // // 🚫 Block if no procedure selected
-      // if (!this.form.price_procedure_id) {
-      //   toast.warning("Please select a procedure first.");
-      //   return;
-      // }
-
       const index = this.selectedTeeth.indexOf(tooth);
 
+      // remove tooth
       if (index !== -1) {
-        // ❌ Remove tooth
         this.selectedTeeth.splice(index, 1);
-        delete this.toothStatusMap[tooth];
-      } else {
-        // ✅ Add tooth
-        this.selectedTeeth.push(tooth);
 
-        // Auto-assign selected procedure
-        this.toothStatusMap[tooth] = this.form.price_procedure_id;
+        delete this.toothStatusMap[tooth];
+        delete this.toothConditionMap[tooth];
+
+        return;
       }
+
+      // require procedure first
+      if (!this.form.selected_procedures.length) {
+        toast.warning("Please select a procedure first.");
+        return;
+      }
+
+      // add tooth
+      this.selectedTeeth.push(tooth);
+
+      // assign procedure
+      this.toothStatusMap[tooth] = this.form.selected_procedures[0];
+
+      // default condition
+      this.toothConditionMap[tooth] = this.toothConditionMap[tooth] || "NR";
     },
 
     handleImageUpload(e) {
@@ -975,8 +1086,13 @@ export default {
       }
     },
     async saveDentalChart() {
-      if (!this.form.patient_id || this.selectedTeeth.length === 0) {
-        toast.warning("Please select a patient and at least one tooth.");
+      if (!this.form.patient_id) {
+        toast.warning("Please select a patient.");
+        return false;
+      }
+
+      if (!this.form.selected_procedures.length) {
+        toast.warning("Please select at least one procedure.");
         return false;
       }
 
@@ -1004,7 +1120,19 @@ export default {
           }
         }
       });
-
+      this.selectedTeeth.forEach((tooth) => {
+        if (!this.toothConditionMap[tooth]) {
+          this.toothConditionMap[tooth] = "NR";
+        }
+      });
+      formData.append(
+        "selected_procedures",
+        JSON.stringify(this.form.selected_procedures || []),
+      );
+      formData.append(
+        "tooth_condition_map",
+        JSON.stringify(this.toothConditionMap || {}),
+      );
       formData.append(
         "selected_teeth",
         JSON.stringify(this.selectedTeeth.map(Number)),
@@ -1026,7 +1154,14 @@ export default {
       if (this.xrayFile instanceof File) {
         formData.append("xray_image", this.xrayFile);
       }
+      // 🔎 LOG PAYLOAD
+      console.log("===== SUBMITTED PAYLOAD =====");
 
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ":", pair[1]);
+      }
+
+      console.log("=============================");
       try {
         if (this.editMode) {
           await axios.patch(
@@ -1044,7 +1179,9 @@ export default {
           // Save returned dental_id for step 2
           this.form.dental_id = res.data.dental_id;
         }
-
+        console.log("selectedTeeth:", this.selectedTeeth);
+        console.log("toothStatusMap:", this.toothStatusMap);
+        console.log("toothConditionMap:", this.toothConditionMap);
         return true;
       } catch (err) {
         console.error(err);

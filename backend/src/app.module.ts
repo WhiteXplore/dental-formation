@@ -16,6 +16,7 @@ import { PriceProcedureModule } from './price-procedure/price-procedure.module';
 import { HmoGuarantorsModule } from './hmo-guarantors/hmo-guarantors.module';
 import { RevenueModule } from './revenue/revenue.module';
 import { ForecastModule } from './forecast/forecast.module';
+import { StatusModule } from './status/status.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { ForecastModule } from './forecast/forecast.module';
     HmoGuarantorsModule,
     RevenueModule,
     ForecastModule,
+    StatusModule,
   ],
 })
 export class AppModule {}

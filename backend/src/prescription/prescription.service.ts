@@ -29,13 +29,8 @@ export class PrescriptionService {
   ) {}
 
   async create(createDto: CreatePrescriptionDto) {
-    const {
-      dental_chart_id,
-      medications,
-      payment_status,
-      issued_date,
-      instruction,
-    } = createDto;
+    const { dental_chart_id, medications, payment_status, issued_date } =
+      createDto;
 
     const dentalChart = await this.dentalChartRepo.findOne({
       where: { dental_id: dental_chart_id },
@@ -51,15 +46,12 @@ export class PrescriptionService {
       dentalChart,
       payment_status,
       issued_date,
-      instruction,
     });
 
     await this.prescriptionRepo.save(prescription);
 
     for (const med of medications) {
-      const { name, type, dosage, pcs, duration, frequencies, preparation } =
-        med;
-
+      const { name, type, dosage, pcs, med_instruction } = med;
       if (!name) {
         throw new BadRequestException('Medication name is required.');
       }
@@ -70,16 +62,14 @@ export class PrescriptionService {
       }
 
       const prescribedMed = this.prescribedMedRepo.create({
-        prescription,
-        dental_chart: dentalChart,
+        prescription: { prescription_id: prescription.prescription_id },
+        dental_chart: { dental_id: dentalChart.dental_id },
         name,
         type,
         dosage,
+        med_instruction, // ✅ add this
         pcs: pcsNumber,
-        issued_date,
-        duration: duration || '', // keep as string
-        frequencies: frequencies || '', // keep as string
-        preparation: preparation || '', // keep as string
+        issued_date: issued_date ?? new Date(),
       });
 
       await this.prescribedMedRepo.save(prescribedMed);
@@ -93,10 +83,11 @@ export class PrescriptionService {
       relations: [
         'dentalChart',
         'dentalChart.patient',
+        'dentalChart.user_accounts', // ✅ ADD THIS
         'dentalChart.teeth',
         'dentalChart.teeth.priceProcedure',
         'dentalChart.teeth.priceProcedure.procedureInventories',
-        'dentalChart.teeth.priceProcedure.procedureInventories.inventory', // <-- add this
+        'dentalChart.teeth.priceProcedure.procedureInventories.inventory',
         'prescribedMedications',
         'payments',
         'hmoGuarantor',
@@ -111,6 +102,7 @@ export class PrescriptionService {
       relations: [
         'dentalChart',
         'dentalChart.patient',
+        'dentalChart.user_accounts', // ✅ add
         'prescribedMedications',
         'payments',
       ],
@@ -137,6 +129,8 @@ export class PrescriptionService {
       relations: [
         'dentalChart',
         'dentalChart.patient',
+        'dentalChart.teeth',
+        'dentalChart.teeth.priceProcedure', // 🔥 IMPORTANT
         'prescribedMedications',
         'payments',
         'hmoGuarantor',
@@ -159,6 +153,7 @@ export class PrescriptionService {
       relations: [
         'dentalChart',
         'dentalChart.patient',
+        'dentalChart.user_accounts', // ✅ add
         'prescribedMedications',
         'payments',
         'hmoGuarantor',
@@ -225,19 +220,25 @@ export class PrescriptionService {
       // Update main prescription fields
       prescription.payment_status =
         updateDto.payment_status ?? prescription.payment_status;
+
       prescription.payment_type =
         updateDto.payment_type ?? prescription.payment_type;
-      prescription.issued_date =
-        updateDto.issued_date ?? prescription.issued_date;
+
+      if (updateDto.issued_date) {
+        prescription.issued_date = new Date(updateDto.issued_date);
+      }
+
       prescription.instruction =
         updateDto.instruction ?? prescription.instruction;
+
       prescription.patient_payment =
         updateDto.patient_payment ?? prescription.patient_payment;
+
       prescription.excess_payment =
         updateDto.excess_payment ?? prescription.excess_payment;
+
       prescription.is_discharged =
         updateDto.is_discharged ?? prescription.is_discharged;
-
       await this.prescriptionRepo.save(prescription);
 
       // Handle medications update if any
@@ -247,7 +248,7 @@ export class PrescriptionService {
         });
 
         for (const med of updateDto.medications) {
-          const { name, type, dosage, pcs } = med;
+          const { name, type, dosage, pcs, med_instruction } = med;
 
           if (!name)
             throw new BadRequestException('Medication name is required.');
@@ -265,6 +266,7 @@ export class PrescriptionService {
             name,
             type,
             dosage,
+            med_instruction, // ✅ add this
             pcs: pcsNumber,
             issued_date: prescription.issued_date,
           });

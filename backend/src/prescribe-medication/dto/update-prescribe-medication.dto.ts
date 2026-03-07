@@ -23,15 +23,7 @@ export class UpdatePrescribeMedicationDto {
 
   @IsOptional()
   @IsString()
-  duration?: string;
-
-  @IsOptional()
-  @IsString()
-  frequencies?: string;
-
-  @IsOptional()
-  @IsString()
-  preparation?: string;
+  med_instruction?: string;
 
   @IsOptional()
   @IsNumber()
@@ -39,5 +31,5 @@ export class UpdatePrescribeMedicationDto {
 
   @IsOptional()
   @IsDateString()
-  issued_date?: Date;
+  issued_date?: string; // ✅ FIXED (string not Date)
 }

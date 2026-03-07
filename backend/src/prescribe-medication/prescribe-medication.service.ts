@@ -1,86 +1,116 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
 import { PrescribeMedication } from './entities/prescribe-medication.entity';
 import { CreatePrescribeMedicationDto } from './dto/create-prescribe-medication.dto';
 import { UpdatePrescribeMedicationDto } from './dto/update-prescribe-medication.dto';
+
+import { DentalChart } from 'src/dental-chart/entities/dental-chart.entity';
+import { Prescription } from 'src/prescription/entities/prescription.entity';
 
 @Injectable()
 export class PrescribeMedicationService {
   constructor(
     @InjectRepository(PrescribeMedication)
-    private prescribeMedicationRepo: Repository<PrescribeMedication>,
+    private readonly prescribeMedicationRepo: Repository<PrescribeMedication>,
   ) {}
 
-  // Create a new prescribed medication
+  // CREATE
   async create(dto: CreatePrescribeMedicationDto) {
-    const newPrescribed = this.prescribeMedicationRepo.create({
-      ...dto,
-      dental_chart: { dental_id: dto.dental_chart },
-      prescription: { prescription_id: dto.prescription },
+    const medication = this.prescribeMedicationRepo.create({
+      name: dto.name,
+      type: dto.type,
+      dosage: dto.dosage,
+      med_instruction: dto.med_instruction,
+      pcs: dto.pcs,
+      issued_date: new Date(dto.issued_date),
+
+      dental_chart: { dental_id: dto.dental_chart } as DentalChart,
+      prescription: { prescription_id: dto.prescription } as Prescription,
     });
 
-    return await this.prescribeMedicationRepo.save(newPrescribed);
+    return await this.prescribeMedicationRepo.save(medication);
   }
 
-  // Update existing prescribed medication
+  // UPDATE
   async update(id: number, dto: UpdatePrescribeMedicationDto) {
-    const preload = await this.prescribeMedicationRepo.preload({
-      prescribe_medication_id: id,
-      ...dto,
-      dental_chart: dto.dental_chart
-        ? { dental_id: dto.dental_chart }
-        : undefined,
-      prescription: dto.prescription
-        ? { prescription_id: dto.prescription }
-        : undefined,
-      // ensure empty strings are saved instead of null
-      duration: dto.duration ?? '',
-      frequencies: dto.frequencies ?? '',
-      preparation: dto.preparation ?? '',
+    const medication = await this.prescribeMedicationRepo.findOne({
+      where: { prescribe_medication_id: id },
     });
 
-    if (!preload) throw new NotFoundException('Prescribed medication not found');
+    if (!medication) {
+      throw new NotFoundException('Prescribed medication not found');
+    }
 
-    return this.prescribeMedicationRepo.save(preload);
+    if (dto.name !== undefined) medication.name = dto.name;
+    if (dto.type !== undefined) medication.type = dto.type;
+    if (dto.dosage !== undefined) medication.dosage = dto.dosage;
+    if (dto.med_instruction !== undefined)
+      medication.med_instruction = dto.med_instruction;
+    if (dto.pcs !== undefined) medication.pcs = dto.pcs;
+
+    if (dto.issued_date) {
+      medication.issued_date = new Date(dto.issued_date);
+    }
+
+    if (dto.dental_chart) {
+      medication.dental_chart = { dental_id: dto.dental_chart } as DentalChart;
+    }
+
+    if (dto.prescription) {
+      medication.prescription = {
+        prescription_id: dto.prescription,
+      } as Prescription;
+    }
+
+    return await this.prescribeMedicationRepo.save(medication);
   }
 
-  // Find by dental chart ID
+  // FIND BY DENTAL CHART
   async findByDentalChartId(dentalId: number) {
     return await this.prescribeMedicationRepo.find({
-      where: { dental_chart: { dental_id: dentalId } },
+      where: {
+        dental_chart: { dental_id: dentalId },
+      },
       relations: ['dental_chart', 'prescription'],
     });
   }
 
-  // Find by prescription ID
+  // FIND BY PRESCRIPTION
   async findByPrescriptionId(prescriptionId: number) {
     return await this.prescribeMedicationRepo.find({
-      where: { prescription: { prescription_id: prescriptionId } },
+      where: {
+        prescription: { prescription_id: prescriptionId },
+      },
       relations: ['dental_chart', 'prescription'],
     });
   }
 
-  // Find all
+  // FIND ALL
   async findAll() {
     return await this.prescribeMedicationRepo.find({
       relations: ['dental_chart', 'prescription'],
     });
   }
 
-  // Find one by ID
+  // FIND ONE
   async findOne(id: number) {
-    const found = await this.prescribeMedicationRepo.findOne({
+    const medication = await this.prescribeMedicationRepo.findOne({
       where: { prescribe_medication_id: id },
       relations: ['dental_chart', 'prescription'],
     });
-    if (!found) throw new NotFoundException('Prescribed medication not found');
-    return found;
+
+    if (!medication) {
+      throw new NotFoundException('Prescribed medication not found');
+    }
+
+    return medication;
   }
 
-  // Remove by ID
+  // DELETE
   async remove(id: number) {
-    const found = await this.findOne(id);
-    return this.prescribeMedicationRepo.remove(found);
+    const medication = await this.findOne(id);
+    return await this.prescribeMedicationRepo.remove(medication);
   }
 }

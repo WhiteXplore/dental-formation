@@ -26,15 +26,7 @@ export class MedicationDto {
 
   @IsOptional()
   @IsString()
-  duration?: string;
-
-  @IsOptional()
-  @IsString()
-  frequencies?: string;
-
-  @IsOptional()
-  @IsString()
-  preparation?: string;
+  med_instruction?: string;
 
   @IsNotEmpty()
   @Type(() => Number)
@@ -79,7 +71,7 @@ export class CreatePrescriptionDto {
 
   @IsNotEmpty()
   @IsDateString()
-  issued_date: Date;
+  issued_date: string; // ✔ fixed
 
   @IsOptional()
   @IsBoolean()

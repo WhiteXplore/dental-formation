@@ -477,7 +477,7 @@ export default {
       try {
         const res = await axios.get(
           process.env.VUE_APP_API_BASE_URL +
-            "/price-procedure/get-price-procedure"
+            "/price-procedure/get-price-procedure",
         );
         const active = res.data.filter((p) => p.is_active);
         const map = {};
@@ -492,7 +492,7 @@ export default {
       try {
         const res = await axios.get(
           process.env.VUE_APP_API_BASE_URL +
-            `/dental-chart/history/${this.patientId}`
+            `/dental-chart/history/${this.patientId}`,
         );
         const rawHistory = res.data || [];
 
@@ -521,7 +521,7 @@ export default {
 
         // Sort by ascending date
         const sortedGrouped = grouped.sort(
-          (a, b) => new Date(a.date) - new Date(b.date)
+          (a, b) => new Date(a.date) - new Date(b.date),
         );
 
         this.availableDates = [...new Set(sortedGrouped.map((g) => g.date))];
@@ -540,7 +540,7 @@ export default {
         this.groupedHistory = [...this.allGrouped];
       } else {
         this.groupedHistory = this.allGrouped.filter(
-          (g) => g.date === this.selectedDate
+          (g) => g.date === this.selectedDate,
         );
       }
       this.currentPage = this.groupedHistory.map(() => 1);
@@ -552,10 +552,10 @@ export default {
         .delete(process.env.VUE_APP_API_BASE_URL + `/dental-chart/${dentalId}`)
         .then(() => {
           this.groupedHistory = this.groupedHistory.filter(
-            (g) => g.dental_id !== dentalId
+            (g) => g.dental_id !== dentalId,
           );
           this.allGrouped = this.allGrouped.filter(
-            (g) => g.dental_id !== dentalId
+            (g) => g.dental_id !== dentalId,
           );
           this.currentPage = this.groupedHistory.map(() => 1);
         })
