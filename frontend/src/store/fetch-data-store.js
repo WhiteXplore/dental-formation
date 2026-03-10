@@ -15,12 +15,27 @@ export const useFetchDataStore = defineStore("fetchData", {
     useraccounts: [],
     hmoGuarantors: [],
     prices: [],
+    status: [],
     loading: false,
     error: null,
     socket: null,
   }),
 
   actions: {
+    async fetchStatus() {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await axios.get(
+          process.env.VUE_APP_API_BASE_URL + "/status/get-status",
+        );
+        this.status = response.data;
+      } catch (err) {
+        this.error = err.message || "Failed to fetch status";
+      } finally {
+        this.loading = false;
+      }
+    },
     async fetchHMOGuarantors() {
       this.loading = true;
       this.error = null;

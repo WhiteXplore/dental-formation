@@ -726,7 +726,7 @@ export default {
                 signatureBase64
                   ? {
                       image: signatureBase64,
-                      width: 120,
+                      width: 70,
                       alignment: "center",
                       margin: [0, -100, 0, -20],
                     }

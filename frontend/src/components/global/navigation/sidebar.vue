@@ -191,6 +191,10 @@ export default {
                     name: "Procedures",
                     route: "/price-procedure",
                   },
+                  {
+                    name: "Status",
+                    route: "/status",
+                  },
                 ],
               },
               {

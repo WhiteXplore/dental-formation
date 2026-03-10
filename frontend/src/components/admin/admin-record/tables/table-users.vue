@@ -158,12 +158,12 @@
                     </button>
 
                     <!-- Delete -->
-                    <button
+                    <!-- <button
                       class="px-3 py-1 border border-red-300 hover:bg-red-200 text-red-800 rounded-lg flex items-center gap-1"
                       @click="toggleDelete(users_data)"
                     >
                       <icon name="delete" /> Delete
-                    </button>
+                    </button> -->
                   </div>
                 </td>
               </tr>

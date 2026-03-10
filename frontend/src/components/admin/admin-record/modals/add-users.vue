@@ -367,20 +367,35 @@ export default {
     async submitData() {
       const formData = new FormData();
 
+      // append basic fields
       Object.keys(this.form).forEach((key) => {
-        if (this.form[key] !== undefined && this.form[key] !== null) {
+        if (key === "signature") return; // ❌ do not send preview url
+
+        if (
+          this.form[key] !== undefined &&
+          this.form[key] !== null &&
+          this.form[key] !== ""
+        ) {
           formData.append(key, this.form[key]);
         }
       });
 
+      // do not send password if editing and empty
+      if (this.isEditMode && !this.form.password) {
+        formData.delete("password");
+      }
+
+      // send signature file
       if (this.signatureFile) {
         formData.append("signature", this.signatureFile);
       }
 
+      // remove signature
       if (this.removeSignatureFlag) {
         formData.append("removeSignature", "true");
       }
 
+      // send schedules only for dentist
       if (this.form.role === "Dentist") {
         formData.append("schedules", JSON.stringify(this.schedules));
       }
@@ -404,7 +419,8 @@ export default {
 
         this.$emit("refresh");
         this.$emit("close");
-      } catch {
+      } catch (err) {
+        console.error(err);
         toast.error("Error saving user");
       }
     },

@@ -186,12 +186,12 @@
           <div v-if="form.appointment_status === 'Call'" class="space-y-3">
             <!-- Call Type -->
             <div class="w-full space-y-1.5 text-left flex flex-col">
-              <label for="call_type" class="font-bold">Call Type:</label>
+              <label for="call_type" class="font-bold">Mode of Payment:</label>
               <select
                 v-model="form.call_type"
                 class="w-full border px-2 py-3 border-gray-600 rounded-md text-md text-gray-800"
               >
-                <option disabled value="">Select type</option>
+                <option disabled value="">Select mode</option>
                 <option value="Cash">Cash</option>
                 <option value="HMO">HMO</option>
               </select>

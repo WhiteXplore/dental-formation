@@ -221,12 +221,17 @@
                         <label class="text-[11px] text-gray-600">Status</label>
                         <select
                           v-model="toothConditionMap[tooth]"
-                          class="w-full border rounded px-2 py-1 text-xs"
+                          class="w-full bg-white border border-gray-300 rounded-md px-2 py-2 text-sm"
                         >
                           <option disabled value="">Select Status</option>
-                          <option value="RF">RF</option>
-                          <option value="OB">OB</option>
-                          <option value="NR">NR</option>
+
+                          <option
+                            v-for="s in status"
+                            :key="s.status_id"
+                            :value="s.status_name"
+                          >
+                            {{ s.status_name }}
+                          </option>
                         </select>
                       </div>
                     </div>
@@ -307,9 +312,14 @@
                             class="w-full bg-white border border-gray-300 rounded-md px-2 py-2 text-sm"
                           >
                             <option disabled value="">Select Status</option>
-                            <option value="RF">RF</option>
-                            <option value="OB">OB</option>
-                            <option value="NR">NR</option>
+
+                            <option
+                              v-for="s in status"
+                              :key="s.status_id"
+                              :value="s.status_name"
+                            >
+                              {{ s.status_name }}
+                            </option>
                           </select>
                         </td>
 
@@ -670,6 +680,7 @@ export default {
       "prices",
       "dentalCharts",
       "inventories",
+      "status",
     ]),
     selectedProceduresList() {
       return this.prices.filter(
@@ -786,6 +797,7 @@ export default {
       "fetchPrices",
       "fetchDentalChart",
       "fetchInventories",
+      "fetchStatus",
     ]),
     stepClass(step) {
       return [
@@ -1196,6 +1208,7 @@ export default {
     await this.fetchPrices();
     await this.fetchDentalChart();
     await this.fetchInventories();
+    await this.fetchStatus();
   },
 };
 </script>

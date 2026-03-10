@@ -151,6 +151,11 @@ const routes = [
         component: () => import("@/components/admin/admin-record/price.vue"),
       },
       {
+        path: "/status",
+        name: "status",
+        component: () => import("@/components/admin/admin-record/status.vue"),
+      },
+      {
         path: "/report-analytics",
         name: "report-analytics",
         component: () =>

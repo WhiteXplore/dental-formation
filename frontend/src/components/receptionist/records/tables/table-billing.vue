@@ -472,7 +472,7 @@ export default {
       // PDF HEADER (FIXED)
       // ===========================
       const header = [
-        { image: base64Logo, width: 120, alignment: "center" },
+        { image: base64Logo, width: 200, alignment: "center" },
         { text: "TOOTHFORMATIONS DENTAL CLINIC", style: "clinicHeader" },
         {
           text: "PANABO POLYMEDIC HOSPITAL, INC. - GROUND FLOOR",
@@ -848,73 +848,53 @@ export default {
       } // ===========================
       // SIGNATURE BLOCK
       // ===========================
+      content.push({
+        margin: [0, 50, 0, 0], // smaller spacing
+        columns: [
+          { width: "*", text: "" },
 
+          {
+            width: 200,
+            alignment: "center",
+            stack: [
+              ...(signatureBase64
+                ? [
+                    {
+                      image: signatureBase64,
+                      width: 60,
+                      alignment: "center",
+                      margin: [0, 0, 0, 5],
+                    },
+                  ]
+                : []),
+
+              {
+                text: dentist
+                  ? `${dentist.last_name}, ${dentist.first_name}`
+                  : "N/A",
+                bold: true,
+                alignment: "center",
+                fontSize: 11,
+                decoration: "underline",
+              },
+              {
+                text: dentist?.license_no
+                  ? `License No: ${dentist.license_no}`
+                  : "Receptionist",
+                fontSize: 10,
+                alignment: "center",
+              },
+            ],
+          },
+        ],
+      });
       const docDefinition = {
         pageSize: "A5",
         pageOrientation: "portrait",
-        pageMargins: [25, 25, 25, 40],
+        pageMargins: [25, 5, 25, 40],
 
         content,
-        footer: () => {
-          const dentistName = dentist
-            ? `${dentist.last_name}, ${dentist.first_name}`
-            : "N/A";
 
-          const dentistLicense = dentist?.license_no || "N/A";
-          const dentistRole = dentist?.role || "";
-
-          return {
-            margin: [40, 0, 20, 0],
-            columns: [
-              { width: "*", text: "" },
-
-              {
-                width: "auto",
-                alignment: "right",
-                stack: [
-                  ...(signatureBase64
-                    ? [
-                        {
-                          image: signatureBase64,
-                          width: 100,
-                          margin: [0, -100, 0, -20], // overlay signature
-                          alignment: "center",
-                        },
-                      ]
-                    : []),
-
-                  {
-                    text: "________________________",
-                    alignment: "center",
-                  },
-
-                  {
-                    text: dentistName,
-                    bold: true,
-                    alignment: "center",
-                    fontSize: 11,
-                  },
-
-                  ...(dentistRole
-                    ? [
-                        {
-                          text: dentistRole,
-                          fontSize: 10,
-                          alignment: "center",
-                        },
-                      ]
-                    : []),
-
-                  {
-                    text: `License No: ${dentistLicense}`,
-                    fontSize: 10,
-                    alignment: "center",
-                  },
-                ],
-              },
-            ],
-          };
-        },
         styles: {
           clinicHeader: {
             fontSize: 16,
@@ -937,7 +917,7 @@ export default {
 
           label: {
             fontSize: 9,
-            color: "#777",
+            color: "#000000",
           },
 
           value: {

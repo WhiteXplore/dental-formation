@@ -17,18 +17,21 @@ export class UserService {
     private readonly scheduleRepository: Repository<DentistSchedule>,
   ) {}
 
+  /* ================= CREATE USER ================= */
   async create(createUserDto: CreateUserDto): Promise<User_Accounts> {
-    const { schedules, password, ...userData } = createUserDto;
+    const { schedules, password, signature, ...userData } = createUserDto;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = this.userRepository.create({
       ...userData,
       password: hashedPassword,
+      signature: signature || null, // save uploaded signature filename
     });
 
     const savedUser = await this.userRepository.save(user);
 
+    /* SAVE DENTIST SCHEDULES */
     if (Array.isArray(schedules) && schedules.length > 0) {
       const scheduleEntities = schedules.map((s) =>
         this.scheduleRepository.create({
@@ -43,6 +46,7 @@ export class UserService {
     return this.findOne(savedUser.user_id);
   }
 
+  /* ================= GET ALL USERS ================= */
   async findAll(): Promise<User_Accounts[]> {
     return this.userRepository.find({
       relations: ['schedules'],
@@ -52,6 +56,7 @@ export class UserService {
     });
   }
 
+  /* ================= GET ONE USER ================= */
   async findOne(user_id: number): Promise<User_Accounts> {
     const user = await this.userRepository.findOne({
       where: { user_id },
@@ -65,23 +70,37 @@ export class UserService {
     return user;
   }
 
+  /* ================= UPDATE USER ================= */
   async update(
     user_id: number,
     updateUserDto: UpdateUserDto,
   ): Promise<User_Accounts> {
-    const { schedules, password, removeSignature, ...userData } = updateUserDto;
+    const { schedules, password, signature, removeSignature, ...userData } =
+      updateUserDto;
 
+    const user = await this.findOne(user_id);
+
+    /* HASH PASSWORD IF UPDATED */
     if (password) {
-      userData['password'] = await bcrypt.hash(password, 10);
+      user.password = await bcrypt.hash(password, 10);
     }
 
-    // ⭐ remove signature
+    /* UPDATE BASIC FIELDS */
+    Object.assign(user, userData);
+
+    /* UPDATE SIGNATURE IF NEW FILE UPLOADED */
+    if (signature) {
+      user.signature = signature;
+    }
+
+    /* REMOVE SIGNATURE */
     if (removeSignature === 'true') {
-      await this.userRepository.update(user_id, { signature: null });
+      user.signature = null;
     }
-    await this.userRepository.update(user_id, userData);
 
-    // ⭐ update schedules
+    await this.userRepository.save(user);
+
+    /* UPDATE SCHEDULES */
     if (Array.isArray(schedules)) {
       await this.scheduleRepository.delete({ user_id });
 
@@ -98,6 +117,7 @@ export class UserService {
     return this.findOne(user_id);
   }
 
+  /* ================= DELETE USER ================= */
   async remove(user_id: number): Promise<void> {
     const result = await this.userRepository.delete(user_id);
 
