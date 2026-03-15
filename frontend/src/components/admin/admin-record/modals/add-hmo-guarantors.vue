@@ -18,6 +18,7 @@
               {{ isEditMode ? "Edit HMO" : "Add HMO" }}
             </h1>
           </div>
+
           <icon
             name="circle-close3"
             @click="$emit('close')"
@@ -27,7 +28,7 @@
 
         <!-- Body -->
         <div class="p-5 w-[30vw] space-y-3">
-          <!-- Company -->
+          <!-- Entity Type -->
           <div class="space-y-1.5">
             <label class="font-bold">Entity Type:</label>
             <select v-model="form.company" required class="input">
@@ -38,7 +39,7 @@
             </select>
           </div>
 
-          <!-- Company (Other) -->
+          <!-- Other Company -->
           <div v-if="form.company === 'Other'" class="space-y-1.5">
             <label class="font-bold">Specify Company:</label>
             <input
@@ -62,6 +63,15 @@
             />
           </div>
 
+          <!-- ACTIVE STATUS -->
+          <div class="space-y-1.5">
+            <label class="font-bold">Status:</label>
+            <select v-model="form.active_status" required class="input">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+
           <div class="w-full h-[1px] bg-gray-200 mt-4"></div>
 
           <!-- Buttons -->
@@ -69,6 +79,7 @@
             <button type="button" @click="$emit('close')" class="btn-danger">
               Cancel
             </button>
+
             <button type="submit" class="btn-primary">
               {{ isEditMode ? "Update" : "Submit" }}
             </button>
@@ -87,6 +98,7 @@ import axios from "axios";
 export default {
   name: "HMOModal",
   components: { icon },
+
   props: {
     guarantor: {
       type: Object,
@@ -100,6 +112,7 @@ export default {
         full_name: "",
         company: "",
         company_other: "",
+        active_status: "Active",
       },
     };
   },
@@ -112,17 +125,14 @@ export default {
 
   mounted() {
     if (this.isEditMode) {
-      const predefinedCompanies = ["Maxicare", "Intellicare", "Avega"];
+      const predefinedCompanies = ["Company", "Corporate"];
       const isPredefined = predefinedCompanies.includes(this.guarantor.company);
 
       this.form = {
-        full_name:
-          this.guarantor.full_name ||
-          `${this.guarantor.first_name} ${this.guarantor.middle_name || ""} ${
-            this.guarantor.last_name
-          }`.trim(),
+        full_name: this.guarantor.full_name || "",
         company: isPredefined ? this.guarantor.company : "Other",
         company_other: isPredefined ? "" : this.guarantor.company,
+        active_status: this.guarantor.active_status || "Active",
       };
     }
   },
@@ -130,6 +140,7 @@ export default {
   methods: {
     async submitData() {
       const formEl = this.$refs.userForm;
+
       if (!formEl.checkValidity()) {
         formEl.reportValidity();
         return;
@@ -142,6 +153,7 @@ export default {
             this.form.company === "Other"
               ? this.form.company_other
               : this.form.company,
+          active_status: this.form.active_status,
         };
 
         if (this.isEditMode) {
@@ -156,14 +168,17 @@ export default {
             `${process.env.VUE_APP_API_BASE_URL}/hmo-guarantors`,
             payload,
           );
+
           toast.success("HMO added successfully!");
         }
 
         new Audio(require("@/assets/add.mp3")).play();
+
         this.$emit("refresh");
         this.$emit("close");
       } catch (error) {
         console.error(error);
+
         toast.error(
           this.isEditMode ? "Failed to update HMO." : "Failed to add HMO.",
         );

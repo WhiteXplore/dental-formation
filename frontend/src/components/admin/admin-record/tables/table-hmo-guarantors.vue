@@ -68,9 +68,12 @@
                   >
                     No.
                   </th>
-                  <th class="px-4 py-3 text-left font-normal">Full Name</th>
+                  <th class="px-4 py-3 text-left font-normal w-[30%]">
+                    Full Name
+                  </th>
                   <th class="px-4 py-3 text-left font-normal">Company</th>
-                  <th class="px-4 py-3 text-left rounded-tr-lg font-normal">
+                  <th class="px-4 py-3 text-left font-normal">Status</th>
+                  <th class="px-4 py-3 text-center rounded-tr-lg font-normal">
                     Actions
                   </th>
                 </tr>
@@ -84,9 +87,9 @@
                   <td class="px-4 py-2">{{ startIndex + index }}</td>
                   <td class="px-4 py-2">{{ guarantor.full_name }}</td>
                   <td class="px-4 py-2">{{ guarantor.company }}</td>
-
+                  <td class="px-4 py-2">{{ guarantor.active_status }}</td>
                   <td class="px-4 py-2">
-                    <div class="flex gap-2">
+                    <div class="flex justify-center gap-2">
                       <button
                         @click="toggleEdit(guarantor)"
                         class="px-3 py-1 h-8 border border-green-300 hover:bg-green-200 text-green-800 rounded-lg flex items-center gap-1"

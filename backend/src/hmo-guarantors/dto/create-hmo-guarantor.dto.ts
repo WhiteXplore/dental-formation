@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsIn } from 'class-validator';
 
 export class CreateHmoGuarantorDto {
   @IsNotEmpty()
@@ -8,4 +8,8 @@ export class CreateHmoGuarantorDto {
   @IsNotEmpty()
   @IsString()
   company: string;
+
+  @IsNotEmpty()
+  @IsString()
+  active_status: string;
 }

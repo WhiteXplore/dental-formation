@@ -12,7 +12,11 @@ export class HmoGuarantor {
   @Column({ length: 150 })
   company: string;
 
-  // Relationship: One HMO guarantor can have many prescriptions
+  // NEW FIELD
+  @Column({ length: 150 })
+  active_status: string;
+
+  // Relationship
   @OneToMany(() => Prescription, (prescription) => prescription.hmoGuarantor)
   prescriptions: Prescription[];
 

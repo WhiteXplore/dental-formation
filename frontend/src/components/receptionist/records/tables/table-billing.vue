@@ -515,34 +515,38 @@ export default {
         },
         {
           margin: [0, 8, 0, 8],
-          stack: [
-            // DATE ISSUED
-            {
-              table: {
-                widths: ["auto", "*"],
-                body: [
-                  [
-                    {
-                      text: "Date Issued:",
-                      style: "label",
-                      border: [false, false, false, false],
-                    },
-                    {
-                      text: dayjs().format("MMMM DD, YYYY"),
-                      style: "value",
-                      border: [false, false, false, false],
-                    },
-                  ],
-                ],
-              },
-              layout: "noBorders",
-              margin: [0, 0, 0, 6],
-            },
-            // PATIENT NAME / AGE & SEX
-            {
-              columns: [
+          table: {
+            widths: ["65%", "35%"],
+            body: [
+              // DATE ISSUED
+              [
                 {
-                  width: "67%",
+                  table: {
+                    widths: ["auto", "*"],
+                    body: [
+                      [
+                        {
+                          text: "Date Issued:",
+                          style: "label",
+                          border: [false, false, false, false],
+                        },
+                        {
+                          text: dayjs().format("MMMM DD, YYYY"),
+                          style: "value",
+                          border: [false, false, false, false],
+                        },
+                      ],
+                    ],
+                  },
+                  layout: "noBorders",
+                  border: [false, false, false, false],
+                },
+                { text: "", border: [false, false, false, false] },
+              ],
+
+              // PATIENT NAME + AGE + SEX
+              [
+                {
                   table: {
                     widths: ["auto", "*"],
                     body: [
@@ -553,8 +557,8 @@ export default {
                           border: [false, false, false, false],
                         },
                         {
-                          text: `${patient?.last_name || "N/A"}, ${
-                            patient?.first_name || "N/A"
+                          text: `${patient?.last_name ?? "N/A"}, ${
+                            patient?.first_name ?? "N/A"
                           }`,
                           style: "value",
                           border: [false, false, false, false],
@@ -564,11 +568,12 @@ export default {
                     ],
                   },
                   layout: "noBorders",
+                  border: [false, false, false, false],
                 },
+
                 {
-                  width: "40%",
                   table: {
-                    widths: [25, 25, 25, 35],
+                    widths: ["auto", 30, "auto", "*"],
                     body: [
                       [
                         {
@@ -578,7 +583,7 @@ export default {
                           border: [false, false, false, false],
                         },
                         {
-                          text: `${patient?.age || "N/A"}`,
+                          text: `${patient?.age ?? "N/A"}`,
                           style: "value",
                           border: [false, false, false, false],
                         },
@@ -589,7 +594,7 @@ export default {
                           border: [false, false, false, false],
                         },
                         {
-                          text: `${patient?.gender || "N/A"}`,
+                          text: `${patient?.gender ?? "N/A"}`,
                           style: "value",
                           border: [false, false, false, false],
                         },
@@ -597,17 +602,15 @@ export default {
                     ],
                   },
                   layout: "noBorders",
+                  border: [false, false, false, false],
                 },
               ],
-              columnGap: 10,
-            },
-            // ADDRESS / STATUS
-            {
-              columns: [
+
+              // ADDRESS + STATUS
+              [
                 {
-                  width: "68%",
                   table: {
-                    widths: [55, "*"],
+                    widths: ["auto", "*"],
                     body: [
                       [
                         {
@@ -616,7 +619,7 @@ export default {
                           border: [false, false, false, false],
                         },
                         {
-                          text: `${patient?.address || "N/A"}`,
+                          text: patient?.address ?? "N/A",
                           style: "value",
                           border: [false, false, false, false],
                           noWrap: false,
@@ -625,11 +628,12 @@ export default {
                     ],
                   },
                   layout: "noBorders",
+                  border: [false, false, false, false],
                 },
+
                 {
-                  width: "40%",
                   table: {
-                    widths: [40, "*"],
+                    widths: ["auto", "*"],
                     body: [
                       [
                         {
@@ -638,7 +642,7 @@ export default {
                           border: [false, false, false, false],
                         },
                         {
-                          text: patient?.marital_status || "N/A",
+                          text: patient?.marital_status ?? "N/A",
                           style: "value",
                           border: [false, false, false, false],
                         },
@@ -646,12 +650,12 @@ export default {
                     ],
                   },
                   layout: "noBorders",
+                  border: [false, false, false, false],
                 },
               ],
-              columnGap: 10,
-              margin: [0, 3, 0, 0],
-            },
-          ],
+            ],
+          },
+          layout: "noBorders",
         },
       ];
 
@@ -848,52 +852,96 @@ export default {
       } // ===========================
       // SIGNATURE BLOCK
       // ===========================
-      content.push({
-        margin: [0, 50, 0, 0], // smaller spacing
-        columns: [
-          { width: "*", text: "" },
+      // content.push({
+      //   margin: [0, 50, 0, 0], // smaller spacing
+      //   columns: [
+      //     { width: "*", text: "" },
 
-          {
-            width: 200,
-            alignment: "center",
-            stack: [
-              ...(signatureBase64
-                ? [
-                    {
-                      image: signatureBase64,
-                      width: 60,
-                      alignment: "center",
-                      margin: [0, 0, 0, 5],
-                    },
-                  ]
-                : []),
+      //     {
+      //       width: 200,
+      //       alignment: "center",
+      //       stack: [
+      //         ...(signatureBase64
+      //           ? [
+      //               {
+      //                 image: signatureBase64,
+      //                 width: 60,
+      //                 alignment: "center",
+      //                 margin: [0, 0, 0, 5],
+      //               },
+      //             ]
+      //           : []),
 
-              {
-                text: dentist
-                  ? `${dentist.last_name}, ${dentist.first_name}`
-                  : "N/A",
-                bold: true,
-                alignment: "center",
-                fontSize: 11,
-                decoration: "underline",
-              },
-              {
-                text: dentist?.license_no
-                  ? `License No: ${dentist.license_no}`
-                  : "Receptionist",
-                fontSize: 10,
-                alignment: "center",
-              },
-            ],
-          },
-        ],
-      });
+      //         {
+      //           text: dentist
+      //             ? `${dentist.last_name}, ${dentist.first_name}`
+      //             : "N/A",
+      //           bold: true,
+      //           alignment: "center",
+      //           fontSize: 11,
+      //           decoration: "underline",
+      //         },
+      //         {
+      //           text: dentist?.license_no
+      //             ? `License No: ${dentist.license_no}`
+      //             : "Receptionist",
+      //           fontSize: 10,
+      //           alignment: "center",
+      //         },
+      //       ],
+      //     },
+      //   ],
+      // });
       const docDefinition = {
         pageSize: "A5",
         pageOrientation: "portrait",
-        pageMargins: [25, 5, 25, 40],
+        pageMargins: [25, 5, 25, 60],
 
         content,
+
+        footer: () => {
+          return {
+            margin: [25, -40, -5, 15],
+            columns: [
+              { width: "*", text: "" },
+
+              {
+                width: 200,
+                alignment: "center",
+                stack: [
+                  ...(signatureBase64
+                    ? [
+                        {
+                          image: signatureBase64,
+                          width: 50, // resize signature here
+                          alignment: "center",
+                          margin: [0, 0, 0, 5],
+                        },
+                      ]
+                    : []),
+
+                  {
+                    text: dentist
+                      ? `${dentist.last_name}, ${dentist.first_name}`
+                      : "N/A",
+                    bold: true,
+                    alignment: "center",
+                    fontSize: 11,
+                    decoration: "underline",
+                  },
+
+                  {
+                    text: dentist?.license_no
+                      ? `License No: ${dentist.license_no}`
+                      : "Receptionist",
+                    fontSize: 10,
+                    alignment: "center",
+                  },
+                ],
+              },
+            ],
+          };
+        },
 
         styles: {
           clinicHeader: {

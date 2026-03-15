@@ -105,10 +105,23 @@
                 <li
                   v-for="item in filteredData"
                   :key="item.hmo_guarantor_id"
-                  @mousedown.prevent="selectGuarantor(item)"
-                  class="px-3 py-2 cursor-pointer hover:bg-blue-100"
+                  @mousedown.prevent="
+                    item.active_status === 'Active' && selectGuarantor(item)
+                  "
+                  :class="[
+                    'px-3 py-2',
+                    item.active_status === 'Active'
+                      ? 'cursor-pointer hover:bg-blue-100'
+                      : 'text-gray-400 cursor-not-allowed bg-gray-50',
+                  ]"
                 >
                   {{ item.full_name }} - {{ item.company }}
+                  <span
+                    v-if="item.active_status === 'Inactive'"
+                    class="text-xs text-red-500 ml-2"
+                  >
+                    (Inactive)
+                  </span>
                 </li>
               </ul>
             </div>
