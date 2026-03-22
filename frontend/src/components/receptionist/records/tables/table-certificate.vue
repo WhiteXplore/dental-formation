@@ -138,17 +138,17 @@
 
         <!-- ===== Clinic Header ===== -->
         <div class="mb-6 border-b pb-4">
-          <div class="flex items-center justify-center gap-4">
+          <div class="flex flex-col items-center justify-center gap-2">
             <!-- Logo -->
             <img
               src="@/assets/img/clinic-logo.png"
-              class="w-[70px] h-[70px] object-contain"
+              class="h-[60px] w-[200px]"
             />
 
             <!-- Clinic Info -->
             <div class="text-center">
               <h2 class="text-[22px] font-bold text-green-700 tracking-wide">
-                TOOTHFORMATIONS DENTAL CLINIC
+                TOOTHFORMATION DENTAL CLINIC
               </h2>
 
               <div class="text-sm text-gray-600">
@@ -158,7 +158,7 @@
               <!-- Contact Row -->
               <div class="flex justify-center gap-6 text-sm text-gray-600 mt-1">
                 <span>Contact #: 0985-104-6429</span>
-                <span>Telephone #: 0985-104-6429</span>
+                <span>Telephone #: 084-823-0981 </span>
               </div>
 
               <!-- Facebook -->
@@ -495,7 +495,10 @@ export default {
 
       const patient = this.selectedReport.dentalChart.patient || {};
       const dentist = this.selectedReport.dentalChart.user_accounts || {};
-      const procedure = this.selectedReport.dentalChart.priceProcedure || {};
+      const procedures = this.selectedReport.dentalChart.teeth
+        .map((t) => t.priceProcedure?.procedure_name)
+        .filter(Boolean)
+        .join(", ");
       const teeth = this.selectedReport.dentalChart.teeth || [];
 
       const logoBase64 = await this.toBase64(
@@ -516,13 +519,13 @@ export default {
           stack: [
             {
               image: logoBase64,
-              width: 150,
+              width: 170,
               alignment: "center",
-              margin: [0, 0, 0, 6],
+              margin: [0, 0, 0, 8],
             },
 
             {
-              text: "TOOTHFORMATIONS DENTAL CLINIC",
+              text: "TOOTH FORMATION DENTAL CLINIC",
               style: "clinicHeader",
             },
 
@@ -545,7 +548,7 @@ export default {
                     },
 
                     {
-                      text: "Telephone#: 0985-104-6429",
+                      text: "Telephone#: 084-823-0981",
                       style: "receiptTitle",
                       margin: [20, 0, 0, 0],
                       border: [false, false, false, false],
@@ -670,7 +673,10 @@ export default {
                 this.selectedReport.dentalChart.procedure_date,
               )}. `,
               "The patient underwent the dental procedure ",
-              { text: `${procedure.procedure_name || "N/A"} `, bold: true },
+              {
+                text: `${procedures || "N/A"} `,
+                bold: true,
+              },
               "involving tooth/teeth number(s) ",
               { text: `${toothNumbers || "N/A"}. `, bold: true },
               "with a diagnosis of ",
@@ -680,20 +686,6 @@ export default {
                 decoration: "underline",
               },
               ".",
-            ],
-            alignment: "justify",
-            lineHeight: 1.6,
-            margin: [0, 20, 0, 20],
-          },
-
-          {
-            text: [
-              "Recommendation: ",
-              {
-                text: (this.recommendation || "N/A").toUpperCase(),
-                bold: true,
-                decoration: "underline",
-              },
             ],
             alignment: "justify",
             lineHeight: 1.6,

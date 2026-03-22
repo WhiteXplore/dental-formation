@@ -280,20 +280,15 @@ export default {
 
       searchMedicationQuery: "",
       showMedicationDropdown: false,
-
-      medicationOptions: [
-        { name: "Amoxicillin", type: "Antibiotic", dosage: "500mg" },
-        { name: "Ibuprofen", type: "Pain reliever", dosage: "200mg" },
-        { name: "Paracetamol", type: "Analgesic", dosage: "500mg" },
-        { name: "Mefenamic Acid", type: "Pain reliever", dosage: "250mg" },
-        { name: "Cefalexin", type: "Antibiotic", dosage: "500mg" },
-        { name: "Metronidazole", type: "Antibiotic", dosage: "400mg" },
-      ],
     };
   },
 
   computed: {
-    ...mapState(useFetchDataStore, ["dentalCharts"]),
+    ...mapState(useFetchDataStore, [
+      "dentalCharts",
+      "medicines", // ✅ medicines from database
+    ]),
+
     selectedPatientName() {
       if (!this.form.user_id.length) return "";
       return this.getPatientName(this.form.user_id[0]);
@@ -302,10 +297,12 @@ export default {
     isPatientLocked() {
       return !!this.dentalId;
     },
+
+    // ✅ FILTER MEDICINES FROM DATABASE
     filteredManualMedications() {
       const q = this.searchMedicationQuery.toLowerCase();
 
-      return this.medicationOptions.filter(
+      return this.medicines.filter(
         (m) =>
           m.name.toLowerCase().includes(q) &&
           !this.form.prescribe_medications.some(
@@ -335,7 +332,10 @@ export default {
   },
 
   methods: {
-    ...mapActions(useFetchDataStore, ["fetchDentalChart"]),
+    ...mapActions(useFetchDataStore, [
+      "fetchDentalChart",
+      "fetchMedicines", // ✅ load medicines
+    ]),
 
     formatDate(date) {
       return dayjs(date).format("MMMM D, YYYY");
@@ -416,6 +416,7 @@ export default {
           dental_chart_id: Number(this.form.user_id[0]),
           payment_status: this.form.payment_status,
           issued_date: this.form.issued_date,
+
           medications: this.form.prescribe_medications.map((med) => ({
             name: med.name,
             type: med.type,
@@ -426,7 +427,6 @@ export default {
         };
 
         if (this.editMode) {
-          // ✅ UPDATE
           await axios.patch(
             process.env.VUE_APP_API_BASE_URL +
               `/prescription/update-by-chart/${this.form.user_id[0]}`,
@@ -435,7 +435,6 @@ export default {
 
           toast.success("Prescription updated successfully!");
         } else {
-          // ✅ CREATE
           await axios.post(
             process.env.VUE_APP_API_BASE_URL + "/prescription/add-prescription",
             payload,
@@ -470,7 +469,7 @@ export default {
 
         this.form.prescribe_medications =
           prescription.prescribedMedications?.map((med) => ({
-            prescribe_medication_id: med.prescribe_medication_id, // important
+            prescribe_medication_id: med.prescribe_medication_id,
             name: med.name,
             type: med.type,
             dosage: med.dosage,
@@ -486,6 +485,7 @@ export default {
 
   async mounted() {
     await this.fetchDentalChart();
+    await this.fetchMedicines(); // ✅ LOAD MEDICINES
 
     if (this.dentalId) {
       this.form.user_id = [this.dentalId];

@@ -15,7 +15,7 @@
             <icon :name="isEdit ? 'edit' : 'add-students'" />
 
             <h1 class="font-bold tracking-wide text-lg">
-              {{ isEdit ? "Edit Status" : "Add Status" }}
+              {{ isEdit ? "Edit Medicine" : "Add Medicine" }}
             </h1>
           </div>
 
@@ -28,16 +28,54 @@
 
         <!-- Form -->
         <div class="p-5 w-[27vw] space-y-4">
-          <!-- Status Name -->
+          <!-- Medicine Name -->
           <div class="space-y-1.5 text-left flex flex-col">
-            <label class="font-bold">Status Name:</label>
+            <label class="font-bold">Medicine Name</label>
 
             <input
-              v-model="form.status_name"
+              v-model="form.name"
               type="text"
               required
               class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
-              placeholder="Enter status name"
+              placeholder="Enter medicine name"
+            />
+          </div>
+
+          <!-- Medicine Type -->
+          <div class="space-y-1.5 text-left flex flex-col">
+            <label class="font-bold">Medicine Type</label>
+
+            <select
+              v-model="form.type"
+              required
+              class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+            >
+              <option disabled value="">Select medicine type</option>
+
+              <option value="Antibiotic">Antibiotic</option>
+              <option value="Analgesic">Analgesic (Pain Reliever)</option>
+              <option value="Anti-inflammatory">Anti-inflammatory</option>
+              <option value="Antipyretic">Antipyretic (Fever Reducer)</option>
+              <option value="Antiseptic">Antiseptic</option>
+              <option value="Antifungal">Antifungal</option>
+              <option value="Antiviral">Antiviral</option>
+              <option value="Antihistamine">Antihistamine</option>
+              <option value="Local Anesthetic">Local Anesthetic</option>
+              <option value="Sedative">Sedative</option>
+              <option value="Vitamin / Supplement">Vitamin / Supplement</option>
+            </select>
+          </div>
+
+          <!-- Dosage -->
+          <div class="space-y-1.5 text-left flex flex-col">
+            <label class="font-bold">Dosage</label>
+
+            <input
+              v-model="form.dosage"
+              type="text"
+              required
+              class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+              placeholder="Example: 500mg"
             />
           </div>
 
@@ -58,7 +96,7 @@
               type="submit"
               class="bg-[#34699A] p-2 px-3 rounded-lg text-white hover:bg-white border hover:border-green-800 hover:text-green-800 hover:shadow-md"
             >
-              {{ isEdit ? "Save Changes" : "Submit" }}
+              {{ isEdit ? "Update" : "Submit" }}
             </button>
           </div>
         </div>
@@ -73,12 +111,12 @@ import axios from "axios";
 import { toast } from "vue3-toastify";
 
 export default {
-  name: "StatusModal",
+  name: "MedicineModal",
 
   components: { icon },
 
   props: {
-    status: {
+    medicine: {
       type: Object,
       default: null,
     },
@@ -87,14 +125,16 @@ export default {
   data() {
     return {
       form: {
-        status_name: "",
+        name: "",
+        type: "",
+        dosage: "",
       },
     };
   },
 
   computed: {
     isEdit() {
-      return !!this.status;
+      return !!this.medicine;
     },
   },
 
@@ -106,35 +146,39 @@ export default {
 
   methods: {
     populateForm() {
-      this.form.status_name = this.status.status_name;
+      this.form.name = this.medicine.name;
+      this.form.type = this.medicine.type;
+      this.form.dosage = this.medicine.dosage;
     },
 
     async submitData() {
       try {
         const payload = {
-          status_name: this.form.status_name,
+          name: this.form.name,
+          type: this.form.type,
+          dosage: this.form.dosage,
         };
 
         if (this.isEdit) {
           await axios.patch(
-            process.env.VUE_APP_API_BASE_URL + `/status/${this.status.id}`,
+            process.env.VUE_APP_API_BASE_URL + `/medicines/${this.medicine.id}`,
             payload,
           );
 
-          toast.success("Status updated successfully!");
+          toast.success("Medicine updated successfully!");
         } else {
           await axios.post(
-            process.env.VUE_APP_API_BASE_URL + "/status/add-status",
+            process.env.VUE_APP_API_BASE_URL + "/medicines/add-medicines",
             payload,
           );
 
-          toast.success("Status added successfully!");
+          toast.success("Medicine added successfully!");
         }
 
         this.$emit("refresh");
         this.$emit("close");
       } catch (err) {
-        toast.error("Failed to save status.");
+        toast.error("Failed to save medicine.");
       }
     },
   },

@@ -472,12 +472,18 @@ export default {
       // PDF HEADER (FIXED)
       // ===========================
       const header = [
-        { image: base64Logo, width: 200, alignment: "center" },
-        { text: "TOOTHFORMATIONS DENTAL CLINIC", style: "clinicHeader" },
+        {
+          image: base64Logo,
+          width: 170,
+          alignment: "center",
+          margin: [0, 0, 0, 8],
+        },
+        { text: "TOOTHFORMATION DENTAL CLINIC", style: "clinicHeader" },
         {
           text: "PANABO POLYMEDIC HOSPITAL, INC. - GROUND FLOOR",
           style: "subTitle",
         },
+
         {
           stack: [
             {
@@ -492,7 +498,7 @@ export default {
                       border: [false, false, false, false],
                     },
                     {
-                      text: "Telephone#: 0985-104-6429",
+                      text: "Telephone#: 084-823-0981",
                       style: "receiptTitle",
                       margin: [20, 0, 0, 0],
                       border: [false, false, false, false],
@@ -505,7 +511,7 @@ export default {
             },
 
             {
-              text: "FB: TOOTHFORMATIONS DENTAL CLINIC",
+              text: "FB: TOOTH FORMATION DENTAL CLINIC",
               style: "receiptTitle",
               alignment: "center",
               margin: [0, 2, 0, 0],

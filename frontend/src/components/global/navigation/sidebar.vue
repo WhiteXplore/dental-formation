@@ -195,6 +195,10 @@ export default {
                     name: "Status",
                     route: "/status",
                   },
+                  {
+                    name: "Medicines",
+                    route: "/medicines",
+                  },
                 ],
               },
               {

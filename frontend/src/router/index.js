@@ -156,6 +156,12 @@ const routes = [
         component: () => import("@/components/admin/admin-record/status.vue"),
       },
       {
+        path: "/medicines",
+        name: "medicines",
+        component: () =>
+          import("@/components/admin/admin-record/medicines.vue"),
+      },
+      {
         path: "/report-analytics",
         name: "report-analytics",
         component: () =>

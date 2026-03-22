@@ -17,6 +17,7 @@ import { HmoGuarantorsModule } from './hmo-guarantors/hmo-guarantors.module';
 import { RevenueModule } from './revenue/revenue.module';
 import { ForecastModule } from './forecast/forecast.module';
 import { StatusModule } from './status/status.module';
+import { MedicinesModule } from './medicines/medicines.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { StatusModule } from './status/status.module';
     RevenueModule,
     ForecastModule,
     StatusModule,
+    MedicinesModule,
   ],
 })
 export class AppModule {}

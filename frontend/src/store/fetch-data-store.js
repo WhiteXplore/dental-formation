@@ -14,6 +14,7 @@ export const useFetchDataStore = defineStore("fetchData", {
     inventories: [],
     useraccounts: [],
     hmoGuarantors: [],
+    medicines: [],
     prices: [],
     status: [],
     loading: false,
@@ -22,6 +23,20 @@ export const useFetchDataStore = defineStore("fetchData", {
   }),
 
   actions: {
+    async fetchMedicines() {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await axios.get(
+          process.env.VUE_APP_API_BASE_URL + "/medicines/get-all-medicines",
+        );
+        this.medicines = response.data;
+      } catch (err) {
+        this.error = err.message || "Failed to fetch medicines";
+      } finally {
+        this.loading = false;
+      }
+    },
     async fetchStatus() {
       this.loading = true;
       this.error = null;
