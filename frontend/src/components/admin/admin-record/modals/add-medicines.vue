@@ -63,7 +63,23 @@
               <option value="Local Anesthetic">Local Anesthetic</option>
               <option value="Sedative">Sedative</option>
               <option value="Vitamin / Supplement">Vitamin / Supplement</option>
+              <option value="Other">Other (Specify)</option>
             </select>
+            <!-- Other Medicine Type -->
+            <div
+              v-if="form.type === 'Other'"
+              class="space-y-1.5 text-left flex flex-col"
+            >
+              <label class="font-bold">Specify Medicine Type</label>
+
+              <input
+                v-model="form.other_type"
+                type="text"
+                required
+                class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+                placeholder="Enter custom medicine type"
+              />
+            </div>
           </div>
 
           <!-- Dosage -->
@@ -147,8 +163,28 @@ export default {
   methods: {
     populateForm() {
       this.form.name = this.medicine.name;
-      this.form.type = this.medicine.type;
       this.form.dosage = this.medicine.dosage;
+
+      const predefinedTypes = [
+        "Antibiotic",
+        "Analgesic",
+        "Anti-inflammatory",
+        "Antipyretic",
+        "Antiseptic",
+        "Antifungal",
+        "Antiviral",
+        "Antihistamine",
+        "Local Anesthetic",
+        "Sedative",
+        "Vitamin / Supplement",
+      ];
+
+      if (predefinedTypes.includes(this.medicine.type)) {
+        this.form.type = this.medicine.type;
+      } else {
+        this.form.type = "Other";
+        this.form.other_type = this.medicine.type;
+      }
     },
 
     async submitData() {
@@ -156,9 +192,9 @@ export default {
         const payload = {
           name: this.form.name,
           type: this.form.type,
+          other_type: this.form.type === "Other" ? this.form.other_type : null,
           dosage: this.form.dosage,
         };
-
         if (this.isEdit) {
           await axios.patch(
             process.env.VUE_APP_API_BASE_URL + `/medicines/${this.medicine.id}`,

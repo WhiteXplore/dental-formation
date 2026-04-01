@@ -156,6 +156,10 @@ export class CreatePatientDto {
 
   @IsOptional()
   @IsString()
+  other_blood_type: string;
+
+  @IsOptional()
+  @IsString()
   blood_pressure: string;
 
   /* MEDICAL CONDITIONS */

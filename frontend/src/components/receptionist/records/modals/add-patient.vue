@@ -520,7 +520,15 @@
                   <option value="AB-">AB-</option>
                   <option value="O+">O+</option>
                   <option value="O-">O-</option>
+                  <option value="Other">Other</option>
                 </select>
+                <input
+                  v-if="form.blood_type === 'Other'"
+                  v-model="form.other_blood_type"
+                  type="text"
+                  class="w-full border px-3 py-3 border-gray-600 rounded-md text-md text-gray-800"
+                  placeholder="Specify blood type"
+                />
               </div>
 
               <div class="space-y-2">
@@ -711,6 +719,7 @@ export default {
         control_pills: "",
 
         blood_type: "",
+        other_blood_type: "",
         blood_pressure: "",
 
         medical_conditions: [],
@@ -864,6 +873,7 @@ export default {
           control_pills: this.form.control_pills,
 
           blood_type: this.form.blood_type,
+          other_blood_type: this.form.other_blood_type,
           blood_pressure: this.form.blood_pressure,
 
           medical_conditions: this.form.medical_conditions,

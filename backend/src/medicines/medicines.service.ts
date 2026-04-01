@@ -12,8 +12,18 @@ export class MedicinesService {
     private medicineRepository: Repository<Medicine>,
   ) {}
 
+  // ✅ CREATE FIX
   async create(createMedicineDto: CreateMedicineDto) {
-    const medicine = this.medicineRepository.create(createMedicineDto);
+    const medicine = this.medicineRepository.create({
+      ...createMedicineDto,
+
+      // ✅ KEY FIX: handle other_type properly
+      other_type:
+        createMedicineDto.type === 'Other'
+          ? createMedicineDto.other_type
+          : undefined,
+    });
+
     return await this.medicineRepository.save(medicine);
   }
 
@@ -27,8 +37,30 @@ export class MedicinesService {
     });
   }
 
+  // ✅ UPDATE FIX (IMPORTANT)
   async update(id: number, updateMedicineDto: UpdateMedicineDto) {
-    await this.medicineRepository.update(id, updateMedicineDto);
+    const medicine = await this.medicineRepository.findOne({
+      where: { id },
+    });
+
+    if (!medicine) {
+      throw new Error('Medicine not found');
+    }
+
+    const updatedData = {
+      ...updateMedicineDto,
+
+      // ✅ KEY FIX: handle switching type
+      other_type:
+        updateMedicineDto.type === 'Other'
+          ? updateMedicineDto.other_type
+          : updateMedicineDto.type
+            ? undefined
+            : medicine.other_type,
+    };
+
+    await this.medicineRepository.update(id, updatedData);
+
     return this.findOne(id);
   }
 

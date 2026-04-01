@@ -140,6 +140,9 @@ export class Patient {
   @Column({ type: 'varchar', length: 10, nullable: true })
   blood_type: string;
 
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  other_blood_type: string;
+
   @Column({ type: 'varchar', length: 20, nullable: true })
   blood_pressure: string;
 

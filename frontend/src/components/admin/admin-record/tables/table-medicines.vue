@@ -105,9 +105,8 @@
                   <td class="px-4 py-2">
                     {{ medicine.name }}
                   </td>
-
                   <td class="px-4 py-2">
-                    {{ medicine.type }}
+                    {{ medicine.other_type || medicine.type }}
                   </td>
 
                   <td class="px-4 py-2">

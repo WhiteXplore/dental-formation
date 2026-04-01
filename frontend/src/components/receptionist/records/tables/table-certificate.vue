@@ -148,7 +148,7 @@
             <!-- Clinic Info -->
             <div class="text-center">
               <h2 class="text-[22px] font-bold text-green-700 tracking-wide">
-                TOOTHFORMATION DENTAL CLINIC
+                TOOTH FORMATIONS DENTAL CLINIC
               </h2>
 
               <div class="text-sm text-gray-600">
@@ -163,7 +163,7 @@
 
               <!-- Facebook -->
               <div class="text-sm text-gray-600 mt-1">
-                FB: TOOTH FORMATION DENTAL CLINIC
+                FB: TOOTH FORMATIONS DENTAL CLINIC
               </div>
             </div>
           </div>
@@ -525,7 +525,7 @@ export default {
             },
 
             {
-              text: "TOOTH FORMATION DENTAL CLINIC",
+              text: "TOOTH FORMATIONS DENTAL CLINIC",
               style: "clinicHeader",
             },
 
@@ -563,7 +563,7 @@ export default {
             },
 
             {
-              text: "FB: TOOTH FORMATION DENTAL CLINIC",
+              text: "FB: TOOTH FORMATIONS DENTAL CLINIC",
               alignment: "center",
               style: "receiptTitle",
               margin: [0, 2, 0, 6],
@@ -727,7 +727,7 @@ export default {
                 {
                   text: `${dentist.last_name || ""}, ${
                     dentist.first_name || ""
-                  }`.toUpperCase(),
+                  }, ${dentist.prc_type || ""}`.toUpperCase(),
                   bold: true,
                   decoration: "underline",
                   alignment: "center",

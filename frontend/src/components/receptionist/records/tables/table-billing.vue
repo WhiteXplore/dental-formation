@@ -321,6 +321,7 @@ export default {
       groupToDelete: null,
       showDeleteModal: false,
       user: null,
+      generatedPdfBlob: null,
     };
   },
   computed: {
@@ -397,14 +398,18 @@ export default {
     // PDF HANDLING
     // ===========================
     downloadPreviewPdf() {
-      if (!this.pendingPdfDefinition || !this.pendingPdfPatient) return;
+      if (!this.generatedPdfBlob || !this.pendingPdfPatient) return;
+
       const fileName = this.getPdfFileName(
         this.pendingPdfType,
         this.pendingPdfPatient,
       );
-      pdfMake.createPdf(this.pendingPdfDefinition).download(fileName);
-    },
 
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(this.generatedPdfBlob);
+      link.download = fileName;
+      link.click();
+    },
     getPdfFileName(type, patient) {
       const name = patient
         ? `${patient.first_name || "N/A"}_${patient.last_name || "N/A"}`
@@ -478,7 +483,7 @@ export default {
           alignment: "center",
           margin: [0, 0, 0, 8],
         },
-        { text: "TOOTHFORMATION DENTAL CLINIC", style: "clinicHeader" },
+        { text: "TOOTH FORMATIONS DENTAL CLINIC", style: "clinicHeader" },
         {
           text: "PANABO POLYMEDIC HOSPITAL, INC. - GROUND FLOOR",
           style: "subTitle",
@@ -511,7 +516,7 @@ export default {
             },
 
             {
-              text: "FB: TOOTH FORMATION DENTAL CLINIC",
+              text: "FB: TOOTH FORMATIONS DENTAL CLINIC",
               style: "receiptTitle",
               alignment: "center",
               margin: [0, 2, 0, 0],
@@ -919,7 +924,7 @@ export default {
                     ? [
                         {
                           image: signatureBase64,
-                          width: 50, // resize signature here
+                          width: 40, // resize signature here
                           alignment: "center",
                           margin: [0, 0, 0, 5],
                         },
@@ -928,7 +933,9 @@ export default {
 
                   {
                     text: dentist
-                      ? `${dentist.last_name}, ${dentist.first_name}`
+                      ? `${dentist.last_name}, ${dentist.first_name}${
+                          dentist.prc_type ? `, ${dentist.prc_type}` : ""
+                        }`
                       : "N/A",
                     bold: true,
                     alignment: "center",
@@ -1012,8 +1019,13 @@ export default {
       this.pendingPdfType = type;
       this.pendingPdfPatient = patient;
 
-      pdfMake.createPdf(docDefinition).getDataUrl((dataUrl) => {
-        this.pdfPreviewUrl = dataUrl;
+      pdfMake.createPdf(docDefinition).getBlob((blob) => {
+        // 🔒 store exact file
+        this.generatedPdfBlob = blob;
+
+        // create preview from SAME blob
+        const url = URL.createObjectURL(blob);
+        this.pdfPreviewUrl = url;
         this.showPreview = true;
       });
     },

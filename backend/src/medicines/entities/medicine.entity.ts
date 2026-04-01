@@ -11,6 +11,9 @@ export class Medicine {
   @Column()
   type: string;
 
+  @Column({ nullable: true })
+  other_type?: string;
+
   @Column()
   dosage: string;
 }
