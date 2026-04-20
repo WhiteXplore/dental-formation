@@ -2,9 +2,7 @@
   <div v-if="isTable">
     <!-- Header -->
     <div class="text-sm flex justify-between">
-      <div class="text-[13px] text-text mt-4 font-regular">
-        Pages / Dental Charts
-      </div>
+      <div class="text-[13px] text-text mt-4 font-regular">Pages / Dental Charts</div>
       <div
         v-if="loggedUser?.role === 'Dentist'"
         @click="toggleAdd"
@@ -58,20 +56,12 @@
             <table
               class="min-w-full table-auto border-separate border-spacing-y-2 text-sm text-gray-700"
             >
-              <thead
-                class="bg-[#34699A] text-white sticky top-0 z-10 tracking-wide"
-              >
+              <thead class="bg-[#34699A] text-white sticky top-0 z-10 tracking-wide">
                 <tr>
-                  <th
-                    class="w-10 px-4 py-2 text-left font-normal rounded-tl-lg"
-                  >
-                    No.
-                  </th>
+                  <th class="w-10 px-4 py-2 text-left font-normal rounded-tl-lg">No.</th>
                   <th class="px-4 py-2 text-left font-normal">Dentist</th>
                   <th class="px-4 py-2 text-left font-normal">Patient</th>
-                  <th class="px-4 py-2 text-left font-normal rounded-tr-lg">
-                    History
-                  </th>
+                  <th class="px-4 py-2 text-left font-normal rounded-tr-lg">History</th>
                 </tr>
               </thead>
 
@@ -235,7 +225,7 @@ export default {
       let data =
         this.loggedUser?.role === "Dentist"
           ? this.dentalCharts.filter(
-              (item) => item.user_accounts?.user_id === this.loggedUser.sub,
+              (item) => item.user_accounts?.user_id === this.loggedUser.sub
             )
           : this.dentalCharts;
       return data.filter((item) => {
@@ -261,10 +251,7 @@ export default {
         : (this.currentPage - 1) * this.itemsPerPage + 1;
     },
     endIndex() {
-      return Math.min(
-        this.currentPage * this.itemsPerPage,
-        this.filteredData.length,
-      );
+      return Math.min(this.currentPage * this.itemsPerPage, this.filteredData.length);
     },
     pageNumbers() {
       return Array.from({ length: this.totalPages }, (_, i) => i + 1);
@@ -276,8 +263,7 @@ export default {
       const map = new Map();
       this.paginatedData.forEach((item) => {
         const pid = item.patient?.patient_id;
-        if (!map.has(pid))
-          map.set(pid, { patient: item.patient, rows: [item] });
+        if (!map.has(pid)) map.set(pid, { patient: item.patient, rows: [item] });
         else map.get(pid).rows.push(item);
       });
       return Array.from(map.values());
@@ -286,10 +272,9 @@ export default {
   methods: {
     async fetchUser() {
       try {
-        const { data } = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/auth/me",
-          { withCredentials: true },
-        );
+        const { data } = await axios.get(process.env.VUE_APP_API_BASE_URL + "/auth/me", {
+          withCredentials: true,
+        });
         this.loggedUser = data;
       } catch (err) {
         console.error("Fetch user error:", err);
@@ -306,7 +291,7 @@ export default {
     },
     editDentalChart(patientId) {
       const records = this.dentalCharts.filter(
-        (item) => item.patient?.patient_id === patientId,
+        (item) => item.patient?.patient_id === patientId
       );
 
       const proceduresByDate = {};
@@ -317,7 +302,7 @@ export default {
       });
 
       const multipleProcedures = Object.values(proceduresByDate).filter(
-        (arr) => arr.length > 1,
+        (arr) => arr.length > 1
       );
 
       if (multipleProcedures.length > 0) {
@@ -379,8 +364,7 @@ export default {
     },
     getRowIndex(indexInGroup, groupIndex) {
       let offset = 0;
-      for (let i = 0; i < groupIndex; i++)
-        offset += this.groupedData[i].rows.length;
+      for (let i = 0; i < groupIndex; i++) offset += this.groupedData[i].rows.length;
       return this.startIndex + offset + indexInGroup;
     },
   },

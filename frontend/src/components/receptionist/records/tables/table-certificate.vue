@@ -2,9 +2,7 @@
   <div>
     <!-- Header -->
     <div class="text-sm flex justify-between">
-      <div class="text-[13px] text-text mt-4 font-regular">
-        Pages / Prescription List
-      </div>
+      <div class="text-[13px] text-text mt-4 font-regular">Pages / Prescription List</div>
       <button
         @click="loadMedications"
         class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
@@ -47,9 +45,7 @@
             <table
               class="min-w-full table-auto border-separate border-spacing-y-2 text-sm text-gray-700"
             >
-              <thead
-                class="bg-[#34699A] text-white sticky top-0 z-10 tracking-wide"
-              >
+              <thead class="bg-[#34699A] text-white sticky top-0 z-10 tracking-wide">
                 <tr>
                   <th class="px-4 py-3 text-left rounded-tl-lg">No.</th>
                   <th class="px-4 py-3 text-left">Patient</th>
@@ -110,9 +106,7 @@
               :key="page"
               @click="changePage(page)"
               class="px-3 py-1 rounded"
-              :class="
-                page === currentPage ? 'bg-[#34699A] text-white' : 'bg-gray-200'
-              "
+              :class="page === currentPage ? 'bg-[#34699A] text-white' : 'bg-gray-200'"
             >
               {{ page }}
             </button>
@@ -140,10 +134,7 @@
         <div class="mb-6 border-b pb-4">
           <div class="flex flex-col items-center justify-center gap-2">
             <!-- Logo -->
-            <img
-              src="@/assets/img/clinic-logo.png"
-              class="h-[60px] w-[200px]"
-            />
+            <img src="@/assets/img/clinic-logo.png" class="h-[60px] w-[200px]" />
 
             <!-- Clinic Info -->
             <div class="text-center">
@@ -170,9 +161,7 @@
 
           <!-- Certificate Title -->
           <div class="text-center mt-4">
-            <div
-              class="font-semibold text-gray-700 tracking-widest text-[15px]"
-            >
+            <div class="font-semibold text-gray-700 tracking-widest text-[15px]">
               DENTAL CERTIFICATE
             </div>
           </div>
@@ -281,9 +270,7 @@
       v-if="showPdfModal"
       class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
     >
-      <div
-        class="bg-white w-[60%] h-[80%] rounded-xl relative overflow-auto p-4"
-      >
+      <div class="bg-white w-[60%] h-[80%] rounded-xl relative overflow-auto p-4">
         <button
           @click="showPdfModal = false"
           class="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
@@ -337,13 +324,9 @@ export default {
         .filter((m) => {
           if (!q) return true;
 
-          const patientName = this.fullName(
-            m.dentalChart?.patient,
-          ).toLowerCase();
+          const patientName = this.fullName(m.dentalChart?.patient).toLowerCase();
 
-          const dentistName = this.fullName(
-            m.dentalChart?.user_accounts,
-          ).toLowerCase();
+          const dentistName = this.fullName(m.dentalChart?.user_accounts).toLowerCase();
 
           return patientName.includes(q) || dentistName.includes(q);
         });
@@ -404,16 +387,11 @@ export default {
     ============================= */
     paginatedGroupedData() {
       const start = (this.currentPage - 1) * this.itemsPerPage;
-      return this.groupedByPatientAndDate.slice(
-        start,
-        start + this.itemsPerPage,
-      );
+      return this.groupedByPatientAndDate.slice(start, start + this.itemsPerPage);
     },
 
     totalPages() {
-      return (
-        Math.ceil(this.groupedByPatientAndDate.length / this.itemsPerPage) || 1
-      );
+      return Math.ceil(this.groupedByPatientAndDate.length / this.itemsPerPage) || 1;
     },
 
     startIndex() {
@@ -423,7 +401,7 @@ export default {
     endIndex() {
       return Math.min(
         this.currentPage * this.itemsPerPage,
-        this.groupedByPatientAndDate.length,
+        this.groupedByPatientAndDate.length
       );
     },
   },
@@ -475,9 +453,7 @@ export default {
 
     fullName(person) {
       if (!person) return "";
-      return `${person.last_name}, ${person.first_name} ${
-        person.middle_name || ""
-      }`;
+      return `${person.last_name}, ${person.first_name} ${person.middle_name || ""}`;
     },
 
     async toBase64(imgPath) {
@@ -501,9 +477,7 @@ export default {
         .join(", ");
       const teeth = this.selectedReport.dentalChart.teeth || [];
 
-      const logoBase64 = await this.toBase64(
-        require("@/assets/img/clinic-logo.png"),
-      );
+      const logoBase64 = await this.toBase64(require("@/assets/img/clinic-logo.png"));
 
       const toothNumbers = teeth.map((t) => t.tooth_number).join(", ");
       const signaturePath = `${process.env.VUE_APP_API_BASE_URL}/uploads/signatures/${dentist.signature}`;
@@ -591,7 +565,7 @@ export default {
                     decoration: "underline",
                   },
                 ],
-                margin: [0, 0, 0, 12],
+                margin: [0, 0, 0, 20],
               },
 
               {
@@ -601,9 +575,7 @@ export default {
                     text: [
                       { text: "Patient Name: ", bold: true },
                       {
-                        text: `${patient.last_name || ""}, ${
-                          patient.first_name || ""
-                        }`,
+                        text: `${patient.last_name || ""}, ${patient.first_name || ""}`,
                         decoration: "underline",
                       },
                     ],
@@ -669,9 +641,7 @@ export default {
                 bold: true,
                 decoration: "underline",
               },
-              `on ${this.formatDate(
-                this.selectedReport.dentalChart.procedure_date,
-              )}. `,
+              `on ${this.formatDate(this.selectedReport.dentalChart.procedure_date)}. `,
               "The patient underwent the dental procedure ",
               {
                 text: `${procedures || "N/A"} `,
@@ -686,12 +656,27 @@ export default {
                 decoration: "underline",
               },
               ".",
+
+              //
             ],
+
             alignment: "justify",
             lineHeight: 1.6,
             margin: [0, 20, 0, 20],
           },
-
+          {
+            text: [
+              "Recommendation: ",
+              {
+                text: (this.recommendation || "N/A").toUpperCase(),
+                bold: true,
+                decoration: "underline",
+              },
+            ],
+            alignment: "justify",
+            lineHeight: 1.6,
+            margin: [0, 0, 0, 20],
+          },
           {
             text: [
               "This certificate is issued upon the request of ",
@@ -725,9 +710,9 @@ export default {
                   : {},
 
                 {
-                  text: `${dentist.last_name || ""}, ${
-                    dentist.first_name || ""
-                  }, ${dentist.prc_type || ""}`.toUpperCase(),
+                  text: `${dentist.last_name || ""}, ${dentist.first_name || ""}, ${
+                    dentist.prc_type || ""
+                  }`.toUpperCase(),
                   bold: true,
                   decoration: "underline",
                   alignment: "center",

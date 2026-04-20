@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
-  >
+  <div class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
     <div
       class="bg-white rounded-2xl shadow-2xl overflow-y-auto scrollbar-hidden w-full max-w-5xl"
     >
@@ -28,18 +26,12 @@
 
         <div v-else>
           <!-- Dental History Grouped by Date -->
-          <div
-            v-for="(group, index) in groupedHistory"
-            :key="group.date"
-            class=""
-          >
+          <div v-for="(group, index) in groupedHistory" :key="group.date" class="">
             <!-- Patient Info (Page 1) -->
             <div v-if="currentPage[index] === 1" class="mx-auto">
               <!-- Header -->
               <div class="flex justify-between items-start">
-                <div
-                  class="flex flex-col justify-start items-start gap-2 mb-4 w-full"
-                >
+                <div class="flex flex-col justify-start items-start gap-2 mb-4 w-full">
                   <h3
                     class="text-2xl font-semibold text-[#2C3E50] flex items-center gap-2"
                   >
@@ -62,11 +54,7 @@
                     :disabled="availableDates.length <= 1"
                   >
                     <option value="">All Dates</option>
-                    <option
-                      v-for="date in availableDates"
-                      :key="date"
-                      :value="date"
-                    >
+                    <option v-for="date in availableDates" :key="date" :value="date">
                       {{ formatDate(date) }}
                     </option>
                   </select>
@@ -88,20 +76,14 @@
                     </h4>
                     <div class="space-y-2 text-[14px] text-gray-700">
                       <div class="flex justify-between">
-                        <span class="font-medium text-gray-600"
-                          >Full Name:</span
-                        >
+                        <span class="font-medium text-gray-600">Full Name:</span>
                         <span class="font-semibold text-gray-800">{{
                           group.patient
                         }}</span>
                       </div>
                       <div class="flex justify-between">
-                        <span class="font-medium text-gray-600"
-                          >Birthdate:</span
-                        >
-                        <span>{{
-                          formatDate(group.patientDetails.birthdate)
-                        }}</span>
+                        <span class="font-medium text-gray-600">Birthdate:</span>
+                        <span>{{ formatDate(group.patientDetails.birthdate) }}</span>
                       </div>
                       <div class="flex justify-between">
                         <span class="font-medium text-gray-600">Gender:</span>
@@ -127,21 +109,15 @@
                         <span>{{ group.patientDetails.religion }}</span>
                       </div>
                       <div class="flex justify-between">
-                        <span class="font-medium text-gray-600"
-                          >Nationality:</span
-                        >
+                        <span class="font-medium text-gray-600">Nationality:</span>
                         <span>{{ group.patientDetails.nationality }}</span>
                       </div>
                       <div class="flex justify-between">
-                        <span class="font-medium text-gray-600"
-                          >Marital Status:</span
-                        >
+                        <span class="font-medium text-gray-600">Marital Status:</span>
                         <span>{{ group.patientDetails.marital_status }}</span>
                       </div>
                       <div class="flex justify-between">
-                        <span class="font-medium text-gray-600"
-                          >Occupation:</span
-                        >
+                        <span class="font-medium text-gray-600">Occupation:</span>
                         <span>{{ group.patientDetails.occupation }}</span>
                       </div>
                     </div>
@@ -159,15 +135,11 @@
                     </h4>
                     <div class="space-y-2 text-[14px] text-gray-700">
                       <div class="flex justify-between">
-                        <span class="font-medium text-gray-600"
-                          >Contact Number:</span
-                        >
+                        <span class="font-medium text-gray-600">Contact Number:</span>
                         <span>{{ group.patientDetails.contact_number }}</span>
                       </div>
                       <div class="flex flex-col">
-                        <span class="font-medium text-gray-600 mb-1"
-                          >Address:</span
-                        >
+                        <span class="font-medium text-gray-600 mb-1">Address:</span>
                         <p
                           class="text-gray-800 bg-gray-50 border border-gray-200 rounded-md p-3 text-sm leading-relaxed"
                         >
@@ -186,9 +158,7 @@
                     </h4>
                     <div class="space-y-2 text-[14px] text-gray-700">
                       <div class="flex justify-between items-center">
-                        <span class="font-medium text-gray-600"
-                          >Parent/Guardian:</span
-                        >
+                        <span class="font-medium text-gray-600">Parent/Guardian:</span>
                         <span
                           class="text-gray-800 font-medium truncate max-w-[55%] text-right"
                         >
@@ -197,9 +167,7 @@
                       </div>
 
                       <div class="flex justify-between items-center">
-                        <span class="font-medium text-gray-600"
-                          >Dental Insurance:</span
-                        >
+                        <span class="font-medium text-gray-600">Dental Insurance:</span>
                         <span
                           class="text-gray-800 font-medium truncate max-w-[55%] text-right"
                         >
@@ -274,8 +242,7 @@
                           >
                             <span class="font-medium">{{ med.name }}</span>
                             ({{ med.dosage }}) – {{ med.pcs }} pcs •
-                            {{ med.duration }} days • {{ med.frequencies }}x/day
-                            •
+                            {{ med.duration }} days • {{ med.frequencies }}x/day •
                             {{ med.preparation }}
                           </li>
                         </ul>
@@ -346,13 +313,11 @@ export default {
       });
 
       const recordGroup = this.groupedHistory.find((g) =>
-        g.records.some((r) => r.dental_id === id),
+        g.records.some((r) => r.dental_id === id)
       );
 
       if (recordGroup) {
-        const dentalRecord = recordGroup.records.find(
-          (r) => r.dental_id === id,
-        );
+        const dentalRecord = recordGroup.records.find((r) => r.dental_id === id);
         dentalRecord.xrayUpdatedAt = Date.now();
       }
     },
@@ -362,7 +327,7 @@ export default {
 
       const res = await axios.get(
         `${this.apiUrl}/prescription/patient/${this.patientId}`,
-        { withCredentials: true },
+        { withCredentials: true }
       );
 
       const mapByDate = {};
@@ -399,9 +364,7 @@ export default {
         mapByDate[date].records.push({
           prescription_id: prescription.prescription_id,
           dental_id: chart.dental_id,
-          dentist: dentist
-            ? `${dentist.last_name}, ${dentist.first_name}`
-            : "Unknown",
+          dentist: dentist ? `${dentist.last_name}, ${dentist.first_name}` : "Unknown",
           notes: chart.procedure_notes,
           procedure_type: {
             procedure_name: chart.priceProcedure?.procedure_name || "Unknown",
@@ -417,7 +380,7 @@ export default {
 
       // ✅ Sort newest first
       this.allGrouped = Object.values(mapByDate).sort(
-        (a, b) => new Date(b.date) - new Date(a.date),
+        (a, b) => new Date(b.date) - new Date(a.date)
       );
 
       this.groupedHistory = [...this.allGrouped];
@@ -429,9 +392,7 @@ export default {
     },
 
     async fetchProcedureColors() {
-      const res = await axios.get(
-        `${this.apiUrl}/price-procedure/get-price-procedure`,
-      );
+      const res = await axios.get(`${this.apiUrl}/price-procedure/get-price-procedure`);
 
       res.data
         .filter((p) => p.is_active)

@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
-  >
+  <div class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
     <div
       class="bg-white rounded-2xl shadow-2xl w-full max-w-[35vw] p-2 overflow-y-auto max-h-[80vh]"
     >
@@ -30,15 +28,16 @@
             <span class="text-gray-700 font-medium">
               {{ formatDate(procedure.procedure_date) }}
             </span>
-            <span
-              class="text-xs px-2 py-1 rounded-full font-normal text-white tracking-wide"
-              :class="
-                procedure.priceProcedure?.status_color ||
-                'bg-gray-300 text-gray-800'
-              "
-            >
-              {{ procedure.priceProcedure?.procedure_name || "Unknown" }}
-            </span>
+            <div class="flex gap-2 flex-wrap">
+              <span
+                v-for="proc in getUniqueProcedures(procedure)"
+                :key="proc.procedure_name"
+                class="text-xs px-2 py-1 rounded-full font-normal text-white tracking-wide"
+                :class="proc.status_color || 'bg-gray-300 text-gray-800'"
+              >
+                {{ proc.procedure_name }}
+              </span>
+            </div>
           </div>
 
           <!-- Notes -->
@@ -85,7 +84,21 @@ export default {
   },
   methods: {
     formatDate(date) {
-      return dayjs(date).format("MMM DD, YYYY - hh:mm A");
+      return dayjs(date).format("MMM DD, YYYY ");
+    },
+    getUniqueProcedures(procedure) {
+      if (!procedure.teeth || !procedure.teeth.length) return [];
+
+      const map = new Map();
+
+      procedure.teeth.forEach((tooth) => {
+        const proc = tooth.priceProcedure;
+        if (proc && proc.procedure_name) {
+          map.set(proc.procedure_name, proc); // unique by name
+        }
+      });
+
+      return Array.from(map.values());
     },
   },
 };

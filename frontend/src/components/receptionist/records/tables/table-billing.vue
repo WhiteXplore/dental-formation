@@ -2,9 +2,7 @@
   <div v-if="isTable">
     <!-- Header -->
     <div class="text-sm flex justify-between">
-      <div class="text-[13px] text-text mt-4 font-regular">
-        Pages / Prescription
-      </div>
+      <div class="text-[13px] text-text mt-4 font-regular">Pages / Prescription</div>
     </div>
 
     <!-- Table -->
@@ -42,28 +40,16 @@
             <table
               class="min-w-full table-auto border-separate border-spacing-y-2 text-sm text-gray-700"
             >
-              <thead
-                class="bg-[#34699A] text-white sticky top-0 z-10 tracking-wide"
-              >
+              <thead class="bg-[#34699A] text-white sticky top-0 z-10 tracking-wide">
                 <tr>
-                  <th
-                    class="w-10 px-4 py-2 text-left font-normal rounded-tl-lg"
-                  >
-                    No.
-                  </th>
+                  <th class="w-10 px-4 py-2 text-left font-normal rounded-tl-lg">No.</th>
                   <th class="px-4 py-2 text-left font-normal">Patient</th>
                   <th class="px-4 py-2 text-left font-normal">Dentist</th>
 
-                  <th class="px-4 py-2 text-left font-normal">
-                    Procedure Date(s)
-                  </th>
+                  <th class="px-4 py-2 text-left font-normal">Procedure Date(s)</th>
 
-                  <th class="px-4 py-2 text-left font-normal">
-                    Payment Status
-                  </th>
-                  <th class="px-4 py-2 text-left font-normal rounded-tr-lg">
-                    Action
-                  </th>
+                  <th class="px-4 py-2 text-left font-normal">Payment Status</th>
+                  <th class="px-4 py-2 text-left font-normal rounded-tr-lg">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -183,8 +169,7 @@
                 @click="changePage(page)"
                 :class="{
                   'bg-[#34699A] text-white': currentPage === page,
-                  'bg-[#FDF5AA]-blue-800-gray-200 text-gray-700':
-                    currentPage !== page,
+                  'bg-[#FDF5AA]-blue-800-gray-200 text-gray-700': currentPage !== page,
                 }"
                 class="px-3 py-1 mx-1 rounded-md hover:bg-[#FDF5AA]-blue-800-green-300"
               >
@@ -260,9 +245,7 @@
       />
     </div>
 
-    <h1 class="text-[14px] md:text-[16px] font-semibold mt-4">
-      Delete Confirmation
-    </h1>
+    <h1 class="text-[14px] md:text-[16px] font-semibold mt-4">Delete Confirmation</h1>
     <p class="mt-2 text-[12px] md:text-[13px] text-center px-8">
       Are you sure you want to delete this record? This action cannot be undone.
     </p>
@@ -338,12 +321,12 @@ export default {
       return this.medications.filter((item) => {
         const patient = item.dentalChart?.patient;
         const dentist = item.dentalChart?.user_accounts;
-        const fullName = `${patient?.first_name ?? ""} ${
-          patient?.middle_name ?? ""
-        } ${patient?.last_name ?? ""}`.toLowerCase();
-        const dentistName = `${dentist?.first_name ?? ""} ${
-          dentist?.middle_name ?? ""
-        } ${dentist?.last_name ?? ""}`.toLowerCase();
+        const fullName = `${patient?.first_name ?? ""} ${patient?.middle_name ?? ""} ${
+          patient?.last_name ?? ""
+        }`.toLowerCase();
+        const dentistName = `${dentist?.first_name ?? ""} ${dentist?.middle_name ?? ""} ${
+          dentist?.last_name ?? ""
+        }`.toLowerCase();
         return fullName.includes(query) || dentistName.includes(query);
       });
     },
@@ -383,7 +366,7 @@ export default {
           patient,
           dentist,
           procedure_date: this.formatScheduledDate(
-            item.dentalChart?.procedure_date || item.dentalChart?.created_at,
+            item.dentalChart?.procedure_date || item.dentalChart?.created_at
           ),
           payment_status: item.payment_status,
           instruction,
@@ -400,10 +383,7 @@ export default {
     downloadPreviewPdf() {
       if (!this.generatedPdfBlob || !this.pendingPdfPatient) return;
 
-      const fileName = this.getPdfFileName(
-        this.pendingPdfType,
-        this.pendingPdfPatient,
-      );
+      const fileName = this.getPdfFileName(this.pendingPdfType, this.pendingPdfPatient);
 
       const link = document.createElement("a");
       link.href = URL.createObjectURL(this.generatedPdfBlob);
@@ -457,9 +437,7 @@ export default {
       let signatureBase64 = null;
 
       const dentist =
-        type === "procedure"
-          ? this.user
-          : row?.dentalChart?.user_accounts || this.user;
+        type === "procedure" ? this.user : row?.dentalChart?.user_accounts || this.user;
 
       if (dentist?.signature) {
         try {
@@ -530,30 +508,30 @@ export default {
             widths: ["65%", "35%"],
             body: [
               // DATE ISSUED
-              [
-                {
-                  table: {
-                    widths: ["auto", "*"],
-                    body: [
-                      [
-                        {
-                          text: "Date Issued:",
-                          style: "label",
-                          border: [false, false, false, false],
-                        },
-                        {
-                          text: dayjs().format("MMMM DD, YYYY"),
-                          style: "value",
-                          border: [false, false, false, false],
-                        },
-                      ],
-                    ],
-                  },
-                  layout: "noBorders",
-                  border: [false, false, false, false],
-                },
-                { text: "", border: [false, false, false, false] },
-              ],
+              // [
+              //   {
+              //     table: {
+              //       widths: ["auto", "*"],
+              //       body: [
+              //         [
+              //           {
+              //             text: "Date Issued:",
+              //             style: "label",
+              //             border: [false, false, false, false],
+              //           },
+              //           {
+              //             text: dayjs().format("MMMM DD, YYYY"),
+              //             style: "value",
+              //             border: [false, false, false, false],
+              //           },
+              //         ],
+              //       ],
+              //     },
+              //     layout: "noBorders",
+              //     border: [false, false, false, false],
+              //   },
+              //   { text: "", border: [false, false, false, false] },
+              // ],
 
               // PATIENT NAME + AGE + SEX
               [
@@ -648,12 +626,12 @@ export default {
                     body: [
                       [
                         {
-                          text: "Status:",
+                          text: "Date Issued:",
                           style: "label",
                           border: [false, false, false, false],
                         },
                         {
-                          text: patient?.marital_status ?? "N/A",
+                          text: dayjs().format("MMMM DD, YYYY"),
                           style: "value",
                           border: [false, false, false, false],
                         },
@@ -687,7 +665,7 @@ export default {
               toothNumber: tooth.tooth_number || "N/A",
               status: "No Procedure",
               date: this.formatScheduledDate(
-                row.dentalChart?.procedure_date || row.dentalChart?.created_at,
+                row.dentalChart?.procedure_date || row.dentalChart?.created_at
               ),
               pricingScope: "-",
               price: "₱0.00",
@@ -702,8 +680,7 @@ export default {
                 toothNumber: "All",
                 status: proc.procedure_name || "Unknown",
                 date: this.formatScheduledDate(
-                  row.dentalChart?.procedure_date ||
-                    row.dentalChart?.created_at,
+                  row.dentalChart?.procedure_date || row.dentalChart?.created_at
                 ),
                 pricingScope: "ONE TIME",
                 price: `₱${Number(proc.price || 0).toFixed(2)}`,
@@ -717,7 +694,7 @@ export default {
             toothNumber: tooth.tooth_number || "N/A",
             status: proc.procedure_name || "Unknown",
             date: this.formatScheduledDate(
-              row.dentalChart?.procedure_date || row.dentalChart?.created_at,
+              row.dentalChart?.procedure_date || row.dentalChart?.created_at
             ),
             pricingScope: "PER TOOTH PAYMENT",
             price: `₱${Number(proc.price || 0).toFixed(2)}`,
@@ -729,10 +706,10 @@ export default {
         // Total & Excess
         const totalProcedurePrice = procedures.reduce(
           (sum, p) => sum + (parseFloat(p.price.replace(/[₱,]/g, "")) || 0),
-          0,
+          0
         );
         const excessPayment = Number(
-          row.excess_payment || row.prescription?.excess_payment || 0,
+          row.excess_payment || row.prescription?.excess_payment || 0
         );
 
         // Procedure Table
@@ -807,9 +784,7 @@ export default {
       // ===========================
       else if (type === "medication") {
         const meds = (row.prescribedMedications || []).map((med) => {
-          const cleanName = (med.name || "Unnamed")
-            .replace(/\bpcs\b/gi, "")
-            .trim();
+          const cleanName = (med.name || "Unnamed").replace(/\bpcs\b/gi, "").trim();
 
           const dosage = med.dosage ? med.dosage : "";
 
@@ -1086,7 +1061,7 @@ export default {
         for (const row of this.groupToDelete.rows) {
           const id = row.prescription_id;
           await axios.delete(
-            process.env.VUE_APP_API_BASE_URL + `/prescription/delete/${id}`,
+            process.env.VUE_APP_API_BASE_URL + `/prescription/delete/${id}`
           );
         }
         toast.success("Prescription(s) deleted successfully.");

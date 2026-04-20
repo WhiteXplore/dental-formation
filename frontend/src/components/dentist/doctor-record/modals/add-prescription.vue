@@ -15,11 +15,7 @@
             {{ editMode ? "Edit Prescription" : "Add Prescription" }}
           </h1>
         </div>
-        <icon
-          :name="'circle-close3'"
-          @click="$emit('close')"
-          class="cursor-pointer"
-        />
+        <icon :name="'circle-close3'" @click="$emit('close')" class="cursor-pointer" />
       </div>
 
       <!-- Form Body -->
@@ -29,9 +25,7 @@
           <div class="w-full space-y-1.5 text-left relative">
             <label for="patient_id" class="font-bold">Patient:</label>
             <input
-              :value="
-                isPatientLocked ? selectedPatientName : searchPatientQuery
-              "
+              :value="isPatientLocked ? selectedPatientName : searchPatientQuery"
               @input="searchPatientQuery = $event.target.value"
               type="text"
               placeholder="Search patient..."
@@ -72,9 +66,7 @@
                   </div>
                 </div>
               </div>
-              <div v-else class="px-3 py-2 text-gray-500 italic">
-                No results found
-              </div>
+              <div v-else class="px-3 py-2 text-gray-500 italic">No results found</div>
             </div>
 
             <!-- Selected Patients -->
@@ -117,9 +109,7 @@
 
         <!-- Prescribe Medication -->
         <div class="flex flex-col gap-3 relative">
-          <label class="font-bold text-gray-700 text-sm">
-            Prescribe Medication
-          </label>
+          <label class="font-bold text-gray-700 text-sm"> Prescribe Medication </label>
 
           <!-- Search Medication -->
           <div class="relative">
@@ -138,6 +128,7 @@
               class="absolute z-30 bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto w-full mt-1"
               @mouseleave="showMedicationDropdown = false"
             >
+              <!-- MED LIST -->
               <div
                 v-for="(med, index) in filteredManualMedications"
                 :key="index"
@@ -148,7 +139,6 @@
                   <span class="font-semibold text-gray-800">
                     {{ med.name }}
                   </span>
-
                   <span class="text-xs text-gray-500">
                     {{ med.type }} • {{ med.dosage }}
                   </span>
@@ -157,6 +147,15 @@
                 <icon name="add" class="w-4 text-blue-500" />
               </div>
 
+              <!-- ✅ ADD THIS EXACTLY HERE -->
+              <div
+                class="p-3 text-center text-red-500 cursor-pointer hover:bg-red-50 border-t"
+                @mousedown.prevent="setNoMedication"
+              >
+                🚫 None (No Medication)
+              </div>
+
+              <!-- EMPTY STATE -->
               <div
                 v-if="filteredManualMedications.length === 0"
                 class="p-3 text-gray-500 italic text-center text-sm"
@@ -168,9 +167,13 @@
 
           <!-- Selected Medications -->
           <div
-            v-if="form.prescribe_medications.length > 0"
+            v-if="form.prescribe_medications.length > 0 || noMedication"
             class="space-y-3 max-h-[250px] overflow-y-auto border rounded-lg p-3 bg-gray-50"
           >
+            <!-- NONE SELECTED -->
+            <div v-if="noMedication" class="text-center text-gray-500 italic py-3">
+              🚫 No medication prescribed
+            </div>
             <div
               v-for="(med, index) in form.prescribe_medications"
               :key="index"
@@ -212,9 +215,7 @@
 
                 <!-- Instruction -->
                 <div class="flex-1">
-                  <label class="text-xs text-gray-500">
-                    Medication Instruction
-                  </label>
+                  <label class="text-xs text-gray-500"> Medication Instruction </label>
 
                   <input
                     type="text"
@@ -273,6 +274,7 @@ export default {
         issued_date: dayjs().format("YYYY-MM-DD"),
         prescribe_medications: [],
         payment_status: "For Payment",
+        noMedication: false,
       },
 
       searchPatientQuery: "",
@@ -305,9 +307,7 @@ export default {
       return this.medicines.filter(
         (m) =>
           m.name.toLowerCase().includes(q) &&
-          !this.form.prescribe_medications.some(
-            (selected) => selected.name === m.name,
-          ),
+          !this.form.prescribe_medications.some((selected) => selected.name === m.name)
       );
     },
 
@@ -324,8 +324,7 @@ export default {
       const query = this.searchPatientQuery.toLowerCase();
 
       return this.simplifiedPatients.filter((p) => {
-        const fullName =
-          `${p.last_name}, ${p.first_name} ${p.middle_name}`.toLowerCase();
+        const fullName = `${p.last_name}, ${p.first_name} ${p.middle_name}`.toLowerCase();
         return fullName.includes(query);
       });
     },
@@ -336,7 +335,15 @@ export default {
       "fetchDentalChart",
       "fetchMedicines", // ✅ load medicines
     ]),
+    setNoMedication() {
+      this.form.prescribe_medications = [];
+      this.noMedication = true;
 
+      this.searchMedicationQuery = "";
+      this.showMedicationDropdown = false;
+
+      toast.info("No medication selected");
+    },
     formatDate(date) {
       return dayjs(date).format("MMMM D, YYYY");
     },
@@ -352,8 +359,9 @@ export default {
     },
 
     toggleManualMedication(med) {
+      this.noMedication = false;
       const exists = this.form.prescribe_medications.some(
-        (item) => item.name === med.name,
+        (item) => item.name === med.name
       );
 
       if (exists) {
@@ -380,9 +388,7 @@ export default {
       const id = dentalChart.dental_id;
       const index = this.form.user_id.indexOf(id);
 
-      index === -1
-        ? this.form.user_id.push(id)
-        : this.form.user_id.splice(index, 1);
+      index === -1 ? this.form.user_id.push(id) : this.form.user_id.splice(index, 1);
     },
 
     removeDentalSelection(id) {
@@ -406,41 +412,44 @@ export default {
         return;
       }
 
-      if (!this.form.prescribe_medications.length) {
-        toast.warning("Please add at least one medication.");
-        return;
-      }
-
       try {
         const payload = {
           dental_chart_id: Number(this.form.user_id[0]),
           payment_status: this.form.payment_status,
           issued_date: this.form.issued_date,
 
-          medications: this.form.prescribe_medications.map((med) => ({
-            name: med.name,
-            type: med.type,
-            dosage: med.dosage,
-            pcs: Number(med.pcs),
-            med_instruction: med.med_instruction,
-          })),
+          // ✅ Allow empty medications
+          medications: this.form.prescribe_medications.length
+            ? this.form.prescribe_medications.map((med) => ({
+                name: med.name,
+                type: med.type,
+                dosage: med.dosage,
+                pcs: Number(med.pcs),
+                med_instruction: med.med_instruction,
+              }))
+            : [], // 👈 important
         };
 
         if (this.editMode) {
           await axios.patch(
             process.env.VUE_APP_API_BASE_URL +
               `/prescription/update-by-chart/${this.form.user_id[0]}`,
-            payload,
+            payload
           );
 
           toast.success("Prescription updated successfully!");
         } else {
           await axios.post(
             process.env.VUE_APP_API_BASE_URL + "/prescription/add-prescription",
-            payload,
+            payload
           );
 
-          toast.success("Prescription added successfully!");
+          // ✅ Better message when no meds
+          if (!this.form.prescribe_medications.length) {
+            toast.success("Prescription saved (No medication prescribed).");
+          } else {
+            toast.success("Prescription added successfully!");
+          }
         }
 
         this.$emit("refresh");
@@ -454,16 +463,14 @@ export default {
     async fetchPrescriptionForDental(dentalId) {
       try {
         const res = await axios.get(
-          process.env.VUE_APP_API_BASE_URL +
-            `/prescription/by-dental/${dentalId}`,
+          process.env.VUE_APP_API_BASE_URL + `/prescription/by-dental/${dentalId}`
         );
 
         const prescription = res.data;
 
         if (!prescription) return;
 
-        this.form.issued_date =
-          prescription.issued_date || dayjs().format("YYYY-MM-DD");
+        this.form.issued_date = prescription.issued_date || dayjs().format("YYYY-MM-DD");
 
         this.form.payment_status = prescription.payment_status || "For Payment";
 
@@ -476,6 +483,7 @@ export default {
             pcs: med.pcs,
             med_instruction: med.med_instruction || "",
           })) || [];
+        this.noMedication = this.form.prescribe_medications.length === 0;
       } catch (err) {
         console.error("Failed to fetch prescription:", err);
         toast.error("Failed to load prescription.");

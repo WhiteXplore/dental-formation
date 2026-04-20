@@ -77,9 +77,8 @@ export class CreatePrescriptionDto {
   @IsBoolean()
   is_discharged?: boolean;
 
-  @IsNotEmpty()
-  @ArrayMinSize(1)
-  @ValidateNested({ each: true })
-  @Type(() => MedicationDto)
-  medications: MedicationDto[];
+  @IsOptional()
+@ValidateNested({ each: true })
+@Type(() => MedicationDto)
+medications?: MedicationDto[];
 }

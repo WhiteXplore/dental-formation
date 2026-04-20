@@ -28,30 +28,37 @@ export class PrescriptionService {
     private readonly hmoRepo: Repository<HmoGuarantor>,
   ) {}
 
-  async create(createDto: CreatePrescriptionDto) {
-    const { dental_chart_id, medications, payment_status, issued_date } =
-      createDto;
+ async create(createDto: CreatePrescriptionDto) {
+  const {
+    dental_chart_id,
+    medications = [], // ✅ default empty
+    payment_status,
+    issued_date,
+  } = createDto;
 
-    const dentalChart = await this.dentalChartRepo.findOne({
-      where: { dental_id: dental_chart_id },
-    });
+  const dentalChart = await this.dentalChartRepo.findOne({
+    where: { dental_id: dental_chart_id },
+  });
 
-    if (!dentalChart) {
-      throw new NotFoundException(
-        `Dental chart with ID ${dental_chart_id} not found.`,
-      );
-    }
+  if (!dentalChart) {
+    throw new NotFoundException(
+      `Dental chart with ID ${dental_chart_id} not found.`,
+    );
+  }
 
-    const prescription = this.prescriptionRepo.create({
-      dentalChart,
-      payment_status,
-      issued_date,
-    });
+  const prescription = this.prescriptionRepo.create({
+    dentalChart,
+    payment_status,
+    issued_date,
+  });
 
-    await this.prescriptionRepo.save(prescription);
+  await this.prescriptionRepo.save(prescription);
 
+  // ✅ ONLY insert meds if exist
+  if (medications.length > 0) {
     for (const med of medications) {
       const { name, type, dosage, pcs, med_instruction } = med;
+
       if (!name) {
         throw new BadRequestException('Medication name is required.');
       }
@@ -67,16 +74,17 @@ export class PrescriptionService {
         name,
         type,
         dosage,
-        med_instruction, // ✅ add this
+        med_instruction,
         pcs: pcsNumber,
         issued_date: issued_date ?? new Date(),
       });
 
       await this.prescribedMedRepo.save(prescribedMed);
     }
-
-    return this.findOne(prescription.prescription_id);
   }
+
+  return this.findOne(prescription.prescription_id);
+}
 
   async findAll() {
     return this.prescriptionRepo.find({
@@ -242,38 +250,45 @@ export class PrescriptionService {
       await this.prescriptionRepo.save(prescription);
 
       // Handle medications update if any
-      if (Array.isArray(updateDto.medications)) {
-        await this.prescribedMedRepo.delete({
-          prescription: { prescription_id },
-        });
+     if (Array.isArray(updateDto.medications)) {
+  // always delete old meds
+  await this.prescribedMedRepo.delete({
+    prescription: { prescription_id },
+  });
 
-        for (const med of updateDto.medications) {
-          const { name, type, dosage, pcs, med_instruction } = med;
+  // ✅ if empty = NONE selected → stop here
+  if (updateDto.medications.length === 0) {
+    return this.findOne(prescription_id);
+  }
 
-          if (!name)
-            throw new BadRequestException('Medication name is required.');
+  // otherwise insert new meds
+  for (const med of updateDto.medications) {
+    const { name, type, dosage, pcs, med_instruction } = med;
 
-          const pcsNumber = Number(pcs);
-          if (isNaN(pcsNumber) || pcsNumber <= 0) {
-            throw new BadRequestException(
-              `Invalid pcs value for medication "${name}".`,
-            );
-          }
+    if (!name)
+      throw new BadRequestException('Medication name is required.');
 
-          const newMed = this.prescribedMedRepo.create({
-            prescription,
-            dental_chart: prescription.dentalChart,
-            name,
-            type,
-            dosage,
-            med_instruction, // ✅ add this
-            pcs: pcsNumber,
-            issued_date: prescription.issued_date,
-          });
+    const pcsNumber = Number(pcs);
+    if (isNaN(pcsNumber) || pcsNumber <= 0) {
+      throw new BadRequestException(
+        `Invalid pcs value for medication "${name}".`,
+      );
+    }
 
-          await this.prescribedMedRepo.save(newMed);
-        }
-      }
+    const newMed = this.prescribedMedRepo.create({
+      prescription,
+      dental_chart: prescription.dentalChart,
+      name,
+      type,
+      dosage,
+      med_instruction,
+      pcs: pcsNumber,
+      issued_date: prescription.issued_date,
+    });
+
+    await this.prescribedMedRepo.save(newMed);
+  }
+}
 
       return this.findOne(prescription_id);
     } catch (error) {
