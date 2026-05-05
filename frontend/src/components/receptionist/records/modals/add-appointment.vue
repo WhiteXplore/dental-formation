@@ -18,11 +18,7 @@
               {{ isEditMode ? "Edit" : "Add" }} Appointment
             </h1>
           </div>
-          <icon
-            :name="'circle-close3'"
-            @click="$emit('close')"
-            class="cursor-pointer"
-          />
+          <icon :name="'circle-close3'" @click="$emit('close')" class="cursor-pointer" />
         </div>
 
         <!-- Form Body -->
@@ -101,9 +97,7 @@
                     <span class="font-semibold">
                       Morning
                       <span class="text-gray-600">
-                        ({{
-                          getSessionTimeRange(dentist, "morning") || "N/A"
-                        }}) </span
+                        ({{ getSessionTimeRange(dentist, "morning") || "N/A" }}) </span
                       >:
                     </span>
 
@@ -131,9 +125,7 @@
                     <span class="font-semibold">
                       Afternoon
                       <span class="text-gray-600">
-                        ({{
-                          getSessionTimeRange(dentist, "afternoon") || "N/A"
-                        }}) </span
+                        ({{ getSessionTimeRange(dentist, "afternoon") || "N/A" }}) </span
                       >:
                     </span>
 
@@ -157,9 +149,7 @@
                   </div>
                 </div>
               </div>
-              <div v-else class="px-3 py-2 text-gray-500 italic">
-                No results found
-              </div>
+              <div v-else class="px-3 py-2 text-gray-500 italic">No results found</div>
             </div>
           </div>
 
@@ -289,10 +279,7 @@
               </div>
 
               <!-- HMO Account No & Valid ID Side by Side -->
-              <div
-                v-if="form.call_type === 'HMO'"
-                class="flex gap-2 justify-between"
-              >
+              <div v-if="form.call_type === 'HMO'" class="flex gap-2 justify-between">
                 <div class="w-1/2 space-y-1.5 text-left flex flex-col">
                   <label class="font-bold">HMO Account No:</label>
                   <input
@@ -344,8 +331,34 @@
                   {{ patient.middle_name }}
                 </div>
               </div>
-              <div v-else class="px-3 py-2 text-gray-500 italic">
-                No results found
+              <div v-else class="px-3 py-2 text-gray-500 italic">No results found</div>
+            </div>
+            <div class="w-full space-y-1.5 text-left relative">
+              <label class="font-bold">Procedure:</label>
+              <input
+                v-model="searchProcedureQuery"
+                type="text"
+                placeholder="Search procedure..."
+                class="px-3 py-3 border w-full border-gray-600 rounded-md text-md text-gray-800"
+                @focus="showProcedureDropdown = true"
+                @blur="hideDropdown('procedure')"
+                readonly
+              />
+              <div
+                v-if="showProcedureDropdown"
+                class="absolute left-0 top-full w-full bg-white border border-gray-300 rounded-md max-h-40 overflow-y-auto z-10"
+              >
+                <div v-if="filteredProcedures.length > 0">
+                  <div
+                    v-for="proc in filteredProcedures"
+                    :key="proc.price_procedure_id"
+                    class="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                    @mousedown.prevent="selectProcedure(proc)"
+                  >
+                    {{ proc.procedure_name }} - ₱{{ proc.price }}
+                  </div>
+                </div>
+                <div v-else class="px-3 py-2 text-gray-500 italic">No results found</div>
               </div>
             </div>
           </div>
@@ -433,12 +446,7 @@ export default {
     };
   },
   computed: {
-    ...mapState(useFetchDataStore, [
-      "patients",
-      "dentists",
-      "appointments",
-      "prices",
-    ]),
+    ...mapState(useFetchDataStore, ["patients", "dentists", "appointments", "prices"]),
     isEditMode() {
       return !!this.editData;
     },
@@ -448,7 +456,7 @@ export default {
       return this.patients.filter((p) =>
         `${p.last_name}, ${p.first_name} ${p.middle_name || ""}`
           .toLowerCase()
-          .includes(query),
+          .includes(query)
       );
     },
     filteredDentists() {
@@ -458,7 +466,7 @@ export default {
         .filter((d) =>
           `${d.last_name}, ${d.first_name} ${d.middle_name || ""}`
             .toLowerCase()
-            .includes(query),
+            .includes(query)
         )
         .map((d) => {
           if (!this.form.scheduled_date || !this.form.appointment_time)
@@ -468,9 +476,7 @@ export default {
           const selectedTotal =
             parseInt(this.form.appointment_time.split(":")[0]) * 60 +
             parseInt(this.form.appointment_time.split(":")[1] || 0);
-          const schedulesForDay = (d.schedules || []).filter(
-            (s) => s.day === day,
-          );
+          const schedulesForDay = (d.schedules || []).filter((s) => s.day === day);
           let isAvailable = false;
           schedulesForDay.forEach((s) => {
             const startTotal =
@@ -487,9 +493,7 @@ export default {
     },
     availableTimes() {
       if (!this.form.user_id || !this.form.scheduled_date) return [];
-      const dentist = this.dentists.find(
-        (d) => d.user_id === this.form.user_id,
-      );
+      const dentist = this.dentists.find((d) => d.user_id === this.form.user_id);
       if (!dentist || !dentist.schedules) return [];
 
       const day = dayjs(this.form.scheduled_date).format("dddd");
@@ -506,9 +510,7 @@ export default {
         while (start < end) {
           const h = Math.floor(start / 60);
           const m = start % 60;
-          times.push(
-            `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`,
-          );
+          times.push(`${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`);
           start += 30; // 30-minute slots
         }
       });
@@ -517,9 +519,7 @@ export default {
     filteredProcedures() {
       const query = this.searchProcedureQuery.toLowerCase();
       if (!query) return this.prices;
-      return this.prices.filter((p) =>
-        p.procedure_name.toLowerCase().includes(query),
-      );
+      return this.prices.filter((p) => p.procedure_name.toLowerCase().includes(query));
     },
   },
 
@@ -551,24 +551,20 @@ export default {
       this.form.notif_viewed_at = this.editData.notif_viewed_at || null;
 
       // Set search queries for dropdown inputs
-      const patient = this.patients.find(
-        (p) => p.patient_id === this.form.patient_id,
-      );
+      const patient = this.patients.find((p) => p.patient_id === this.form.patient_id);
       if (patient) {
-        this.searchPatientQuery = `${patient.last_name}, ${
-          patient.first_name
-        } ${patient.middle_name || ""}`;
+        this.searchPatientQuery = `${patient.last_name}, ${patient.first_name} ${
+          patient.middle_name || ""
+        }`;
       }
 
-      const dentist = this.dentists.find(
-        (d) => d.user_id === this.form.user_id,
-      );
+      const dentist = this.dentists.find((d) => d.user_id === this.form.user_id);
       if (dentist) {
         this.searchDentistQuery = `Dr. ${dentist.last_name}, ${dentist.first_name}`;
       }
 
       const procedure = this.prices.find(
-        (p) => p.price_procedure_id === this.form.price_procedure_id,
+        (p) => p.price_procedure_id === this.form.price_procedure_id
       );
       if (procedure) {
         this.searchProcedureQuery = procedure.procedure_name;
@@ -594,24 +590,18 @@ export default {
 
       const selectedDay = dayjs(this.form.scheduled_date).format("dddd");
 
-      const schedules = (dentist.schedules || []).filter(
-        (s) => s.day === selectedDay,
-      );
+      const schedules = (dentist.schedules || []).filter((s) => s.day === selectedDay);
 
       if (!schedules.length) return null;
 
       let filtered = [];
 
       if (session === "morning") {
-        filtered = schedules.filter(
-          (s) => parseInt(s.start_time.split(":")[0]) < 12,
-        );
+        filtered = schedules.filter((s) => parseInt(s.start_time.split(":")[0]) < 12);
       }
 
       if (session === "afternoon") {
-        filtered = schedules.filter(
-          (s) => parseInt(s.start_time.split(":")[0]) >= 12,
-        );
+        filtered = schedules.filter((s) => parseInt(s.start_time.split(":")[0]) >= 12);
       }
 
       if (!filtered.length) return null;
@@ -632,9 +622,7 @@ export default {
       if (!this.form.scheduled_date) return null;
 
       const selectedDay = dayjs(this.form.scheduled_date).format("dddd");
-      const schedules = (dentist.schedules || []).filter(
-        (s) => s.day === selectedDay,
-      );
+      const schedules = (dentist.schedules || []).filter((s) => s.day === selectedDay);
 
       if (!schedules.length) return null;
 
@@ -656,7 +644,7 @@ export default {
       const dentistAppointments = this.appointments.filter(
         (appt) =>
           appt.user_id === dentist.user_id &&
-          dayjs(appt.scheduled_date).format("YYYY-MM-DD") === selectedDate,
+          dayjs(appt.scheduled_date).format("YYYY-MM-DD") === selectedDate
       );
 
       let count = 0;
@@ -707,12 +695,8 @@ export default {
       }
 
       try {
-        const formattedDate = dayjs(this.form.scheduled_date).format(
-          "YYYY-MM-DD",
-        );
-        const dentist = this.dentists.find(
-          (d) => d.user_id === this.form.user_id,
-        );
+        const formattedDate = dayjs(this.form.scheduled_date).format("YYYY-MM-DD");
+        const dentist = this.dentists.find((d) => d.user_id === this.form.user_id);
 
         if (!dentist) {
           toast.warning("Please select a dentist.");
@@ -721,7 +705,7 @@ export default {
 
         const selectedDay = dayjs(this.form.scheduled_date).format("dddd");
         const schedulesForDay = (dentist.schedules || []).filter(
-          (s) => s.day === selectedDay,
+          (s) => s.day === selectedDay
         );
 
         // Dentist has no schedule at all
@@ -737,10 +721,7 @@ export default {
         const morningSlots = this.getSessionSlots(dentist, "morning");
         const afternoonSlots = this.getSessionSlots(dentist, "afternoon");
 
-        const selectedHour = parseInt(
-          this.form.appointment_time.split(":")[0],
-          10,
-        );
+        const selectedHour = parseInt(this.form.appointment_time.split(":")[0], 10);
         const session = selectedHour < 12 ? "morning" : "afternoon";
 
         // Session fully booked
@@ -752,12 +733,11 @@ export default {
             .filter(
               (appt) =>
                 appt.user_id === dentist.user_id &&
-                dayjs(appt.scheduled_date).format("YYYY-MM-DD") ===
-                  formattedDate &&
+                dayjs(appt.scheduled_date).format("YYYY-MM-DD") === formattedDate &&
                 ((session === "morning" &&
                   parseInt(appt.appointment_time.split(":")[0]) < 12) ||
                   (session === "afternoon" &&
-                    parseInt(appt.appointment_time.split(":")[0]) >= 12)),
+                    parseInt(appt.appointment_time.split(":")[0]) >= 12))
             )
             .map((appt) => ({
               appointment_id: appt.appointment_id,
@@ -784,15 +764,11 @@ export default {
           scheduled_date: formattedDate,
           appointment_time: this.form.appointment_time,
           appointment_status: this.form.appointment_status,
-          call_type:
-            this.form.appointment_status === "Call"
-              ? this.form.call_type
-              : null,
+          call_type: this.form.appointment_status === "Call" ? this.form.call_type : null,
           contact_number:
             this.form.call_type === "Call" ? this.form.contact_number : null,
           birthdate: this.form.call_type === "HMO" ? this.form.birthdate : null,
-          hmo_account_no:
-            this.form.call_type === "HMO" ? this.form.hmo_account_no : null,
+          hmo_account_no: this.form.call_type === "HMO" ? this.form.hmo_account_no : null,
           valid_id: this.form.call_type === "HMO" ? this.form.valid_id : null,
           medical_history: this.form.medical_history || null,
           notif_status: this.form.notif_status || null,
@@ -802,13 +778,13 @@ export default {
         if (!this.isEditMode) {
           await axios.post(
             `${process.env.VUE_APP_API_BASE_URL}/appointment/add-appointment`,
-            payload,
+            payload
           );
           toast.success("Appointment added successfully!");
         } else {
           await axios.patch(
             `${process.env.VUE_APP_API_BASE_URL}/appointment/${this.editData.appointment_id}`,
-            payload,
+            payload
           );
           toast.success("Appointment updated successfully!");
         }

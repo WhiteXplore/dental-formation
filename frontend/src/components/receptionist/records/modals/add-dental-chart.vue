@@ -23,7 +23,7 @@
             <div class="flex gap-1 items-center">
               <icon :name="'add-students'" />
               <h1 class="font-bold tracking-wide text-lg">
-                {{ editMode ? "Edit Dental Chart" : "Addss Dental Chart" }}
+                {{ editMode ? "Edit Dental Chart" : "Add Dental Chart" }}
               </h1>
             </div>
             <icon
@@ -87,9 +87,7 @@
                     v-for="p in prices.filter((proc) => proc.is_active)"
                     :key="p.price_procedure_id"
                     :value="p.price_procedure_id"
-                    :disabled="
-                      form.selected_procedures.includes(p.price_procedure_id)
-                    "
+                    :disabled="form.selected_procedures.includes(p.price_procedure_id)"
                   >
                     {{ p.procedure_name }}
                   </option>
@@ -117,10 +115,7 @@
                 </div>
               </div>
               <!-- Braces Position Selection -->
-              <div
-                v-if="isBracesProcedure"
-                class="w-full space-y-1.5 text-left"
-              >
+              <div v-if="isBracesProcedure" class="w-full space-y-1.5 text-left">
                 <label class="font-bold">Braces Position:</label>
                 <select
                   v-model="form.bracesPosition"
@@ -164,15 +159,12 @@
                         class="w-8 h-8 border border-black flex items-center justify-center cursor-pointer"
                         :class="[
                           selectedTeeth.includes(tooth)
-                            ? statusColors[toothStatusMap[tooth]] ||
-                              'bg-blue-500'
+                            ? statusColors[toothStatusMap[tooth]] || 'bg-blue-500'
                             : 'bg-white',
                         ]"
                         @click="toggleTooth(tooth)"
                       >
-                        <div
-                          class="w-4 h-4 border border-black rounded-full"
-                        ></div>
+                        <div class="w-4 h-4 border border-black rounded-full"></div>
                       </div>
 
                       <!-- Tooth Number -->
@@ -190,10 +182,7 @@
 
                       <!-- ✅ Hover Modal -->
                       <div
-                        v-if="
-                          hoveredTooth === tooth &&
-                          selectedTeeth.includes(tooth)
-                        "
+                        v-if="hoveredTooth === tooth && selectedTeeth.includes(tooth)"
                         class="absolute top-10 left-1/2 -translate-x-1/2 z-50 bg-white border rounded-lg shadow-lg p-3 w-44 text-xs"
                       >
                         <div class="font-semibold mb-2 text-gray-700">
@@ -201,9 +190,7 @@
                         </div>
 
                         <!-- Procedure -->
-                        <label class="text-[11px] text-gray-600"
-                          >Procedure</label
-                        >
+                        <label class="text-[11px] text-gray-600">Procedure</label>
                         <select
                           v-model="toothStatusMap[tooth]"
                           class="w-full border rounded px-2 py-1 text-xs mb-2"
@@ -263,9 +250,7 @@
                 </div>
 
                 <!-- Scrollable table ONLY -->
-                <div
-                  class="h-[20vh] overflow-y-auto mt-2 border rounded-md shadow-sm"
-                >
+                <div class="h-[20vh] overflow-y-auto mt-2 border rounded-md shadow-sm">
                   <table class="w-full text-[13px] text-center">
                     <thead
                       class="bg-gray-100 text-gray-700 uppercase text-[10px] tracking-wide sticky top-0 z-10"
@@ -327,8 +312,7 @@
                         <td class="p-3 border">
                           <div
                             :class="[
-                              statusColors[toothStatusMap[tooth]] ||
-                                'bg-white border',
+                              statusColors[toothStatusMap[tooth]] || 'bg-white border',
                               'w-6 h-6 mx-auto rounded-full border border-gray-400 shadow-inner',
                             ]"
                           ></div>
@@ -368,9 +352,7 @@
                 ></textarea>
               </div>
               <div class="flex flex-col gap-2 relative">
-                <label class="font-bold"
-                  >Select Additional Inventory Items:</label
-                >
+                <label class="font-bold">Select Additional Inventory Items:</label>
                 <input
                   type="text"
                   v-model="searchInventoryQuery"
@@ -392,12 +374,9 @@
                     @mousedown.prevent="toggleInventory(item)"
                   >
                     <div class="flex flex-col">
-                      <span class="font-semibold text-gray-800">{{
-                        item.name
-                      }}</span>
+                      <span class="font-semibold text-gray-800">{{ item.name }}</span>
                       <span class="text-xs text-gray-600 italic"
-                        >{{ item.type }} • {{ item.quantity }}
-                        {{ item.unit }}</span
+                        >{{ item.type }} • {{ item.quantity }} {{ item.unit }}</span
                       >
                     </div>
                   </div>
@@ -410,10 +389,7 @@
                 </div>
 
                 <!-- Selected Inventories -->
-                <div
-                  v-if="form.selected_inventories.length > 0"
-                  class="mt-2 space-y-2"
-                >
+                <div v-if="form.selected_inventories.length > 0" class="mt-2 space-y-2">
                   <div
                     v-for="(item, index) in form.selected_inventories"
                     :key="item.inventory_id"
@@ -424,8 +400,7 @@
                         <span>
                           {{ item.name }}
                           <span class="text-xs text-gray-500"
-                            >({{ item.type }} • {{ item.quantity }}
-                            {{ item.unit }})</span
+                            >({{ item.type }} • {{ item.quantity }} {{ item.unit }})</span
                           >
                         </span>
 
@@ -567,12 +542,60 @@ export default {
       ],
       toothAgeMap: {
         adult: [
-          18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28, 48,
-          47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38,
+          18,
+          17,
+          16,
+          15,
+          14,
+          13,
+          12,
+          11,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          48,
+          47,
+          46,
+          45,
+          44,
+          43,
+          42,
+          41,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
         ],
         child: [
-          55, 54, 53, 52, 51, 61, 62, 63, 64, 65, 85, 84, 83, 82, 81, 71, 72,
-          73, 74, 75,
+          55,
+          54,
+          53,
+          52,
+          51,
+          61,
+          62,
+          63,
+          64,
+          65,
+          85,
+          84,
+          83,
+          82,
+          81,
+          71,
+          72,
+          73,
+          74,
+          75,
         ],
       },
       showXrayModal: false,
@@ -592,8 +615,7 @@ export default {
         this.form.dental_id = data.dental_id;
         this.form.patient_id = data.patient?.patient_id ?? null;
         this.form.user_id = data.user_accounts?.user_id ?? null;
-        this.form.price_procedure_id =
-          data.priceProcedure?.price_procedure_id ?? null;
+        this.form.price_procedure_id = data.priceProcedure?.price_procedure_id ?? null;
 
         this.form.procedure_notes = data.procedure_notes ?? "";
         this.form.procedure_date = data.procedure_date ?? null;
@@ -665,8 +687,7 @@ export default {
             : process.env.VUE_APP_API_BASE_URL + "/" + data.xray_image_url;
         } else if (data.xray_image) {
           this.xrayPreview =
-            process.env.VUE_APP_API_BASE_URL +
-            `/dental-chart/xray/${data.dental_id}`;
+            process.env.VUE_APP_API_BASE_URL + `/dental-chart/xray/${data.dental_id}`;
         } else {
           this.xrayPreview = null;
         }
@@ -684,14 +705,11 @@ export default {
     ]),
     selectedProceduresList() {
       return this.prices.filter(
-        (p) =>
-          p.is_active &&
-          this.form.selected_procedures.includes(p.price_procedure_id),
+        (p) => p.is_active && this.form.selected_procedures.includes(p.price_procedure_id)
       );
     },
     filteredPatients() {
-      if (!this.appointments || this.appointments.length === 0 || !this.user)
-        return [];
+      if (!this.appointments || this.appointments.length === 0 || !this.user) return [];
 
       const today = new Date();
       today.setHours(0, 0, 0, 0); // Reset time to midnight
@@ -702,30 +720,26 @@ export default {
         appointments = [...this.appointments];
       } else if (this.user.role === "Dentist") {
         appointments = this.appointments.filter(
-          (a) => a.user_id === this.user.user_id || a.user_id === this.user.sub,
+          (a) => a.user_id === this.user.user_id || a.user_id === this.user.sub
         );
       }
 
       // Only upcoming appointments
-      appointments = appointments.filter(
-        (a) => new Date(a.scheduled_date) >= today,
-      );
+      appointments = appointments.filter((a) => new Date(a.scheduled_date) >= today);
 
       // Apply search filter
       if (this.searchPatientQuery) {
         const query = this.searchPatientQuery.toLowerCase();
         appointments = appointments.filter((a) =>
-          `${a.patient.last_name}, ${a.patient.first_name} ${
-            a.patient.middle_name || ""
-          }`
+          `${a.patient.last_name}, ${a.patient.first_name} ${a.patient.middle_name || ""}`
             .toLowerCase()
-            .includes(query),
+            .includes(query)
         );
       }
 
       // Sort by nearest date first
       appointments.sort(
-        (a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date),
+        (a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date)
       );
 
       return appointments;
@@ -736,7 +750,7 @@ export default {
       return this.inventories.filter((inv) => {
         // hide already selected inventories
         const alreadySelected = this.form.selected_inventories.some(
-          (i) => i.inventory_id === inv.inventory_id,
+          (i) => i.inventory_id === inv.inventory_id
         );
 
         if (alreadySelected) return false;
@@ -744,8 +758,7 @@ export default {
         if (!query) return true;
 
         return (
-          inv.name.toLowerCase().includes(query) ||
-          inv.type.toLowerCase().includes(query)
+          inv.name.toLowerCase().includes(query) || inv.type.toLowerCase().includes(query)
         );
       });
     },
@@ -768,7 +781,7 @@ export default {
     },
     selectedProcedure() {
       return this.prices.find(
-        (p) => p.price_procedure_id === this.form.price_procedure_id,
+        (p) => p.price_procedure_id === this.form.price_procedure_id
       );
     },
 
@@ -785,7 +798,7 @@ export default {
       const bracesProc = this.prices.find(
         (p) =>
           this.form.selected_procedures.includes(p.price_procedure_id) &&
-          p.procedure_name.toLowerCase().includes("brace"),
+          p.procedure_name.toLowerCase().includes("brace")
       );
 
       return !!bracesProc;
@@ -821,7 +834,7 @@ export default {
 
     removeProcedure(procId) {
       this.form.selected_procedures = this.form.selected_procedures.filter(
-        (p) => p !== procId,
+        (p) => p !== procId
       );
     },
     goToPrescription() {
@@ -835,7 +848,7 @@ export default {
     },
     toggleInventory(item) {
       const exists = this.form.selected_inventories.some(
-        (i) => i.inventory_id === item.inventory_id,
+        (i) => i.inventory_id === item.inventory_id
       );
 
       if (!exists) {
@@ -864,28 +877,54 @@ export default {
       let teeth = [];
 
       if (this.form.bracesPosition === "upper") {
-        teeth = [
-          18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
-        ];
+        teeth = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
       }
 
       if (this.form.bracesPosition === "lower") {
-        teeth = [
-          48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38,
-        ];
+        teeth = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
       }
 
       if (this.form.bracesPosition === "all") {
         teeth = [
-          18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28, 48,
-          47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38,
+          18,
+          17,
+          16,
+          15,
+          14,
+          13,
+          12,
+          11,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          48,
+          47,
+          46,
+          45,
+          44,
+          43,
+          42,
+          41,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
         ];
       }
 
       const bracesProc = this.prices.find(
         (p) =>
           this.form.selected_procedures.includes(p.price_procedure_id) &&
-          p.procedure_name.toLowerCase().includes("brace"),
+          p.procedure_name.toLowerCase().includes("brace")
       );
 
       if (!bracesProc) return;
@@ -954,16 +993,9 @@ export default {
       }
 
       // ✅ Validate file type
-      const allowedTypes = [
-        "image/png",
-        "image/jpeg",
-        "image/jpg",
-        "image/webp",
-      ];
+      const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
       if (!allowedTypes.includes(file.type)) {
-        toast.warning(
-          "Please select a valid image file (PNG, JPG, JPEG, WEBP).",
-        );
+        toast.warning("Please select a valid image file (PNG, JPG, JPEG, WEBP).");
         this.xrayFile = null;
         this.xrayPreview = null;
         return;
@@ -995,12 +1027,9 @@ export default {
     },
     async fetchUser() {
       try {
-        const response = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/auth/me",
-          {
-            withCredentials: true,
-          },
-        );
+        const response = await axios.get(process.env.VUE_APP_API_BASE_URL + "/auth/me", {
+          withCredentials: true,
+        });
         if (response.data) {
           this.user = response.data;
           this.form.user_id = this.user?.user_id ?? this.user?.sub;
@@ -1024,15 +1053,12 @@ export default {
         editedData.teeth.forEach((tooth) => {
           const procId = tooth.price_procedure_id;
 
-          const procedure = this.prices.find(
-            (p) => p.price_procedure_id === procId,
-          );
+          const procedure = this.prices.find((p) => p.price_procedure_id === procId);
           if (!procedure?.procedureInventories?.length) return;
 
           procedure.procedureInventories.forEach((pi) => {
             const invId = pi.inventory.inventory_id;
-            inventoryMap[invId] =
-              (inventoryMap[invId] || 0) + Number(pi.quantity);
+            inventoryMap[invId] = (inventoryMap[invId] || 0) + Number(pi.quantity);
           });
         });
       }
@@ -1051,13 +1077,10 @@ export default {
        * 🚀 SEND DEDUCTIONS TO BACKEND
        * =============================== */
       for (const [inventoryId, quantity] of Object.entries(inventoryMap)) {
-        await axios.patch(
-          `${process.env.VUE_APP_API_BASE_URL}/inventory/deduct`,
-          {
-            inventoryId: Number(inventoryId),
-            quantity,
-          },
-        );
+        await axios.patch(`${process.env.VUE_APP_API_BASE_URL}/inventory/deduct`, {
+          inventoryId: Number(inventoryId),
+          quantity,
+        });
       }
 
       /* ===============================
@@ -1068,7 +1091,7 @@ export default {
         {
           teeth: editedData.teeth,
           addItems: editedData.addItems,
-        },
+        }
       );
 
       /* ===============================
@@ -1121,11 +1144,7 @@ export default {
       allowedFields.forEach((key) => {
         const value = this.form[key];
         if (value !== null && value !== undefined && value !== "") {
-          if (
-            key === "patient_id" ||
-            key === "user_id" ||
-            key === "price_procedure_id"
-          ) {
+          if (key === "patient_id" || key === "user_id" || key === "price_procedure_id") {
             formData.append(key, Number(value));
           } else {
             formData.append(key, value);
@@ -1139,28 +1158,22 @@ export default {
       });
       formData.append(
         "selected_procedures",
-        JSON.stringify(this.form.selected_procedures || []),
+        JSON.stringify(this.form.selected_procedures || [])
       );
       formData.append(
         "tooth_condition_map",
-        JSON.stringify(this.toothConditionMap || {}),
+        JSON.stringify(this.toothConditionMap || {})
       );
-      formData.append(
-        "selected_teeth",
-        JSON.stringify(this.selectedTeeth.map(Number)),
-      );
-      formData.append(
-        "tooth_status_map",
-        JSON.stringify(this.toothStatusMap || {}),
-      );
+      formData.append("selected_teeth", JSON.stringify(this.selectedTeeth.map(Number)));
+      formData.append("tooth_status_map", JSON.stringify(this.toothStatusMap || {}));
       formData.append(
         "additional_items",
         JSON.stringify(
           (this.form.selected_inventories || []).map((item) => ({
             inventory_id: Number(item.inventory_id),
             pcs: Number(item.selected_quantity) || 1,
-          })),
-        ),
+          }))
+        )
       );
 
       if (this.xrayFile instanceof File) {
@@ -1179,13 +1192,13 @@ export default {
           await axios.patch(
             `${process.env.VUE_APP_API_BASE_URL}/dental-chart/update/${this.form.dental_id}`,
             formData,
-            { headers: { "Content-Type": "multipart/form-data" } },
+            { headers: { "Content-Type": "multipart/form-data" } }
           );
         } else {
           const res = await axios.post(
             `${process.env.VUE_APP_API_BASE_URL}/dental-chart/add-dental-chart`,
             formData,
-            { headers: { "Content-Type": "multipart/form-data" } },
+            { headers: { "Content-Type": "multipart/form-data" } }
           );
 
           // Save returned dental_id for step 2

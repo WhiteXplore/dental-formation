@@ -484,9 +484,10 @@ export default {
       const signatureBase64 = dentist.signature
         ? await this.toBase64(signaturePath)
         : null;
+
       const docDefinition = {
         pageSize: "LETTER",
-        pageMargins: [40, 160, 40, 80],
+        pageMargins: [40, 145, 40, 80],
 
         header: {
           margin: [40, 15, 40, 0],
@@ -542,20 +543,19 @@ export default {
               style: "receiptTitle",
               margin: [0, 2, 0, 6],
             },
-
-            {
-              text: "Dental Certificate",
-              bold: true,
-              fontSize: 15,
-              alignment: "center",
-              margin: [0, 10, 0, 0],
-            },
           ],
         },
 
         content: [
           {
+            text: "DENTAL CERTIFICATE",
+            bold: true,
+            fontSize: 15,
+            alignment: "center",
             margin: [0, 0, 0, 20],
+          },
+
+          {
             stack: [
               {
                 text: [
@@ -637,7 +637,7 @@ export default {
               },
               "has been examined at ",
               {
-                text: "TOOTH FORMATION DENTAL CLINIC – PANABO POLYMEDIC HOSPITAL, INC. ",
+                text: "TOOTH FORMATIONS DENTAL CLINIC – PANABO POLYMEDIC HOSPITAL, INC. ",
                 bold: true,
                 decoration: "underline",
               },
@@ -656,14 +656,12 @@ export default {
                 decoration: "underline",
               },
               ".",
-
-              //
             ],
-
             alignment: "justify",
             lineHeight: 1.6,
             margin: [0, 20, 0, 20],
           },
+
           {
             text: [
               "Recommendation: ",
@@ -677,6 +675,7 @@ export default {
             lineHeight: 1.6,
             margin: [0, 0, 0, 20],
           },
+
           {
             text: [
               "This certificate is issued upon the request of ",
@@ -696,7 +695,6 @@ export default {
           margin: [40, 0, 40, 30],
           columns: [
             { width: "*", text: "" },
-
             {
               width: "auto",
               stack: [
@@ -708,7 +706,6 @@ export default {
                       margin: [0, -100, 0, -20],
                     }
                   : {},
-
                 {
                   text: `${dentist.last_name || ""}, ${dentist.first_name || ""}, ${
                     dentist.prc_type || ""
@@ -717,7 +714,6 @@ export default {
                   decoration: "underline",
                   alignment: "center",
                 },
-
                 {
                   text: `License No. ${dentist.license_no || "N/A"}`,
                   fontSize: 9,

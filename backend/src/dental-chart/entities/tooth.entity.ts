@@ -19,7 +19,7 @@ export class ToothChart {
   // RF / OB / NR
   @Column({
     type: 'varchar',
-    length: 10,
+    length: 50,
     nullable: true,
   })
   tooth_condition: string;
