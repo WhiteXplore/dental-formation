@@ -126,5 +126,5 @@ json_path = DATA_PATH.parent / "revenue_forecast_nextmonth.json"
 with open(json_path, "w", encoding="utf-8") as f:
     json.dump(api_payload, f, indent=2)
 
-print(f"✅ Next month forecast JSON generated at {json_path}")
-print(f"✅ Excel saved at {forecast_excel_path}")
+print(f" Next month forecast JSON generated at {json_path}")
+print(f" Excel saved at {forecast_excel_path}")

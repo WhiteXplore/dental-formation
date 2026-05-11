@@ -95,4 +95,4 @@ json_path = DATA_PATH.parent / "revenue_forecast_daily.json"
 with open(json_path, "w", encoding="utf-8") as f:
     json.dump(api_payload, f, indent=2)
 
-print(f"✅ Forecast JSON successfully generated at {json_path}")
+print(f" Forecast JSON successfully generated at {json_path}")

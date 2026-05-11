@@ -2,43 +2,42 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import * as XLSX from 'xlsx';
 import * as fs from 'fs';
 import * as path from 'path';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
 @Injectable()
 export class RevenueService {
-  // Base directory (compiled dist -> project root)
   private readonly baseDir = path.resolve(__dirname, '../../..');
 
-  // Python paths
   private readonly pythonDir = path.join(this.baseDir, 'python');
   private readonly pythonDataDir = path.join(this.pythonDir, 'data');
 
-  // Path to virtual environment Python
-  private readonly pythonBin = path.join(
-    this.pythonDir,
-    'venv',
-    'bin',
-    'python3',
-  );
+private readonly pythonBin =
+  process.platform === 'win32'
+    ? path.join(this.pythonDir, 'venv', 'Scripts', 'python.exe')
+    : path.join(this.pythonDir, 'venv', 'bin', 'python3');
 
-  // Default XLSX and scripts
   private readonly defaultXlsxPath = path.join(
     this.pythonDataDir,
     'Revenue_Report.xlsx',
   );
+
   private readonly pythonScriptForDaily = path.join(
     this.pythonDir,
     'forecast_daily.py',
   );
+
   private readonly pythonScriptForMonthly = path.join(
     this.pythonDir,
     'forecast_monthly.py',
   );
 
-  // -----------------------------
-  // Generate XLSX + Daily Forecast
-  // -----------------------------
   generateRevenueXlsxAndForecast(rows: any[]) {
+    if (!rows || !rows.length) {
+      throw new InternalServerErrorException(
+        'No data available to generate forecast.',
+      );
+    }
+
     const xlsxPath = this.createRevenueXlsx(rows);
     const forecast = this.runDailyForecast(xlsxPath);
 
@@ -49,109 +48,133 @@ export class RevenueService {
     };
   }
 
-  // -----------------------------
-  // Create XLSX
-  // -----------------------------
   createRevenueXlsx(rows: any[]): string {
     try {
+      if (!rows || !rows.length) {
+        throw new InternalServerErrorException(
+          'No rows received from frontend.',
+        );
+      }
+
       if (!fs.existsSync(this.pythonDataDir)) {
         fs.mkdirSync(this.pythonDataDir, { recursive: true });
       }
 
-      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const cleanRows = rows.filter((row) => row && Object.keys(row).length);
+
+      if (!cleanRows.length) {
+        throw new InternalServerErrorException(
+          'Rows are empty after filtering.',
+        );
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(cleanRows);
       const workbook = XLSX.utils.book_new();
+
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Revenue Report');
-
       XLSX.writeFile(workbook, this.defaultXlsxPath);
+
       return this.defaultXlsxPath;
-    } catch (err) {
-      throw new InternalServerErrorException(
-        'Failed to generate Revenue XLSX file',
-      );
-    }
-  }
-
-  // -----------------------------
-  // Run Daily Forecast (venv Python)
-  // -----------------------------
-  runDailyForecast(xlsxPath?: string): any {
-    const filePath = xlsxPath || this.defaultXlsxPath;
-
-    if (!fs.existsSync(filePath))
-      throw new InternalServerErrorException(
-        `XLSX file not found: ${filePath}`,
-      );
-
-    if (!fs.existsSync(this.pythonScriptForDaily))
-      throw new InternalServerErrorException(
-        `Python script not found: ${this.pythonScriptForDaily}`,
-      );
-
-    try {
-      execSync(
-        `"${this.pythonBin}" "${this.pythonScriptForDaily}" "${filePath}"`,
-        { stdio: 'pipe' }, // capture stdout/stderr
-      );
     } catch (err: any) {
-      console.error('🐍 PYTHON STDOUT:', err?.stdout?.toString());
-      console.error('🐍 PYTHON STDERR:', err?.stderr?.toString());
       throw new InternalServerErrorException(
-        err?.stderr?.toString() || 'Python daily forecast failed',
+        err?.message || 'Failed to generate Revenue XLSX file',
       );
     }
-
-    const jsonPath = path.join(
-      this.pythonDataDir,
-      'revenue_forecast_daily.json',
-    );
-
-    if (!fs.existsSync(jsonPath))
-      throw new InternalServerErrorException(
-        'Daily forecast JSON not generated',
-      );
-
-    return JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
   }
 
-  // -----------------------------
-  // Run Monthly Forecast (venv Python)
-  // -----------------------------
+ runDailyForecast(xlsxPath?: string): any {
+  const filePath = xlsxPath || this.defaultXlsxPath;
+
+  this.validatePythonFiles(filePath, this.pythonScriptForDaily);
+
+  try {
+    console.log('PYTHON BIN:', this.pythonBin);
+    console.log('PYTHON EXISTS:', fs.existsSync(this.pythonBin));
+    console.log('PYTHON SCRIPT:', this.pythonScriptForDaily);
+    console.log('XLSX PATH:', filePath);
+
+    execFileSync(this.pythonBin, [this.pythonScriptForDaily, filePath], {
+      stdio: 'pipe',
+      windowsHide: true,
+    });
+  } catch (err: any) {
+    console.error('🐍 Daily PYTHON STDOUT:', err?.stdout?.toString());
+    console.error('🐍 Daily PYTHON STDERR:', err?.stderr?.toString());
+
+    throw new InternalServerErrorException(
+      err?.stderr?.toString() ||
+        err?.stdout?.toString() ||
+        'Python daily forecast failed',
+    );
+  }
+
+  const jsonPath = path.join(this.pythonDataDir, 'revenue_forecast_daily.json');
+
+  if (!fs.existsSync(jsonPath)) {
+    throw new InternalServerErrorException('Daily forecast JSON not generated');
+  }
+
+  return JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+}
+
   runMonthlyForecast(xlsxPath?: string): any {
-    const filePath = xlsxPath || this.defaultXlsxPath;
+  const filePath = xlsxPath || this.defaultXlsxPath;
 
-    if (!fs.existsSync(filePath))
-      throw new InternalServerErrorException(
-        `XLSX file not found: ${filePath}`,
-      );
+  this.validatePythonFiles(filePath, this.pythonScriptForMonthly);
 
-    if (!fs.existsSync(this.pythonScriptForMonthly))
-      throw new InternalServerErrorException(
-        `Python script not found: ${this.pythonScriptForMonthly}`,
-      );
+  try {
+    console.log('PYTHON BIN:', this.pythonBin);
+    console.log('PYTHON EXISTS:', fs.existsSync(this.pythonBin));
+    console.log('PYTHON SCRIPT:', this.pythonScriptForMonthly);
+    console.log('XLSX PATH:', filePath);
 
-    try {
-      execSync(
-        `"${this.pythonBin}" "${this.pythonScriptForMonthly}" "${filePath}"`,
-        { stdio: 'pipe' },
-      );
-    } catch (err: any) {
-      console.error('🐍 PYTHON STDOUT:', err?.stdout?.toString());
-      console.error('🐍 PYTHON STDERR:', err?.stderr?.toString());
+    execFileSync(this.pythonBin, [this.pythonScriptForMonthly, filePath], {
+      stdio: 'pipe',
+      windowsHide: true,
+    });
+  } catch (err: any) {
+    console.error('🐍 Monthly PYTHON STDOUT:', err?.stdout?.toString());
+    console.error('🐍 Monthly PYTHON STDERR:', err?.stderr?.toString());
+
+    throw new InternalServerErrorException(
+      err?.stderr?.toString() ||
+        err?.stdout?.toString() ||
+        'Python monthly forecast failed',
+    );
+  }
+
+  const jsonPath = path.join(
+    this.pythonDataDir,
+    'revenue_forecast_nextmonth.json',
+  );
+
+  console.log('MONTHLY JSON PATH:', jsonPath);
+  console.log('MONTHLY JSON EXISTS:', fs.existsSync(jsonPath));
+
+  if (!fs.existsSync(jsonPath)) {
+    throw new InternalServerErrorException(
+      'Monthly forecast JSON not generated',
+    );
+  }
+
+  return JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+}
+
+  private validatePythonFiles(xlsxPath: string, scriptPath: string) {
+    if (!fs.existsSync(this.pythonBin)) {
       throw new InternalServerErrorException(
-        err?.stderr?.toString() || 'Python monthly forecast failed',
+        `Python executable not found: ${this.pythonBin}`,
       );
     }
 
-    const jsonPath = path.join(
-      this.pythonDataDir,
-      'revenue_forecast_nextmonth.json',
-    );
+    if (!fs.existsSync(xlsxPath)) {
+      throw new InternalServerErrorException(`XLSX file not found: ${xlsxPath}`);
+    }
 
-    if (!fs.existsSync(jsonPath))
+    if (!fs.existsSync(scriptPath)) {
       throw new InternalServerErrorException(
-        'Monthly forecast JSON not generated',
+        `Python script not found: ${scriptPath}`,
       );
-
-    return JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+    }
   }
 }
