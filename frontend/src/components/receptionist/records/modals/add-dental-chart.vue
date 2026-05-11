@@ -116,7 +116,7 @@
               </div>
               <!-- Braces Position Selection -->
               <div v-if="isBracesProcedure" class="w-full space-y-1.5 text-left">
-                <label class="font-bold">Braces Position:</label>
+                <label class="font-bold">Teeth Position:</label>
                 <select
                   v-model="form.bracesPosition"
                   class="w-full px-3 py-3 border border-gray-600 rounded-md text-md text-gray-800 bg-white"
@@ -795,13 +795,13 @@ export default {
     isBracesProcedure() {
       if (!this.form.selected_procedures.length) return false;
 
-      const bracesProc = this.prices.find(
-        (p) =>
-          this.form.selected_procedures.includes(p.price_procedure_id) &&
-          p.procedure_name.toLowerCase().includes("brace")
-      );
+      return this.prices.some((p) => {
+        if (!this.form.selected_procedures.includes(p.price_procedure_id)) return false;
 
-      return !!bracesProc;
+        const name = p.procedure_name.toLowerCase();
+
+        return name.includes("brace") || name.includes("oral prophylaxis");
+      });
     },
   },
   methods: {
@@ -921,18 +921,21 @@ export default {
         ];
       }
 
-      const bracesProc = this.prices.find(
-        (p) =>
-          this.form.selected_procedures.includes(p.price_procedure_id) &&
-          p.procedure_name.toLowerCase().includes("brace")
-      );
+      const selectedProc = this.prices.find((p) => {
+        if (!this.form.selected_procedures.includes(p.price_procedure_id)) return false;
 
-      if (!bracesProc) return;
+        const name = p.procedure_name.toLowerCase();
+
+        return name.includes("brace") || name.includes("oral prophylaxis");
+      });
+
+      if (!selectedProc) return;
 
       this.selectedTeeth = [...teeth];
 
       teeth.forEach((t) => {
-        this.toothStatusMap[t] = bracesProc.price_procedure_id;
+        this.toothStatusMap[t] = selectedProc.price_procedure_id;
+        this.toothConditionMap[t] = this.toothConditionMap[t] || "NR";
       });
     },
     clearToothSelection() {

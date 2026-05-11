@@ -471,15 +471,54 @@ export default {
 
       const patient = this.selectedReport.dentalChart.patient || {};
       const dentist = this.selectedReport.dentalChart.user_accounts || {};
-      const procedures = this.selectedReport.dentalChart.teeth
-        .map((t) => t.priceProcedure?.procedure_name)
-        .filter(Boolean)
-        .join(", ");
+      // const procedures = this.selectedReport.dentalChart.teeth
+      //   .map((t) => t.priceProcedure?.procedure_name)
+      //   .filter(Boolean)
+      //   .join(", ");
+
       const teeth = this.selectedReport.dentalChart.teeth || [];
+
+      // Get unique procedure names
+      const procedureSet = new Set();
+      teeth.forEach((t) => {
+        if (t.priceProcedure?.procedure_name) {
+          procedureSet.add(t.priceProcedure.procedure_name);
+        }
+      });
+
+      const procedureList = Array.from(procedureSet);
+      const procedureText = procedureList.join(", ");
+
+      // Tooth numbers
+      const toothNumbers = teeth.map((t) => t.tooth_number).join(", ");
+
+      // Detect scope
+      const scope = this.selectedReport.dentalChart.procedure_scope;
+
+      // Detect Oral Prophylaxis
+      const isOralProphylaxis = procedureText.toLowerCase().includes("oral prophylaxis");
+
+      // FINAL TEXT BUILDER
+      let procedureSentence = "";
+
+      if (scope === "ALL_TEETH") {
+        if (isOralProphylaxis) {
+          // 👉 ONLY procedure name
+          procedureSentence = `${procedureText}`;
+        } else {
+          // 👉 procedure + teeth
+          procedureSentence = `${procedureText} involving tooth/teeth number(s) ${toothNumbers}`;
+        }
+      } else if (scope === "PER_TOOTH") {
+        // 👉 Always show both
+        procedureSentence = `${procedureText} involving tooth/teeth number(s) ${toothNumbers}`;
+      } else {
+        // fallback
+        procedureSentence = procedureText;
+      }
 
       const logoBase64 = await this.toBase64(require("@/assets/img/clinic-logo.png"));
 
-      const toothNumbers = teeth.map((t) => t.tooth_number).join(", ");
       const signaturePath = `${process.env.VUE_APP_API_BASE_URL}/uploads/signatures/${dentist.signature}`;
       const signatureBase64 = dentist.signature
         ? await this.toBase64(signaturePath)
@@ -644,11 +683,18 @@ export default {
               `on ${this.formatDate(this.selectedReport.dentalChart.procedure_date)}. `,
               "The patient underwent the dental procedure ",
               {
-                text: `${procedures || "N/A"} `,
+                text: `${procedureSentence}. `,
                 bold: true,
               },
-              "involving tooth/teeth number(s) ",
-              { text: `${toothNumbers || "N/A"}. `, bold: true },
+
+              // 👉 ONLY show teeth if NOT Oral Prophylaxis OR if PER_TOOTH
+              ...(!isOralProphylaxis || scope === "PER_TOOTH"
+                ? [
+                    "involving tooth/teeth number(s) ",
+                    { text: `${toothNumbers || "N/A"}. `, bold: true },
+                  ]
+                : []),
+
               "with a diagnosis of ",
               {
                 text: (this.diagnosis || "N/A").toUpperCase(),

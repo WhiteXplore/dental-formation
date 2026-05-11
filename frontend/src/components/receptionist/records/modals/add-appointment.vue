@@ -256,7 +256,6 @@
                   class="px-3 py-3 border w-full border-gray-600 rounded-md text-md text-gray-800"
                   @focus="showProcedureDropdown = true"
                   @blur="hideDropdown('procedure')"
-                  readonly
                 />
                 <div
                   v-if="showProcedureDropdown"

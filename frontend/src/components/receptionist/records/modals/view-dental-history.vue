@@ -1,7 +1,7 @@
 <template>
   <div class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
     <div
-      class="bg-white rounded-2xl shadow-2xl overflow-y-auto scrollbar-hidden w-full max-w-5xl"
+      class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
     >
       <!-- Header -->
       <div
@@ -15,8 +15,9 @@
         />
       </div>
 
-      <!-- Body -->
-      <div class="text-[13px] p-4">
+      <div
+        class="text-[13px] p-4 overflow-y-auto max-h-[calc(90vh-70px)] scrollbar-hidden"
+      >
         <div
           v-if="groupedHistory.length === 0"
           class="text-gray-500 text-center italic py-12"
@@ -188,12 +189,12 @@
               <table class="w-full border border-gray-300 text-sm">
                 <thead class="bg-gray-100">
                   <tr>
-                    <th class="border p-2 w-[20%]">Dentist</th>
+                    <th class="border p-2 w-[15%]">Dentist</th>
                     <th class="border p-2 w-[15%]">Notes</th>
                     <th class="border p-2 w-[12%]">Procedure</th>
                     <th class="border p-2">X-Ray</th>
-                    <th class="border p-2 max-w-[40%]">Teeth</th>
-                    <th class="border p-2 w-[40%]">Medication</th>
+                    <th class="border p-2 max-w-[50%]">Teeth</th>
+                    <th class="border p-2 w-[35%]">Medication</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -205,8 +206,11 @@
                     </td>
 
                     <td class="border p-2">
-                      <div v-for="(status, tooth) in record.teeth" :key="tooth">
-                        {{ status }}
+                      <div
+                        v-for="(proc, i) in [...new Set(Object.values(record.teeth))]"
+                        :key="i"
+                      >
+                        {{ proc }}
                       </div>
                     </td>
                     <td class="border p-2">
@@ -221,11 +225,11 @@
                       <span v-else class="italic text-gray-400">None</span>
                     </td>
                     <td class="border p-2">
-                      <div class="flex flex-wrap gap-1">
+                      <div class="grid grid-cols-4 gap-2">
                         <div
                           v-for="(status, tooth) in record.teeth"
                           :key="tooth"
-                          class="w-6 h-6 text-xs flex items-center justify-center border"
+                          class="h-8 text-xs flex items-center justify-center border rounded"
                           :class="statusColors[status]"
                         >
                           {{ tooth }}
