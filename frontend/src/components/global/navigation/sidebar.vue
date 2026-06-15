@@ -83,11 +83,7 @@
                 ]"
               >
                 <div
-                  :class="[
-                    !isExpanded
-                      ? 'justify-center w-full'
-                      : 'justify-start gap-5',
-                  ]"
+                  :class="[!isExpanded ? 'justify-center w-full' : 'justify-start gap-5']"
                   class="flex items-center"
                 >
                   <icon :name="item.icon" />
@@ -130,10 +126,10 @@
     <!-- Main Content -->
     <div
       :class="{ 'ml-16': !isExpanded, 'ml-64': isExpanded }"
-      class="flex-grow transition-all pt-2 min-h-screen rounded-t-[20px] overflow-hidden z-50"
+      class="flex-grow transition-all min-h-screen overflow-hidden z-50"
     >
       <slot>
-        <div class="bg-white w-auto h-full shadow mr-2 rounded-t-[20px]">
+        <div class="bg-white w-auto h-full shadow">
           <receptionistTopbar />
           <div class="p-2">
             <router-view></router-view>
@@ -378,10 +374,7 @@ export default {
   },
   computed: {
     roleMenuSections() {
-      return (
-        this.menuItemsByRole[this.user.role] ||
-        this.menuItemsByRole["Receptionist"]
-      );
+      return this.menuItemsByRole[this.user.role] || this.menuItemsByRole["Receptionist"];
     },
   },
   watch: {
@@ -403,9 +396,7 @@ export default {
       const allDropdownItems = sections.flatMap((s) => s.items);
       for (const item of allDropdownItems) {
         if (item.children) {
-          const match = item.children.find((child) =>
-            path.startsWith(child.route),
-          );
+          const match = item.children.find((child) => path.startsWith(child.route));
           if (match) {
             this.isDropdownOpen = item.name;
             break;
@@ -415,12 +406,9 @@ export default {
     },
     async fetchUser() {
       try {
-        const response = await axios.get(
-          process.env.VUE_APP_API_BASE_URL + "/auth/me",
-          {
-            withCredentials: true,
-          },
-        );
+        const response = await axios.get(process.env.VUE_APP_API_BASE_URL + "/auth/me", {
+          withCredentials: true,
+        });
         if (response.data) {
           this.user = response.data;
           console.log("Authenticated User:", this.user);

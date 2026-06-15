@@ -2,15 +2,39 @@
   "model": "Hybrid SARIMA + RandomForest",
   "seasonality": "Weekly",
   "forecast_days": 7,
-  "generated_at": "2026-05-11T12:41:19.641773",
+  "generated_at": "2026-05-11T18:25:07.548817",
   "historical": [
     {
       "date": "2026-03-04",
       "Clinic Share": 1440.0
     },
     {
+      "date": "2026-03-05",
+      "Clinic Share": 0.0
+    },
+    {
+      "date": "2026-03-06",
+      "Clinic Share": 0.0
+    },
+    {
       "date": "2026-03-07",
       "Clinic Share": 1440.0
+    },
+    {
+      "date": "2026-03-08",
+      "Clinic Share": 0.0
+    },
+    {
+      "date": "2026-03-09",
+      "Clinic Share": 0.0
+    },
+    {
+      "date": "2026-03-10",
+      "Clinic Share": 0.0
+    },
+    {
+      "date": "2026-03-11",
+      "Clinic Share": 0.0
     },
     {
       "date": "2026-03-12",
@@ -25,8 +49,16 @@
       "Clinic Share": 240.0
     },
     {
+      "date": "2026-03-15",
+      "Clinic Share": 0.0
+    },
+    {
       "date": "2026-03-16",
       "Clinic Share": 960.0
+    },
+    {
+      "date": "2026-03-17",
+      "Clinic Share": 0.0
     },
     {
       "date": "2026-03-18",
@@ -37,28 +69,88 @@
       "Clinic Share": 180.0
     },
     {
+      "date": "2026-03-20",
+      "Clinic Share": 0.0
+    },
+    {
       "date": "2026-03-21",
       "Clinic Share": 660.0
+    },
+    {
+      "date": "2026-03-22",
+      "Clinic Share": 0.0
     },
     {
       "date": "2026-03-23",
       "Clinic Share": 1440.0
     },
     {
+      "date": "2026-03-24",
+      "Clinic Share": 0.0
+    },
+    {
       "date": "2026-03-25",
       "Clinic Share": 960.0
+    },
+    {
+      "date": "2026-03-26",
+      "Clinic Share": 0.0
+    },
+    {
+      "date": "2026-03-27",
+      "Clinic Share": 0.0
+    },
+    {
+      "date": "2026-03-28",
+      "Clinic Share": 0.0
+    },
+    {
+      "date": "2026-03-29",
+      "Clinic Share": 0.0
+    },
+    {
+      "date": "2026-03-30",
+      "Clinic Share": 0.0
+    },
+    {
+      "date": "2026-03-31",
+      "Clinic Share": 0.0
     },
     {
       "date": "2026-04-01",
       "Clinic Share": 1920.0
     },
     {
+      "date": "2026-04-02",
+      "Clinic Share": 0.0
+    },
+    {
+      "date": "2026-04-03",
+      "Clinic Share": 0.0
+    },
+    {
+      "date": "2026-04-04",
+      "Clinic Share": 0.0
+    },
+    {
+      "date": "2026-04-05",
+      "Clinic Share": 0.0
+    },
+    {
       "date": "2026-04-06",
       "Clinic Share": 480.0
     },
     {
+      "date": "2026-04-07",
+      "Clinic Share": 0.0
+    },
+    {
       "date": "2026-04-08",
       "Clinic Share": 480.0
+    },
+    {
+      "date": "2026-04-09",
+      "Clinic Share": 0.0
     },
     {
       "date": "2026-04-10",
@@ -67,6 +159,10 @@
     {
       "date": "2026-04-11",
       "Clinic Share": 960.0
+    },
+    {
+      "date": "2026-04-12",
+      "Clinic Share": 0.0
     },
     {
       "date": "2026-04-13",
@@ -80,58 +176,58 @@
   "forecast": [
     {
       "date": "2026-04-15",
-      "sarima_forecast": 14846.06545676841,
-      "hybrid_forecast": 15769.304725022685,
-      "difference": 923.2392682542741,
-      "absolute_difference": 923.2392682542741
+      "sarima_forecast": 913.2608377427279,
+      "hybrid_forecast": 866.6113948586959,
+      "difference": -46.64944288403194,
+      "absolute_difference": 46.64944288403194
     },
     {
       "date": "2026-04-16",
-      "sarima_forecast": -9914.550149106848,
-      "hybrid_forecast": -8991.310880852576,
-      "difference": 923.2392682542722,
-      "absolute_difference": 923.2392682542722
+      "sarima_forecast": 310.0419489391047,
+      "hybrid_forecast": 263.3925060550728,
+      "difference": -46.64944288403194,
+      "absolute_difference": 46.64944288403194
     },
     {
       "date": "2026-04-17",
-      "sarima_forecast": -2136.455240520537,
-      "hybrid_forecast": -1213.2159722662636,
-      "difference": 923.2392682542732,
-      "absolute_difference": 923.2392682542732
+      "sarima_forecast": 334.51361601589053,
+      "hybrid_forecast": 287.8641731318586,
+      "difference": -46.64944288403194,
+      "absolute_difference": 46.64944288403194
     },
     {
       "date": "2026-04-18",
-      "sarima_forecast": -1526.1358756454636,
-      "hybrid_forecast": -602.8966073911904,
-      "difference": 923.2392682542732,
-      "absolute_difference": 923.2392682542732
+      "sarima_forecast": 723.434612230234,
+      "hybrid_forecast": 676.7851693462021,
+      "difference": -46.64944288403194,
+      "absolute_difference": 46.64944288403194
     },
     {
       "date": "2026-04-19",
-      "sarima_forecast": 1189.258619846174,
-      "hybrid_forecast": 2112.497888100447,
-      "difference": 923.2392682542732,
-      "absolute_difference": 923.2392682542732
+      "sarima_forecast": 147.11233815930223,
+      "hybrid_forecast": 100.46289527527028,
+      "difference": -46.64944288403194,
+      "absolute_difference": 46.64944288403194
     },
     {
       "date": "2026-04-20",
-      "sarima_forecast": 1017.1986809082538,
-      "hybrid_forecast": 1940.4379491625268,
-      "difference": 923.239268254273,
-      "absolute_difference": 923.239268254273
+      "sarima_forecast": 844.0212972641345,
+      "hybrid_forecast": 797.3718543801026,
+      "difference": -46.64944288403194,
+      "absolute_difference": 46.64944288403194
     },
     {
       "date": "2026-04-21",
-      "sarima_forecast": 3947.184000493513,
-      "hybrid_forecast": 4870.423268747786,
-      "difference": 923.2392682542732,
-      "absolute_difference": 923.2392682542732
+      "sarima_forecast": 398.9407719621467,
+      "hybrid_forecast": 352.29132907811476,
+      "difference": -46.64944288403194,
+      "absolute_difference": 46.64944288403194
     }
   ],
   "summary": {
-    "avg_sarima": 1060.3664989633576,
-    "avg_hybrid": 1983.6057672176305,
-    "avg_difference": 923.2392682542732,
-    "max_expected_revenue": 15769.304725022685
+    "avg_sarima": 524.4750603305058,
+    "avg_hybrid": 477.82561744647376,
+    "avg_difference": -46.64944288403194,
+    "max_expected_revenue": 866.6113948586959
   }
 }

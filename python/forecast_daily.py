@@ -34,6 +34,19 @@ df = df.sort_values("Procedure Date")
 # Aggregate daily revenue
 daily_revenue = df.groupby("Procedure Date")["Clinic Share"].sum()
 
+# 🔥 Create continuous daily dates
+full_dates = pd.date_range(
+    start=daily_revenue.index.min(),
+    end=daily_revenue.index.max(),
+    freq="D"
+)
+
+# 🔥 Fill missing dates with 0
+daily_revenue = daily_revenue.reindex(full_dates, fill_value=0)
+
+# 🔥 Restore index name
+daily_revenue.index.name = "Procedure Date"
+
 # SARIMA model
 sarima = SARIMAX(
     daily_revenue, order=(1, 1, 1), seasonal_order=(1, 1, 1, 7),
@@ -60,7 +73,9 @@ rf.fit(X.iloc[:split], y.iloc[:split])
 
 future_residuals = np.repeat(rf.predict(X.iloc[[-1]])[0], 7)
 hybrid_forecast = sarima_forecast.values + future_residuals
-
+# 🔥 Prevent negative forecast
+hybrid_forecast = np.maximum(hybrid_forecast, 0)
+sarima_forecast = np.maximum(sarima_forecast, 0)
 forecast_index = pd.date_range(
     daily_revenue.index[-1] + pd.Timedelta(days=1), periods=7)
 forecast_df = pd.DataFrame({

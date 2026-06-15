@@ -104,7 +104,7 @@ private readonly pythonBin =
     throw new InternalServerErrorException(
       err?.stderr?.toString() ||
         err?.stdout?.toString() ||
-        'Python daily forecast failed',
+        'Python daily forecast failed',   
     );
   }
 
